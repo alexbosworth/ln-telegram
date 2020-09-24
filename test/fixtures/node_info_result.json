@@ -1,0 +1,15 @@
+{
+  "channels": [],
+  "node": {
+    "addresses": [],
+    "alias": "alias",
+    "color": "#000000",
+    "features": {},
+    "last_update": 1,
+    "num_channels": 1,
+    "pub_key": "a",
+    "total_capacity": "1"
+  },
+  "num_channels": 1,
+  "total_capacity": "1"
+}
