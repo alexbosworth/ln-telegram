@@ -33,7 +33,7 @@
   "name": "ln-telegram",
   "repository": {
     "type": "git",
-    "url": "https://github.com/alexbosworth/ln-telegrams.git"
+    "url": "https://github.com/alexbosworth/ln-telegram.git"
   },
   "scripts": {
     "test": "tap test/post/*.js"
