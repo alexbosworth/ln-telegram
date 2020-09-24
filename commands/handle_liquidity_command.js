@@ -160,7 +160,7 @@ module.exports = ({from, id, key, nodes, reply, request, text}, cbk) => {
             }
 
             return cbk(null, {
-              balance: res.balance,
+              balance: res.tokens.reduce((sum, n) => sum + n, Number()),
               public_key: node.public_key,
             });
           });

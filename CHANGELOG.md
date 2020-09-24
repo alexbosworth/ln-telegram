@@ -1,5 +1,9 @@
 # Versions
 
+## Version 1.0.1
+
+- `handleLiquidityCommand`: Fix outbound liquidity command
+
 ## Version 1.0.0
 
 - `handleBackupCommand`: Add method to send backups as files
