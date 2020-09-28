@@ -159,7 +159,7 @@ const tests = [
         return cbk(null, {statusCode: 200})
       },
     },
-    description: 'Get ndoe error reverts back to channel ids',
+    description: 'Get node error reverts back to channel ids',
   },
 ];
 

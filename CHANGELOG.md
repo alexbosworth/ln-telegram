@@ -1,5 +1,9 @@
 # Versions
 
+## Version 1.1.0
+
+- `handleEarningsCommand`: Add command to show node earnings
+
 ## Version 1.0.1
 
 - `handleLiquidityCommand`: Fix outbound liquidity command
