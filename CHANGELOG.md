@@ -1,5 +1,14 @@
 # Versions
 
+## Version 2.0.0
+
+- `notifyOfForwards`: Use this method instead of `postForwardedPayments`, which is removed
+- `postSettledInvoice`: Show public key of sender even when unverified
+
+### Breaking Changes
+
+- `postForwardedPayments`: Remove method
+
 ## Version 1.1.0
 
 - `handleEarningsCommand`: Add command to show node earnings

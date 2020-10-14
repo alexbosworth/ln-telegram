@@ -22,11 +22,12 @@ const uniq = arr => Array.from(new Set(arr));
     from: <From Node Name String>
     id: <Connected User Id Number>
     key: <Telegram API Key String>
-    lnd: <Authenticated LND gRPC API Object>
+    lnd: <Authenticated LND API Object>
+    node: <From Node Public Key Hex String>
     request: <Request Function>
   }
 */
-module.exports = ({forwards, from, id, key, lnd, request}, cbk) => {
+module.exports = ({forwards, from, id, key, lnd, node, request}, cbk) => {
   return new Promise((resolve, reject) => {
     return asyncAuto({
       // Check arguments
@@ -51,6 +52,10 @@ module.exports = ({forwards, from, id, key, lnd, request}, cbk) => {
           return cbk([400, 'ExpectedLndToNotifyOfForwards']);
         }
 
+        if (!node) {
+          return cbk([400, 'ExpectedFromNodePublicKeyToNotifyOfForwards']);
+        }
+
         if (!request) {
           return cbk([400, 'ExpectedRequestFunctionToNotifyOfForwards']);
         }
@@ -58,32 +63,20 @@ module.exports = ({forwards, from, id, key, lnd, request}, cbk) => {
         return cbk();
       },
 
-      // Get own key
-      getInfo: ['validate', ({}, cbk) => {
-        // There is no need to find own key when there are no forwards
-        if (!forwards.length) {
-          return cbk();
-        }
-
-        return getWalletInfo({lnd}, cbk);
-      }],
-
       // Get channel details
-      getChannels: ['getInfo', ({getInfo}, cbk) => {
+      getChannels: ['validate', ({}, cbk) => {
         const channels = []
           .concat(forwards.map(n => n.incoming_channel))
           .concat(forwards.map(n => n.outgoing_channel));
 
         return asyncMap(uniq(channels), (id, cbk) => {
-          const publicKey = getInfo.public_key;
-
           return getChannel({id, lnd}, (err, res) => {
             // Ignore errors
             if (!!err) {
               return cbk();
             }
 
-            const policy = res.policies.find(n => n.public_key !== publicKey);
+            const policy = res.policies.find(n => n.public_key !== node);
 
             return cbk(null, {id, key: policy.public_key});
           });

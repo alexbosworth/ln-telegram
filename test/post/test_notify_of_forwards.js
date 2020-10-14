@@ -3,63 +3,74 @@ const {test} = require('tap');
 const {chanInfoResult} = require('./../fixtures');
 const {getInfoResponse} = require('./../fixtures');
 const {nodeInfoResult} = require('./../fixtures');
-const notifyOfForwards = require('./../../post/notify_of_forwards');
+const {notifyOfForwards} = require('./../../');
+
+const makeArgs = overrides => {
+  const args = {
+    forwards: [],
+    from: 'from',
+    id: 1,
+    key: 'key',
+    lnd: {},
+    node: Buffer.alloc(33).toString('hex'),
+    request: ({}, cbk) => {},
+  };
+
+  Object.keys(overrides).forEach(k => args[k] = overrides[k]);
+
+  return args;
+};
 
 const getInfoRes = () => JSON.parse(JSON.stringify(getInfoResponse));
 
 const tests = [
   {
-    args: {},
+    args: makeArgs({forwards: undefined}),
     description: 'A forwards array is required to notify of forwards',
     error: [400, 'ExpectedForwardsArrayToNotifyOfForwards'],
   },
   {
-    args: {forwards: []},
+    args: makeArgs({from: undefined}),
     description: 'A from name is required to notify of forwards',
     error: [400, 'ExpectedFromNodeNameToNotifyOfForwards'],
   },
   {
-    args: {forwards: [], from: 'from'},
+    args: makeArgs({id: undefined}),
     description: 'A user id is required to notify of forwards',
     error: [400, 'ExpectedConnectedUserIdToNotifyOfForwards'],
   },
   {
-    args: {forwards: [], from: 'from', id: 1},
+    args: makeArgs({key: undefined}),
     description: 'A telegram key is required to notify of forwards',
     error: [400, 'ExpectedTelegramApiKeyToNotifyOfForwards'],
   },
   {
-    args: {forwards: [], from: 'from', id: 1, key: 'key'},
+    args: makeArgs({lnd: undefined}),
     description: 'An lnd connection is required to notify of forwards',
     error: [400, 'ExpectedLndToNotifyOfForwards'],
   },
   {
-    args: {forwards: [], from: 'from', id: 1, key: 'key', lnd: {}},
+    args: makeArgs({node: undefined}),
+    description: 'A node public key is required to notify of forwards',
+    error: [400, 'ExpectedFromNodePublicKeyToNotifyOfForwards'],
+  },
+  {
+    args: makeArgs({request: undefined}),
     description: 'A request function is required to notify of forwards',
     error: [400, 'ExpectedRequestFunctionToNotifyOfForwards'],
   },
   {
-    args: {
-      forwards: [],
-      from: 'from',
-      id: 1,
-      key: 'key',
-      lnd: {},
-      request: ({}, cbk) => {},
-    },
+    args: makeArgs({}),
     description: 'No forwards yields no notifications',
   },
   {
-    args: {
+    args: makeArgs({
       forwards: [{
         fee: 1, 
         incoming_channel: '0x0x1',
         outgoing_channel: '1x1x1',
         tokens: 1,
       }],
-      from: 'from',
-      id: 1,
-      key: 'key',
       lnd: {
         default: {
           getChanInfo: (args, cbk) => cbk(null, chanInfoResult),
@@ -74,20 +85,17 @@ const tests = [
 
         return cbk(null, {statusCode: 200})
       },
-    },
+    }),
     description: 'A forward is mapped to a forward notification',
   },
   {
-    args: {
+    args: makeArgs({
       forwards: [{
         fee: 1, 
         incoming_channel: '0x0x1',
         outgoing_channel: '1x1x1',
         tokens: 1,
       }],
-      from: 'from',
-      id: 1,
-      key: 'key',
       lnd: {
         default: {
           getChanInfo: (args, cbk) => cbk('err'),
@@ -102,20 +110,17 @@ const tests = [
 
         return cbk(null, {statusCode: 200})
       },
-    },
+    }),
     description: 'Get channel error reverts back to channel ids',
   },
   {
-    args: {
+    args: makeArgs({
       forwards: [{
         fee: 1, 
         incoming_channel: '0x0x1',
         outgoing_channel: '1x1x1',
         tokens: 1,
       }],
-      from: 'from',
-      id: 1,
-      key: 'key',
       lnd: {
         default: {
           getChanInfo: (args, cbk) => cbk('err'),
@@ -130,20 +135,17 @@ const tests = [
 
         return cbk(null, {statusCode: 200})
       },
-    },
+    }),
     description: 'Get channel error reverts back to channel ids',
   },
   {
-    args: {
+    args: makeArgs({
       forwards: [{
         fee: 1,
         incoming_channel: '0x0x1',
         outgoing_channel: '1x1x1',
         tokens: 1,
       }],
-      from: 'from',
-      id: 1,
-      key: 'key',
       lnd: {
         default: {
           getChanInfo: (args, cbk) => cbk(null, chanInfoResult),
@@ -158,7 +160,7 @@ const tests = [
 
         return cbk(null, {statusCode: 200})
       },
-    },
+    }),
     description: 'Get node error reverts back to channel ids',
   },
 ];

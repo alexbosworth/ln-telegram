@@ -6,9 +6,9 @@ const {handleInvoiceCommand} = require('./commands');
 const {handleLiquidityCommand} = require('./commands');
 const {handleMempoolCommand} = require('./commands');
 const {handlePayCommand} = require('./commands');
+const {notifyOfForwards} = require('./post');
 const {postChainTransaction} = require('./post');
 const {postClosedMessage} = require('./post');
-const {postForwardedPayments} = require('./post');
 const {postOpenMessage} = require('./post');
 const {postSettledInvoice} = require('./post');
 const {postUpdatedBackups} = require('./post');
@@ -23,9 +23,9 @@ module.exports = {
   handleLiquidityCommand,
   handleMempoolCommand,
   handlePayCommand,
+  notifyOfForwards,
   postChainTransaction,
   postClosedMessage,
-  postForwardedPayments,
   postOpenMessage,
   postSettledInvoice,
   postUpdatedBackups,
