@@ -38,5 +38,5 @@
   "scripts": {
     "test": "tap test/commands/*.js test/post/*.js"
   },
-  "version": "2.0.0"
+  "version": "3.0.0"
 }

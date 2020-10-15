@@ -1,5 +1,13 @@
 # Versions
 
+## Version 3.0.0
+
+- `postUpdatedBackup`: Use this method instead of `postUpdatedBackups`, which is removed
+
+### Breaking Changes
+
+- `postUpdatedBackups`: Method removed
+
 ## Version 2.0.0
 
 - `notifyOfForwards`: Use this method instead of `postForwardedPayments`, which is removed
@@ -7,7 +15,7 @@
 
 ### Breaking Changes
 
-- `postForwardedPayments`: Remove method
+- `postForwardedPayments`: Method removed
 
 ## Version 1.1.0
 

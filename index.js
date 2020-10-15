@@ -11,7 +11,7 @@ const {postChainTransaction} = require('./post');
 const {postClosedMessage} = require('./post');
 const {postOpenMessage} = require('./post');
 const {postSettledInvoice} = require('./post');
-const {postUpdatedBackups} = require('./post');
+const {postUpdatedBackup} = require('./post');
 const {sendMessage} = require('./post');
 
 module.exports = {
@@ -28,6 +28,6 @@ module.exports = {
   postClosedMessage,
   postOpenMessage,
   postSettledInvoice,
-  postUpdatedBackups,
+  postUpdatedBackup,
   sendMessage,
 };

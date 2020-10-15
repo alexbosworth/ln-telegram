@@ -2,45 +2,53 @@ const {test} = require('tap');
 
 const {postChainTransaction} = require('./../../');
 
+const makeTransaction = overrides => {
+  const tx = {
+    chain_fee: 1,
+    related_channels: [
+      {
+        action: 'action',
+        node: 'node',
+        with: Buffer.alloc(33).toString('hex'),
+      },
+      {
+        action: 'channel_closing',
+      },
+      {
+        action: 'cooperatively_closed_channel',
+      },
+      {
+        action: 'force_closed_channel',
+      },
+      {
+        action: 'opened_channel',
+      },
+      {
+        action: 'opening_channel',
+      },
+      {
+        action: 'peer_force_closed_channel',
+      },
+      {
+        action: 'peer_force_closing_channel',
+      },
+    ],
+    sent: 1,
+    sent_to: ['address'],
+  };
+
+  Object.keys(overrides).forEach(k => tx[k] = overrides[k]);
+
+  return tx;
+};
+
 const makeArgs = overrides => {
   const args = {
     from: 'from',
     id: 1,
     key: 'key',
     request: ({}, cbk) => cbk(null, {statusCode: 200}, {}),
-    transaction: {
-      chain_fee: 1,
-      related_channels: [
-        {
-          action: 'action',
-          node: 'node',
-          with: Buffer.alloc(33).toString('hex'),
-        },
-        {
-          action: 'channel_closing',
-        },
-        {
-          action: 'cooperatively_closed_channel',
-        },
-        {
-          action: 'force_closed_channel',
-        },
-        {
-          action: 'opened_channel',
-        },
-        {
-          action: 'opening_channel',
-        },
-        {
-          action: 'peer_force_closed_channel',
-        },
-        {
-          action: 'peer_force_closing_channel',
-        },
-      ],
-      sent: 1,
-      sent_to: ['address'],
-    },
+    transaction: makeTransaction({}),
   };
 
   Object.keys(overrides).forEach(k => args[k] = overrides[k]);
@@ -75,7 +83,9 @@ const tests = [
     error: [400, 'ExpectedTransactionRecordToPostChainTransaction'],
   },
   {
-    args: makeArgs({transaction: {}}),
+    args: makeArgs({
+      transaction: makeTransaction({related_channels: undefined}),
+    }),
     description: 'Transaction related channels is expected',
     error: [400, 'ExpectedRelatedChannelsInTransactionToPost'],
   },
@@ -84,11 +94,24 @@ const tests = [
     description: 'A chain transaction is posted',
   },
   {
+    args: makeArgs({transaction: makeTransaction({received: 1})}),
+    description: 'A chain transaction is posted',
+  },
+  {
+    args: makeArgs({
+      transaction: makeTransaction({
+        received: undefined,
+        related_channels: [],
+      }),
+    }),
+    description: 'A chain transaction is posted',
+  },
+  {
     args: makeArgs({
       transaction: {
         received: 1,
         related_channels: [],
-        send: undefined,
+        sent: undefined,
         sent_to: undefined,
       },
     }),
@@ -99,11 +122,26 @@ const tests = [
       transaction: {
         received: undefined,
         related_channels: [],
-        send: undefined,
+        sent: undefined,
         sent_to: undefined,
       },
     }),
     description: 'A 3rd party chain transaction is posted',
+  },
+  {
+    args: makeArgs({transaction: makeTransaction({sent_to: undefined})}),
+    description: 'A chain transaction is posted with no addresses',
+  },
+  {
+    args: makeArgs({
+      transaction: makeTransaction({
+        received: 1,
+        related_channels: [],
+        sent: undefined,
+        sent_to: undefined,
+      }),
+    }),
+    description: 'A chain transaction is posted with no related channels',
   },
 ];
 

@@ -57,6 +57,13 @@ const tests = [
     },
   },
   {
+    args: makeArgs({description: ''}),
+    description: 'Got received message for a received invoice with no desc',
+    expected: {
+      message:  'Received 1 \nSender message: “message”',
+    },
+  },
+  {
     args: makeArgs({payments: [{messages: []}]}),
     description: 'Got received message for a received invoice',
     expected: {
