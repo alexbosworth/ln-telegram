@@ -2,6 +2,7 @@ const asyncAuto = require('async/auto');
 const {getChannels} = require('ln-service');
 const {getNodeAlias} = require('ln-sync');
 const {returnResult} = require('asyncjs-util');
+const {subscribeToPastPayment} = require('ln-service');
 
 const {isArray} = Array;
 
@@ -67,6 +68,10 @@ module.exports = ({fee, hops, lnd, payments, received}, cbk) => {
       getOut: ['validate', ({}, cbk) => {
         const [firstHop] = hops;
 
+        if (!firstHop) {
+          return cbk(null, {});
+        }
+
         return getNodeAlias({lnd, id: firstHop.public_key}, cbk);
       }],
 
@@ -93,7 +98,7 @@ module.exports = ({fee, hops, lnd, payments, received}, cbk) => {
 
       // Derive a description of the rebalance
       rebalanceDescription: ['getIn', 'getOut', ({getIn, getOut}, cbk) => {
-        const withNode = `with ${getOut.alias || getOut.id}`;
+        const withNode = `with ${getOut.alias || getOut.id || 'peer'}`;
 
         const increase = `Increased inbound liquidity ${withNode}`;
 

@@ -57,6 +57,13 @@ const tests = [
     },
   },
   {
+    args: makeArgs({hops: []}),
+    description: 'Rebalancing where there are no hops',
+    expected: {
+      message: 'Increased inbound liquidity with peer by 1. Paid fee: 1. Decreased inbound on 000000000000000000000000000000000000000000000000000000000000000000',
+    },
+  },
+  {
     args: makeArgs({payments: []}),
     description: 'Absent a payment a rebalance message is still generated',
     expected: {

@@ -1,6 +1,6 @@
 const asyncAuto = require('async/auto');
-const {getPayment} = require('ln-service');
 const {returnResult} = require('asyncjs-util');
+const {subscribeToPastPayment} = require('ln-service');
 
 const getRebalanceMessage = require('./get_rebalance_message');
 const getReceivedMessage = require('./get_received_message');
@@ -83,14 +83,13 @@ module.exports = ({from, id, invoice, key, lnd, request}, cbk) => {
           return cbk();
         }
 
-        return getPayment({lnd, id: invoice.id}, (err, res) => {
-          // Exit early when there is no found payment
-          if (!!err) {
-            return cbk();
-          }
+        const sub = subscribeToPastPayment({lnd, id: invoice.id});
 
-          return cbk(null, res);
-        });
+        sub.once('confirmed', payment => cbk(null, {payment}));
+        sub.once('error', () => cbk());
+        sub.once('failed', () => cbk());
+
+        return;
       }],
 
       // Details for message
