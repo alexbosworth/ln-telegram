@@ -10,9 +10,9 @@
     "@alexbosworth/request": "2.88.3",
     "async": "3.2.0",
     "asyncjs-util": "1.2.3",
-    "goldengate": "8.0.1",
+    "goldengate": "9.0.0",
     "invoices": "1.1.4",
-    "ln-service": "50.2.1",
+    "ln-service": "50.3.0",
     "ln-sync": "0.3.1",
     "table": "6.0.3"
   },
@@ -38,5 +38,5 @@
   "scripts": {
     "test": "tap test/commands/*.js test/post/*.js"
   },
-  "version": "3.0.3"
+  "version": "3.0.4"
 }
