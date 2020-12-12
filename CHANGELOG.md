@@ -1,6 +1,6 @@
 # Versions
 
-## Version 3.0.4
+## Version 3.0.5
 
 - `postSettledInvoice`: Fix race condition in rebalance payment
 - `postSettledInvoice`: Add safeguard against unexpected data in payment record

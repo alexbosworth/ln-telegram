@@ -6,7 +6,7 @@ const sendMessage = require('./send_message');
 const emoji = '⛓';
 const tokAsBig = tokens => (tokens / 1e8).toFixed(8);
 
-/** Post settled payment
+/** Post chain transaction
 
   {
     from: <From Node String>

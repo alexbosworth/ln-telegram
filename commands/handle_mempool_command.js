@@ -21,7 +21,7 @@ const waitTimeForBlock = n => `${n * 10} min`;
 
   {
     reply: <Reply Function>
-    request: <Request Function
+    request: <Request Function>
   }
 
   @returns via cbk or Promise
