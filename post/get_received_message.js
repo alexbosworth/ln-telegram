@@ -7,9 +7,12 @@ const {verifyBytesSignature} = require('ln-service');
 const bufFromHex = hex => Buffer.from(hex, 'hex');
 const dateType = '34349343';
 const fromKeyType = '34349339';
+const hexAsUtf8 = hex => Buffer.from(hex, 'hex').toString('utf8');
 const hexFromBuf = buffer => buffer.toString('hex');
 const {isArray} = Array;
+const maxAnswer = BigInt(80518);
 const messageType = '34349334';
+const minAnswer = BigInt(80509);
 const newLine = '\n';
 const signatureType = '34349337';
 
@@ -30,6 +33,8 @@ const signatureType = '34349337';
   @returns via cbk or Promise
   {
     [message]: <Embedded Message Payment Received String>
+    [quiz]: [<Quiz Answer String>]
+    [title]: <Sender Message String>
   }
 */
 module.exports = ({description, lnd, payments, received}, cbk) => {
@@ -61,6 +66,12 @@ module.exports = ({description, lnd, payments, received}, cbk) => {
 
         const [{messages}] = payments;
 
+        const quizAnswers = messages
+          .filter(({type}) => {
+            return BigInt(type) >= minAnswer && BigInt(type) <= maxAnswer;
+          })
+          .map(({value}) => hexAsUtf8(value));
+
         const messageRecord = messages.find(({type}) => type === messageType);
 
         // Exit early when there is no message type record
@@ -72,6 +83,7 @@ module.exports = ({description, lnd, payments, received}, cbk) => {
           date: messages.find(({type}) => type === dateType),
           from: messages.find(({type}) => type === fromKeyType),
           message: messageRecord,
+          quiz: quizAnswers,
           signature: messages.find(({type}) => type === signatureType),
         });
       }],
@@ -178,8 +190,24 @@ module.exports = ({description, lnd, payments, received}, cbk) => {
       }],
 
       // Final received message
-      message: ['receivedMessage', ({receivedMessage}, cbk) => {
-        return cbk(null, {message: receivedMessage});
+      message: [
+        'messageDetails',
+        'receivedMessage',
+        ({messageDetails, receivedMessage}, cbk) =>
+      {
+        if (!receivedMessage) {
+          return cbk(null, {});
+        }
+
+        if (!messageDetails) {
+          return cbk(null, {message: receivedMessage});
+        }
+
+        return cbk(null, {
+          message: receivedMessage,
+          quiz: messageDetails.quiz,
+          title: bufFromHex(messageDetails.message.value).toString(),
+        });
       }],
     },
     returnResult({reject, resolve, of: 'message'}, cbk));

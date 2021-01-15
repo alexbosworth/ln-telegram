@@ -6,7 +6,10 @@ const getRebalanceMessage = require('./get_rebalance_message');
 const getReceivedMessage = require('./get_received_message');
 const sendMessage = require('./send_message');
 
-const earnEmoji = '💰';
+const earnEmoji = '💵';
+const minQuizLength = 2;
+const maxQuizLength = 10;
+const randomIndex = n => Math.floor(Math.random() * n);
 const rebalanceEmoji = '☯️';
 
 /** Post settled invoices
@@ -39,12 +42,13 @@ const rebalanceEmoji = '☯️';
     }
     key: <Telegram API Key String>
     lnd: <Authenticated LND API Object>
+    quiz: ({answers: [<String>], correct: <Number>, question: <String>}) => {}
     request: <Request Function>
   }
 
   @returns via cbk or Promise
 */
-module.exports = ({from, id, invoice, key, lnd, request}, cbk) => {
+module.exports = ({from, id, invoice, key, lnd, quiz, request}, cbk) => {
   return new Promise((resolve, reject) => {
     return asyncAuto({
       // Check arguments
@@ -129,9 +133,37 @@ module.exports = ({from, id, invoice, key, lnd, request}, cbk) => {
 
         const emoji = !getPayment ? earnEmoji : rebalanceEmoji;
 
-        const text = `${emoji} ${from}\n${details.message}`;
+        const text = `${emoji} ${details.message}\n${from}`;
 
         return sendMessage({id, key, request, text}, cbk);
+      }],
+
+      // Post quiz
+      quiz: ['details', 'post', ({details, post}, cbk) => {
+        // Exit early when there is no quiz
+        if (!details || !details.quiz || details.quiz.length < minQuizLength) {
+          return cbk();
+        }
+
+        // Exit early when the quiz has too many answers
+        if (details.quiz.length > maxQuizLength) {
+          return cbk();
+        }
+
+        const answers = details.quiz.slice();
+
+        const [answer] = answers;
+        const correct = randomIndex(answers.length);
+
+        const replace = answers[correct];
+
+        // Randomize the position of the correct answer
+        answers[correct] = answer;
+        answers[Number()] = replace;
+
+        quiz({answers, correct, question: details.title});
+
+        return cbk();
       }],
     },
     returnResult({reject, resolve}, cbk));

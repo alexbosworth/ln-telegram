@@ -1,5 +1,10 @@
 # Versions
 
+## Version 3.1.0
+
+- `handleVersionCommand`: Add method for responding with version number
+- `postSettledInvoice`: Add quiz message support
+
 ## Version 3.0.5
 
 - `postSettledInvoice`: Fix race condition in rebalance payment

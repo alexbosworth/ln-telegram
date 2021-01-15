@@ -92,7 +92,7 @@ module.exports = (args, cbk) => {
           `Outbound liquidity now: ${tokensAsBigTok(getLiquidity.outbound)}.`,
         ];
 
-        const text = [`🌹 ${args.from}`, details.join(detailsJoiner)];
+        const text = [`🌹 ${details.join(detailsJoiner)}`, args.from];
 
         return cbk(null, {text: text.join(textJoiner)});
       }],

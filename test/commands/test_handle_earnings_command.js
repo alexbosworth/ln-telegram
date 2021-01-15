@@ -33,6 +33,7 @@ const tests = [
             }),
             listInvoices: ({}, cbk) => {
               return cbk(null, {
+                first_index_offset: '1',
                 invoices: [],
                 last_index_offset: '1',
               });

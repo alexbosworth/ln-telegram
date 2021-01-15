@@ -96,8 +96,8 @@ const tests = [
     description: 'Post channel close message to Telegram',
     expected: {
       text: [
-        '🥀 node1',
-        `0.00000001 channel closed with alias ${pubKey}. Inbound liquidity now: 0.00000001. Outbound liquidity now: 0.00000001.`,
+        `🥀 0.00000001 channel closed with alias ${pubKey}. Inbound liquidity now: 0.00000001. Outbound liquidity now: 0.00000001.`,
+        'node1',
       ],
     },
   },
@@ -106,8 +106,8 @@ const tests = [
     description: 'Post breach channel close message to Telegram',
     expected: {
       text: [
-        '🥀 node1',
-        `Breach countered on 0.00000001 channel with alias ${pubKey}. Inbound liquidity now: 0.00000001. Outbound liquidity now: 0.00000001.`,
+        `🥀 Breach countered on 0.00000001 channel with alias ${pubKey}. Inbound liquidity now: 0.00000001. Outbound liquidity now: 0.00000001.`,
+        'node1',
       ],
     },
   },
@@ -116,8 +116,8 @@ const tests = [
     description: 'Post cooperative channel close message to Telegram',
     expected: {
       text: [
-        '🥀 node1',
-        `Cooperatively closed 0.00000001 channel with alias ${pubKey}. Inbound liquidity now: 0.00000001. Outbound liquidity now: 0.00000001.`,
+        `🥀 Cooperatively closed 0.00000001 channel with alias ${pubKey}. Inbound liquidity now: 0.00000001. Outbound liquidity now: 0.00000001.`,
+        'node1',
       ],
     },
   },
@@ -126,8 +126,8 @@ const tests = [
     description: 'Post local force channel close message to Telegram',
     expected: {
       text: [
-        '🥀 node1',
-        `Force-closed 0.00000001 channel with alias ${pubKey}. Inbound liquidity now: 0.00000001. Outbound liquidity now: 0.00000001.`,
+        `🥀 Force-closed 0.00000001 channel with alias ${pubKey}. Inbound liquidity now: 0.00000001. Outbound liquidity now: 0.00000001.`,
+        'node1',
       ],
     },
   },
@@ -136,8 +136,8 @@ const tests = [
     description: 'Post remote force channel close message to Telegram',
     expected: {
       text: [
-        '🥀 node1',
-        `0.00000001 channel was force closed by alias ${pubKey}. Inbound liquidity now: 0.00000001. Outbound liquidity now: 0.00000001.`,
+        `🥀 0.00000001 channel was force closed by alias ${pubKey}. Inbound liquidity now: 0.00000001. Outbound liquidity now: 0.00000001.`,
+        'node1',
       ],
     },
   },

@@ -53,28 +53,28 @@ const tests = [
     args: makeArgs({}),
     description: 'Rebalancing results in a rebalance message',
     expected: {
-      message: 'Increased inbound liquidity with 000000000000000000000000000000000000000000000000000000000000000000 by 1. Paid fee: 1. Decreased inbound on 000000000000000000000000000000000000000000000000000000000000000000',
+      message: 'Increased inbound with 000000000000000000000000000000000000000000000000000000000000000000 by 1. Paid fee: 1. Decreased inbound with 000000000000000000000000000000000000000000000000000000000000000000',
     },
   },
   {
     args: makeArgs({hops: []}),
     description: 'Rebalancing where there are no hops',
     expected: {
-      message: 'Increased inbound liquidity with peer by 1. Paid fee: 1. Decreased inbound on 000000000000000000000000000000000000000000000000000000000000000000',
+      message: 'Increased inbound with peer by 1. Paid fee: 1. Decreased inbound with 000000000000000000000000000000000000000000000000000000000000000000',
     },
   },
   {
     args: makeArgs({payments: []}),
     description: 'Absent a payment a rebalance message is still generated',
     expected: {
-      message: 'Increased inbound liquidity with 000000000000000000000000000000000000000000000000000000000000000000 by 1. Paid fee: 1',
+      message: 'Increased inbound with 000000000000000000000000000000000000000000000000000000000000000000 by 1. Paid fee: 1',
     },
   },
   {
     args: makeArgs({payments: [{in_channel: '0x0x2'}]}),
     description: 'Absent a matching HTLC a rebalance message is still made',
     expected: {
-      message: 'Increased inbound liquidity with 000000000000000000000000000000000000000000000000000000000000000000 by 1. Paid fee: 1',
+      message: 'Increased inbound with 000000000000000000000000000000000000000000000000000000000000000000 by 1. Paid fee: 1',
     },
   },
 ];

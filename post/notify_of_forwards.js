@@ -141,7 +141,7 @@ module.exports = ({forwards, from, id, key, lnd, node, request}, cbk) => {
           return `Earned ${fee} forwarding ${tokens} ${forwardFrom} ${to}`;
         });
 
-        const text = `💰 *${from}*\n${allForwards.join('\n')}`;
+        const text = `💰 ${allForwards.join('\n')}\n*${from}*`;
 
         return sendMessage({id, key, request, text}, cbk);
       }],

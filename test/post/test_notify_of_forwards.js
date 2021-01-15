@@ -79,7 +79,7 @@ const tests = [
         },
       },
       request: ({qs}, cbk) => {
-        if (qs.text !== '💰 *from*\nEarned 1 forwarding 1 from alias to alias') {
+        if (qs.text !== '💰 Earned 1 forwarding 1 from alias to alias\n*from*') {
           throw new Error('UnexpectedTextMessageSentToTelegramRequest');
         }
 
@@ -104,7 +104,7 @@ const tests = [
         },
       },
       request: ({qs}, cbk) => {
-        if (qs.text !== '💰 *from*\nEarned 1 forwarding 1 from 0x0x1 to 1x1x1') {
+        if (qs.text !== '💰 Earned 1 forwarding 1 from 0x0x1 to 1x1x1\n*from*') {
           throw new Error('UnexpectedTextMessageSentToTelegramRequest');
         }
 
@@ -129,7 +129,7 @@ const tests = [
         },
       },
       request: ({qs}, cbk) => {
-        if (qs.text !== '💰 *from*\nEarned 1 forwarding 1 from 0x0x1 to 1x1x1') {
+        if (qs.text !== '💰 Earned 1 forwarding 1 from 0x0x1 to 1x1x1\n*from*') {
           throw new Error('UnexpectedTextMessageSentToTelegramRequest');
         }
 
@@ -154,7 +154,7 @@ const tests = [
         },
       },
       request: ({qs}, cbk) => {
-        if (qs.text !== '💰 *from*\nEarned 1 forwarding 1 from 0x0x1 to 1x1x1') {
+        if (qs.text !== '💰 Earned 1 forwarding 1 from 0x0x1 to 1x1x1\n*from*') {
           throw new Error('UnexpectedTextMessageSentToTelegramRequest');
         }
 

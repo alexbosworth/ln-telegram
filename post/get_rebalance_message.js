@@ -100,7 +100,7 @@ module.exports = ({fee, hops, lnd, payments, received}, cbk) => {
       rebalanceDescription: ['getIn', 'getOut', ({getIn, getOut}, cbk) => {
         const withNode = `with ${getOut.alias || getOut.id || 'peer'}`;
 
-        const increase = `Increased inbound liquidity ${withNode}`;
+        const increase = `Increased inbound ${withNode}`;
 
         const rebalance = `${increase} by ${received}. Paid fee: ${fee}`;
 
@@ -109,7 +109,7 @@ module.exports = ({fee, hops, lnd, payments, received}, cbk) => {
           return cbk(null, rebalance);
         }
 
-        const decrease = `Decreased inbound on ${getIn.alias || getIn.id}`;
+        const decrease = `Decreased inbound with ${getIn.alias || getIn.id}`;
 
         return cbk(null, `${rebalance}. ${decrease}`);
       }],

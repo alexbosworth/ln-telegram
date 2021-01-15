@@ -9,6 +9,7 @@ const tokAsBig = tokens => (tokens / 1e8).toFixed(8);
 /** Post chain transaction
 
   {
+    confirmed: <Transaction is Confirmed Bool>
     from: <From Node String>
     id: <Connected User Id Number>
     key: <Telegram API Key String>
@@ -29,7 +30,7 @@ const tokAsBig = tokens => (tokens / 1e8).toFixed(8);
 
   @returns via cbk or Promise
 */
-module.exports = ({from, id, key, request, transaction}, cbk) => {
+module.exports = ({confirmed, from, id, key, request, transaction}, cbk) => {
   return new Promise((resolve, reject) => {
     return asyncAuto({
       // Check arguments
@@ -133,7 +134,9 @@ module.exports = ({from, id, key, request, transaction}, cbk) => {
           return cbk();
         }
 
-        const text = `${emoji} ${from}\n${details}`;
+        const pending = !confirmed ? '(pending)' : '';
+
+        const text = `${emoji} ${pending} ${details}\n${from}`;
 
         return sendMessage({id, key, request, text}, cbk);
       }],

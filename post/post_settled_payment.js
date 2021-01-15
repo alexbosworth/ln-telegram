@@ -86,7 +86,7 @@ module.exports = ({from, id, key, lnd, payment, request}, cbk) => {
 
       // Post message
       post: ['details', ({details}, cbk) => {
-        const text = `${emoji} ${from}\n${details}`;
+        const text = `${emoji} ${details}\n${from}`;
 
         return sendMessage({id, key, request, text}, cbk);
       }],

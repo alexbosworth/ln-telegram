@@ -6,6 +6,7 @@ const handleInvoiceCommand = require('./handle_invoice_command');
 const handleLiquidityCommand = require('./handle_liquidity_command');
 const handleMempoolCommand = require('./handle_mempool_command');
 const handlePayCommand = require('./handle_pay_command');
+const handleVersionCommand = require('./handle_version_command');
 
 module.exports = {
   handleBackupCommand,
@@ -16,4 +17,5 @@ module.exports = {
   handleLiquidityCommand,
   handleMempoolCommand,
   handlePayCommand,
+  handleVersionCommand,
 };
