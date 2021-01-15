@@ -15,6 +15,7 @@ const messageType = '34349334';
 const minAnswer = BigInt(80509);
 const newLine = '\n';
 const signatureType = '34349337';
+const sort = (a, b) => (a < b) ? -1 : ((a > b) ? 1 : 0);
 
 /** Get received message
 
@@ -70,6 +71,7 @@ module.exports = ({description, lnd, payments, received}, cbk) => {
           .filter(({type}) => {
             return BigInt(type) >= minAnswer && BigInt(type) <= maxAnswer;
           })
+          .sort((a, b) => sort(BigInt(a.type), BigInt(b.type)))
           .map(({value}) => hexAsUtf8(value));
 
         const messageRecord = messages.find(({type}) => type === messageType);

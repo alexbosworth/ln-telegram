@@ -150,16 +150,23 @@ module.exports = ({from, id, invoice, key, lnd, quiz, request}, cbk) => {
           return cbk();
         }
 
-        const answers = details.quiz.slice();
+        const [answer] = details.quiz;
+        const correct = randomIndex(details.quiz.length);
 
-        const [answer] = answers;
-        const correct = randomIndex(answers.length);
-
-        const replace = answers[correct];
+        const replace = details.quiz[correct];
 
         // Randomize the position of the correct answer
-        answers[correct] = answer;
-        answers[Number()] = replace;
+        const answers = details.quiz.map((n, i) => {
+          if (i === correct) {
+            return answer;
+          }
+
+          if (!i) {
+            return replace;
+          }
+
+          return n;
+        });
 
         quiz({answers, correct, question: details.title});
 
