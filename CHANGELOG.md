@@ -1,5 +1,9 @@
 # Versions
 
+## Version 3.2.0
+
+- `handlePendingCommand`: Add method for responding with pending channels and HTLCs
+
 ## Version 3.1.0
 
 - `handleVersionCommand`: Add method for responding with version number
