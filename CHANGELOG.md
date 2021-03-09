@@ -1,6 +1,6 @@
 # Versions
 
-## Version 3.2.0
+## Version 3.2.1
 
 - `handlePendingCommand`: Add method for responding with pending channels and HTLCs
 

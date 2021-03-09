@@ -9,10 +9,10 @@
   "dependencies": {
     "async": "3.2.0",
     "asyncjs-util": "1.2.3",
-    "goldengate": "10.0.1",
-    "invoices": "1.1.5",
-    "ln-service": "51.1.1",
-    "ln-sync": "0.4.3",
+    "goldengate": "10.0.2",
+    "invoices": "1.1.6",
+    "ln-service": "51.3.1",
+    "ln-sync": "0.4.4",
     "moment": "2.29.1",
     "table": "6.0.7"
   },
