@@ -97,13 +97,13 @@ const tests = [
 ];
 
 tests.forEach(({args, description, error, expected}) => {
-  return test(description, async ({deepIs, end, rejects}) => {
+  return test(description, async ({end, rejects, strictSame}) => {
     if (!!error) {
-      rejects(postOpenMessage(args), error, 'Got expected error');
+      await rejects(postOpenMessage(args), error, 'Got expected error');
     } else {
       const {text} = await postOpenMessage(args);
 
-      deepIs(text.split('\n'), expected.text, 'Got expected open message');
+      strictSame(text.split('\n'), expected.text, 'Got expected open message');
     }
 
     return end();

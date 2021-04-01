@@ -60,11 +60,11 @@ const tests = [
 ];
 
 tests.forEach(({args, description, error, expected}) => {
-  return test(description, async ({deepIs, end, equal, rejects}) => {
+  return test(description, async ({end, strictSame, throws}) => {
     if (!!error) {
       throws(() => pendingPayments(args), error, 'Got expected error');
     } else {
-      deepIs(pendingPayments(args), expected, 'Got expected result');
+      strictSame(pendingPayments(args), expected, 'Got expected result');
     }
 
     return end();

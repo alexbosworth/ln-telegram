@@ -144,13 +144,13 @@ const tests = [
 ];
 
 tests.forEach(({args, description, error, expected}) => {
-  return test(description, async ({deepIs, end, rejects}) => {
+  return test(description, async ({end, rejects, strictSame}) => {
     if (!!error) {
       rejects(postClosedMessage(args), error, 'Got expected error');
     } else {
       const {text} = await postClosedMessage(args);
 
-      deepIs(text.split('\n'), expected.text, 'Got expected close message');
+      strictSame(text.split('\n'), expected.text, 'Got close message');
     }
 
     return end();

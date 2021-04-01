@@ -28,6 +28,7 @@ const tests = [
                 fee: '1',
                 fee_msat: '1000',
                 timestamp: '1',
+                timestamp_ns: '1000000',
               }],
               last_offset_index: '1',
             }),

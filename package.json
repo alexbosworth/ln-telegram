@@ -8,17 +8,17 @@
   },
   "dependencies": {
     "async": "3.2.0",
-    "asyncjs-util": "1.2.3",
-    "goldengate": "10.0.2",
-    "invoices": "1.1.6",
-    "ln-service": "51.3.1",
-    "ln-sync": "0.4.4",
+    "asyncjs-util": "1.2.4",
+    "goldengate": "10.0.3",
+    "invoices": "1.1.7",
+    "ln-service": "51.5.0",
+    "ln-sync": "0.4.5",
     "moment": "2.29.1",
-    "table": "6.0.7"
+    "table": "6.0.9"
   },
   "description": "Lightning Network Telegram bot commands",
   "devDependencies": {
-    "tap": "14.11.0"
+    "tap": "15.0.1"
   },
   "engines": {
     "node": ">=10.12.0"
@@ -36,7 +36,7 @@
     "url": "https://github.com/alexbosworth/ln-telegram.git"
   },
   "scripts": {
-    "test": "tap test/commands/*.js test/post/*.js"
+    "test": "tap --branches=1 --functions=1 --lines=1 --statements=1 test/commands/*.js test/post/*.js"
   },
-  "version": "3.2.1"
+  "version": "3.2.2"
 }
