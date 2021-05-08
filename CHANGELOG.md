@@ -1,5 +1,9 @@
 # Versions
 
+## Version 3.2.3
+
+- `handleConnectCommand`: Fix missing reference to already connected message
+
 ## Version 3.2.2
 
 - `handlePendingCommand`: Add method for responding with pending channels and HTLCs

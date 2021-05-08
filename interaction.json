@@ -2,6 +2,7 @@
   "ask_for_connect_code": "Run */connect* to authorize.",
   "block_notification": "⏹ **New block found**",
   "bot": "🤖",
+  "bot_is_connected": "🤖 *Bot is online.* /help for commands",
   "create_invoice_syntax": "/invoice <amount> \\[memo]",
   "mempool_report": "⏹ **mempool.space reports:**",
   "pay_syntax": "/pay <payment request> \\[max payment amount]",

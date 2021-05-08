@@ -12,7 +12,7 @@ const interaction = require('./../interaction');
     reply: <Reply Function>
   }
 */
-module.exports = ({from, id, reply}, cbk) => {
+module.exports = ({from, id, reply}) => {
   if (!!id) {
     return reply(interaction.bot_is_connected);
   }
