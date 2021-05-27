@@ -1,6 +1,6 @@
 # Versions
 
-## Version 3.2.3
+## Version 3.2.4
 
 - `handleConnectCommand`: Fix missing reference to already connected message
 
