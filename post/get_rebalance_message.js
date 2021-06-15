@@ -102,7 +102,7 @@ module.exports = ({fee, hops, lnd, payments, received}, cbk) => {
 
         const increase = `Increased inbound ${withNode}`;
 
-        const rebalance = `${increase} by ${received}. Paid fee: ${fee}`;
+        const rebalance = `${increase} by ${received} sats. Paid fee: ${fee} sats`;
 
         // Exit early when there is no inbound peer info
         if (!getIn) {

@@ -94,7 +94,7 @@ module.exports = ({description, lnd, payments, received}, cbk) => {
       receiveLine: ['validate', ({}, cbk) => {
         const quoted = !description ? '' : `for “${description}”`;
 
-        return cbk(null, `Received ${received} ${quoted}`);
+        return cbk(null, `Received ${received} sats ${quoted}`);
       }],
 
       // Get the node public key for signature verification puroses
