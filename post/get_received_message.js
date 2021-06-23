@@ -4,6 +4,7 @@ const {getWalletInfo} = require('ln-service');
 const {returnResult} = require('asyncjs-util');
 const {verifyBytesSignature} = require('ln-service');
 
+const asBigUnit = tokens => (tokens / 1e8).toFixed(8);
 const bufFromHex = hex => Buffer.from(hex, 'hex');
 const dateType = '34349343';
 const fromKeyType = '34349339';
@@ -94,7 +95,7 @@ module.exports = ({description, lnd, payments, received}, cbk) => {
       receiveLine: ['validate', ({}, cbk) => {
         const quoted = !description ? '' : `for “${description}”`;
 
-        return cbk(null, `Received ${received} sats ${quoted}`);
+        return cbk(null, `Received ${asBigUnit(received)} ${quoted}`.trim());
       }],
 
       // Get the node public key for signature verification puroses

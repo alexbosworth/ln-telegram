@@ -4,7 +4,6 @@ const {getChannels} = require('ln-service');
 const {getHeight} = require('ln-service');
 const {getNodeAlias} = require('ln-sync');
 const {getPendingChannels} = require('ln-service');
-const moment = require('moment');
 const {returnResult} = require('asyncjs-util');
 
 const notifyOfPending = require('./notify_of_pending');
@@ -12,7 +11,6 @@ const pendingPayments = require('./pending_payments');
 
 const blocksAsEpoch = blocks => Date.now() + blocks * 1000 * 60 * 10;
 const flatten = arr => [].concat(...arr);
-const fromNow = epoch => !epoch ? undefined : moment(epoch).fromNow();
 const {isArray} = Array;
 const sumOf = arr => arr.reduce((sum, n) => sum + n, Number());
 const uniq = arr => Array.from(new Set(arr));

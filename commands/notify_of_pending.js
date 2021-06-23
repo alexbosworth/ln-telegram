@@ -1,10 +1,10 @@
-const moment = require('moment');
+const {DateTime} = require('luxon');
 
 const {bot} = require('./../interaction');
 
 const blocksAsEpoch = blocks => Date.now() + blocks * 1000 * 60 * 10;
 const flatten = arr => [].concat(...arr);
-const fromNow = epoch => !epoch ? undefined : moment(epoch).fromNow();
+const fromNow = ms => !ms ? undefined : DateTime.fromMillis(ms).toRelative();
 const nodeAlias = (alias, id) => `${alias} ${id.substring(0, 8)}`.trim();
 const sumOf = arr => arr.reduce((sum, n) => sum + n, Number());
 const uniq = arr => Array.from(new Set(arr));

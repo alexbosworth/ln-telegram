@@ -133,7 +133,7 @@ module.exports = ({from, id, invoice, key, lnd, quiz, request}, cbk) => {
 
         const emoji = !getPayment ? earnEmoji : rebalanceEmoji;
 
-        const text = `${emoji} ${details.message}\n${from}`;
+        const text = `${emoji} ${details.message} - ${from}`;
 
         return sendMessage({id, key, request, text}, cbk);
       }],

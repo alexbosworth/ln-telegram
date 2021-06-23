@@ -47,21 +47,6 @@ const makeArgs = overrides => {
         transaction_id: Buffer.alloc(32).toString('hex'),
       }],
     }],
-    reply: message => {
-      const expected = [
-        '⏳ from:\n' +
-        'Waiting for inbound 3 channel with a 02020202 to confirm: 0000000000000000000000000000000000000000000000000000000000000000\n' +
-        'Waiting to recover 1 in an hour from closing channel with a 02020202',
-
-        '💸 from:\n' +
-        'Forwarding 1 for 1 fee from a 02020202 to b 03030303\n' +
-        'Probing out a 02020202',
-      ];
-
-      if (!expected.includes(message)) {
-        throw new Error('ReceivedUnexpectedMessageForPendingNotification');
-      }
-    },
   };
 
   Object.keys(overrides).forEach(k => args[k] = overrides[k]);
@@ -73,15 +58,27 @@ const tests = [
   {
     args: makeArgs({}),
     description: 'Notify of pending payments and channels',
+    expected: [
+      `⏳ from:
+Waiting for inbound 3 channel with a 02020202 to confirm: 0000000000000000000000000000000000000000000000000000000000000000
+Waiting to recover 1 in 49 minutes from closing channel with a 02020202`,
+      `💸 from:
+Forwarding 1 for 1 fee from a 02020202 to b 03030303
+Probing out a 02020202`,
+    ],
   },
 ];
 
 tests.forEach(({args, description, error, expected}) => {
-  return test(description, async ({end, rejects}) => {
+  return test(description, async ({end, equal, rejects}) => {
     if (!!error) {
       throws(() => notifyOfPending(args), error, 'Got expected error');
     } else {
-      notifyOfPending(args);
+      notifyOfPending(Object.assign(args, {
+        reply: message => {
+          equal(message, expected.shift());
+        }
+      }));
     }
 
     return end();

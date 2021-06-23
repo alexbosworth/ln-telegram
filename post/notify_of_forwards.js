@@ -7,7 +7,11 @@ const {returnResult} = require('asyncjs-util');
 
 const sendMessage = require('./send_message');
 
+const asBigUnit = tokens => (tokens / 1e8).toFixed(8);
+const asPercent = (fee, tokens) => (fee / tokens * 100).toFixed(2);
+const asPpm = (fee, tokens) => (fee / tokens * 1e6).toFixed();
 const {isArray} = Array;
+const sanitize = n => (n || '').replace(/_/g, '\\_').replace(/[*~`]/g, '');
 const uniq = arr => Array.from(new Set(arr));
 
 /** Notify Telegram of forwarded payments
@@ -132,16 +136,19 @@ module.exports = ({forwards, from, id, key, lnd, node, request}, cbk) => {
         });
 
         const allForwards = details.map(({fee, inbound, outbound, tokens}) => {
+          const feePercent = asPercent(fee, tokens);
+          const feeRate = asPpm(fee, tokens);
           const fromPeer = inbound.alias || inbound.key || inbound.channel;
           const toPeer = outbound.alias || outbound.key || outbound.channel;
 
-          const forwardFrom = `from ${fromPeer}`;
-          const to = `to ${toPeer}`;
+          const action = `Forwarded ${asBigUnit(tokens)}`;
+          const between = `${sanitize(fromPeer)} *→* ${sanitize(toPeer)}`;
+          const feeInfo = `${asBigUnit(fee)} ${feePercent}% (${feeRate})`;
 
-          return `Earned ${fee} sats forwarding ${tokens} sats ${forwardFrom} ${to}`;
+          return `${action} ${between}. Earned ${feeInfo}`;
         });
 
-        const text = `💰 ${allForwards.join('\n')}\n*${from}*`;
+        const text = `💰 ${allForwards.join('\n')} - ${from}`;
 
         return sendMessage({id, key, request, text}, cbk);
       }],

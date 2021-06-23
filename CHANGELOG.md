@@ -1,5 +1,11 @@
 # Versions
 
+## Version 3.2.6
+
+Remove momentjs dependency
+
+- Change formatting for forward, rebalance, received messages
+
 ## Version 3.2.5
 
 - `handleConnectCommand`: Fix missing reference to already connected message

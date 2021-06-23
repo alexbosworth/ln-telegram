@@ -78,20 +78,14 @@ const tests = [
           getNodeInfo: ({}, cbk) => cbk(null, nodeInfoResult),
         },
       },
-      request: ({qs}, cbk) => {
-        if (qs.text !== '💰 Earned 1 forwarding 1 from alias to alias\n*from*') {
-          throw new Error('UnexpectedTextMessageSentToTelegramRequest');
-        }
-
-        return cbk(null, {statusCode: 200})
-      },
     }),
     description: 'A forward is mapped to a forward notification',
+    expected: '💰 Forwarded 0.00000001 alias *→* alias. Earned 0.00000001 100.00% (1000000) - from',
   },
   {
     args: makeArgs({
       forwards: [{
-        fee: 1, 
+        fee: 1,
         incoming_channel: '0x0x1',
         outgoing_channel: '1x1x1',
         tokens: 1,
@@ -103,20 +97,14 @@ const tests = [
           getNodeInfo: ({}, cbk) => cbk(null, nodeInfoResult),
         },
       },
-      request: ({qs}, cbk) => {
-        if (qs.text !== '💰 Earned 1 forwarding 1 from 0x0x1 to 1x1x1\n*from*') {
-          throw new Error('UnexpectedTextMessageSentToTelegramRequest');
-        }
-
-        return cbk(null, {statusCode: 200})
-      },
     }),
     description: 'Get channel error reverts back to channel ids',
+    expected: '💰 Forwarded 0.00000001 0x0x1 *→* 1x1x1. Earned 0.00000001 100.00% (1000000) - from',
   },
   {
     args: makeArgs({
       forwards: [{
-        fee: 1, 
+        fee: 1,
         incoming_channel: '0x0x1',
         outgoing_channel: '1x1x1',
         tokens: 1,
@@ -128,15 +116,9 @@ const tests = [
           getNodeInfo: ({}, cbk) => cbk(null, nodeInfoResult),
         },
       },
-      request: ({qs}, cbk) => {
-        if (qs.text !== '💰 Earned 1 forwarding 1 from 0x0x1 to 1x1x1\n*from*') {
-          throw new Error('UnexpectedTextMessageSentToTelegramRequest');
-        }
-
-        return cbk(null, {statusCode: 200})
-      },
     }),
     description: 'Get channel error reverts back to channel ids',
+    expected: '💰 Forwarded 0.00000001 0x0x1 *→* 1x1x1. Earned 0.00000001 100.00% (1000000) - from',
   },
   {
     args: makeArgs({
@@ -153,15 +135,9 @@ const tests = [
           getNodeInfo: ({}, cbk) => cbk('err'),
         },
       },
-      request: ({qs}, cbk) => {
-        if (qs.text !== '💰 Earned 1 forwarding 1 from 0x0x1 to 1x1x1\n*from*') {
-          throw new Error('UnexpectedTextMessageSentToTelegramRequest');
-        }
-
-        return cbk(null, {statusCode: 200})
-      },
     }),
     description: 'Get node error reverts back to channel ids',
+    expected: '💰 Forwarded 0.00000001 0x0x1 *→* 1x1x1. Earned 0.00000001 100.00% (1000000) - from',
   },
 ];
 
@@ -170,7 +146,10 @@ tests.forEach(({args, description, error, expected}) => {
     if (!!error) {
       await rejects(notifyOfForwards(args), error, 'Got expected error');
     } else {
-      await notifyOfForwards(args);
+      await notifyOfForwards(Object.assign(args, {request: (args, cbk) => {
+        equal(args.qs.text, expected);
+        return cbk(null, {statusCode: 200});
+      }}));
     }
 
     return end();
