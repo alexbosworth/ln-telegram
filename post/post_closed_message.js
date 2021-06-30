@@ -19,7 +19,7 @@ const tokensAsBigTok = tokens => (tokens / 1e8).toFixed(8);
     is_local_force_close: <Is Local Force Close Bool>
     is_remote_force_close: <Is Remote Force close Bool>
     key: <Telegram API Key String>
-    lnd: <Authenticated LND gRPC API Object>
+    lnd: <Authenticated LND API Object>
     partner_public_key: <Partner Public Key Hex String>
     request: <Request Function>
   }

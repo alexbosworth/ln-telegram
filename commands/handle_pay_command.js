@@ -1,6 +1,6 @@
 const asyncAuto = require('async/auto');
 const {getPayment} = require('ln-service');
-const {parsePaymentRequest} = require('invoices');
+const {parsePaymentRequest} = require('ln-service');
 const {payViaRoutes} = require('ln-service');
 const {returnResult} = require('asyncjs-util');
 const {subscribeToProbeForRoute} = require('ln-service');

@@ -10,9 +10,8 @@
     "async": "3.2.0",
     "asyncjs-util": "1.2.6",
     "goldengate": "10.1.0",
-    "invoices": "1.2.1",
-    "ln-service": "51.8.4",
-    "ln-sync": "0.4.5",
+    "ln-service": "51.8.5",
+    "ln-sync": "0.4.6",
     "luxon": "1.27.0",
     "table": "6.7.1"
   },
@@ -38,5 +37,5 @@
   "scripts": {
     "test": "tap --branches=1 --functions=1 --lines=1 --statements=1 test/commands/*.js test/post/*.js"
   },
-  "version": "3.2.6"
+  "version": "3.2.7"
 }

@@ -1,6 +1,6 @@
 # Versions
 
-## Version 3.2.6
+## Version 3.2.7
 
 Remove momentjs dependency
 
