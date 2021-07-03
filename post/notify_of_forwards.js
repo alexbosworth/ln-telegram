@@ -5,11 +5,13 @@ const {getNode} = require('ln-service');
 const {getWalletInfo} = require('ln-service');
 const {returnResult} = require('asyncjs-util');
 
+const consolidateForwards = require('./consolidate_forwards');
 const sendMessage = require('./send_message');
 
 const asBigUnit = tokens => (tokens / 1e8).toFixed(8);
 const asPercent = (fee, tokens) => (fee / tokens * 100).toFixed(2);
 const asPpm = (fee, tokens) => (fee / tokens * 1e6).toFixed();
+const consolidate = forwards => consolidateForwards({forwards}).forwards;
 const {isArray} = Array;
 const sanitize = n => (n || '').replace(/_/g, '\\_').replace(/[*~`]/g, '');
 const uniq = arr => Array.from(new Set(arr));
@@ -117,7 +119,7 @@ module.exports = ({forwards, from, id, key, lnd, node, request}, cbk) => {
         const channels = getChannels.filter(n => !!n);
         const nodes = getNodes.filter(n => !!n);
 
-        const details = forwards.map(forward => {
+        const details = consolidate(forwards).map(forward => {
           const inboundChannel = channels
             .find(channel => channel.id === forward.incoming_channel) || {};
 

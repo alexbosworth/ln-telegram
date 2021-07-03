@@ -1,5 +1,9 @@
 # Versions
 
+## Version 3.2.8
+
+- `notifyOfForwards`: Combine forwards within the same pair
+
 ## Version 3.2.7
 
 Remove momentjs dependency

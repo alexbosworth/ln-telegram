@@ -3,6 +3,7 @@ const {test} = require('tap');
 const {chanInfoResult} = require('./../fixtures');
 const {getInfoResponse} = require('./../fixtures');
 const {nodeInfoResult} = require('./../fixtures');
+const {versionInfo} = require('./../fixtures');
 const {notifyOfForwards} = require('./../../');
 
 const makeArgs = overrides => {
@@ -77,6 +78,9 @@ const tests = [
           getInfo: ({}, cbk) => cbk(null, getInfoRes()),
           getNodeInfo: ({}, cbk) => cbk(null, nodeInfoResult),
         },
+        version: {
+          getVersion: ({}, cbk) => cbk(null, versionInfo),
+        },
       },
     }),
     description: 'A forward is mapped to a forward notification',
@@ -96,6 +100,9 @@ const tests = [
           getInfo: ({}, cbk) => cbk(null, getInfoRes()),
           getNodeInfo: ({}, cbk) => cbk(null, nodeInfoResult),
         },
+        version: {
+          getVersion: ({}, cbk) => cbk(null, versionInfo),
+        },
       },
     }),
     description: 'Get channel error reverts back to channel ids',
@@ -115,6 +122,9 @@ const tests = [
           getInfo: ({}, cbk) => cbk(null, getInfoRes()),
           getNodeInfo: ({}, cbk) => cbk(null, nodeInfoResult),
         },
+        version: {
+          getVersion: ({}, cbk) => cbk(null, versionInfo),
+        },
       },
     }),
     description: 'Get channel error reverts back to channel ids',
@@ -133,6 +143,9 @@ const tests = [
           getChanInfo: (args, cbk) => cbk(null, chanInfoResult),
           getInfo: ({}, cbk) => cbk(null, getInfoRes()),
           getNodeInfo: ({}, cbk) => cbk('err'),
+        },
+        version: {
+          getVersion: ({}, cbk) => cbk(null, versionInfo),
         },
       },
     }),
