@@ -1,5 +1,9 @@
 # Versions
 
+## Version 3.2.9
+
+- `handlePayCommand`: Fix issue paying requests that require the payment nonce
+
 ## Version 3.2.8
 
 - `notifyOfForwards`: Combine forwards within the same pair

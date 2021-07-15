@@ -104,6 +104,8 @@ module.exports = ({budget, from, id, key, nodes, reply, request, text}, cbk) => 
             cltv_delta: decoded.cltv_delta,
             destination: decoded.destination,
             id: decoded.id,
+            mtokens: decoded.mtokens,
+            payment: decoded.payment,
             routes: decoded.routes,
             tokens: decoded.tokens,
           });
@@ -158,15 +160,18 @@ module.exports = ({budget, from, id, key, nodes, reply, request, text}, cbk) => 
         'postStatus',
         ({decodeCommand, decodeRequest, maxTokens}, cbk) =>
       {
+        const mtokens = decodeRequest.mtokens;
         let probeTimeout;
 
         const sub = subscribeToProbeForRoute({
           cltv_delta: decodeRequest.cltv_delta + cltvDeltaBuffer,
           destination: decodeRequest.destination,
           lnd: decodeCommand.lnd,
+          mtokens: decodeRequest.mtokens,
           path_timeout_ms: pathTimeoutMs,
+          payment: decodeRequest.payment,
           routes: decodeRequest.routes,
-          tokens: decodeRequest.tokens,
+          total_mtokens: !!decodeRequest.payment ? mtokens : undefined,
         });
 
         const finished = (err, res) => {
