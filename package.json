@@ -7,12 +7,12 @@
     "url": "https://github.com/alexbosworth/ln-telegram/issues"
   },
   "dependencies": {
-    "async": "3.2.0",
+    "async": "3.2.1",
     "asyncjs-util": "1.2.6",
     "goldengate": "10.1.0",
-    "ln-service": "51.9.0",
-    "ln-sync": "0.4.6",
-    "luxon": "2.0.1",
+    "ln-service": "52.0.0",
+    "ln-sync": "0.4.7",
+    "luxon": "2.0.2",
     "table": "6.7.1"
   },
   "description": "Lightning Network Telegram bot commands",
@@ -37,5 +37,5 @@
   "scripts": {
     "test": "tap --branches=1 --functions=1 --lines=1 --statements=1 test/commands/*.js test/post/*.js"
   },
-  "version": "3.2.9"
+  "version": "3.2.10"
 }

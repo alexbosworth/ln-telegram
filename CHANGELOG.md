@@ -1,5 +1,9 @@
 # Versions
 
+## Verrsion 3.2.10
+
+- `handlePendingCommand`: Add check on from and id before pending lookups
+
 ## Version 3.2.9
 
 - `handlePayCommand`: Fix issue paying requests that require the payment nonce

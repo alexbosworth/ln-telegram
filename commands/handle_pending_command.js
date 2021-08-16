@@ -6,6 +6,7 @@ const {getNodeAlias} = require('ln-sync');
 const {getPendingChannels} = require('ln-service');
 const {returnResult} = require('asyncjs-util');
 
+const checkAccess = require('./check_access');
 const notifyOfPending = require('./notify_of_pending');
 const pendingPayments = require('./pending_payments');
 
@@ -18,6 +19,8 @@ const uniq = arr => Array.from(new Set(arr));
 /** Handle pending command
 
   {
+    from: <Command From User Id Number>
+    id: <Connected User Id Number>
     nodes: [{
       from: <From Name String>
       lnd: <Authenticated LND API Object>
@@ -28,11 +31,19 @@ const uniq = arr => Array.from(new Set(arr));
 
   @returns via cbk or Promise
 */
-module.exports = ({nodes, reply}, cbk) => {
+module.exports = ({from, id, nodes, reply}, cbk) => {
   return new Promise((resolve, reject) => {
     return asyncAuto({
       // Check arguments
       validate: cbk => {
+        if (!from) {
+          return cbk([400, 'ExpectedFromUserIdNumberForPendingCommand']);
+        }
+
+        if (!id) {
+          return cbk([400, 'ExpectedConnectedIdNumberForPendingCommand']);
+        }
+
         if (!isArray(nodes)) {
           return cbk([400, 'ExpectedNodesToHandlePendingCommand']);
         }
@@ -44,8 +55,13 @@ module.exports = ({nodes, reply}, cbk) => {
         return cbk();
       },
 
+      // Authenticate the command caller is authorized to this command
+      checkAccess: ['validate', ({}, cbk) => {
+        return checkAccess({from, id, reply}, cbk);
+      }],
+
       // Get HTLCs in channels
-      getHtlcs: ['validate', ({}, cbk) => {
+      getHtlcs: ['checkAccess', ({}, cbk) => {
         return asyncMap(nodes, ({from, lnd}, cbk) => {
           return getChannels({lnd}, (err, res) => {
             if (!!err) {
@@ -77,7 +93,7 @@ module.exports = ({nodes, reply}, cbk) => {
       }],
 
       // Get pending channels
-      getPending: ['validate', ({}, cbk) => {
+      getPending: ['checkAccess', ({}, cbk) => {
         return asyncMap(nodes, ({from, lnd}, cbk) => {
           return getPendingChannels({lnd}, (err, res) => {
             if (!!err) {
