@@ -1,9 +1,8 @@
 const asyncAuto = require('async/auto');
 const {returnResult} = require('asyncjs-util');
 
-const sendFile = require('./send_file');
-
 const date = () => new Date().toISOString().substring(0, 10);
+const hexAsBuffer = hex => Buffer.from(hex, 'hex');
 
 /** Post updated backup to Telegram
 
@@ -15,12 +14,12 @@ const date = () => new Date().toISOString().substring(0, 10);
       alias: <Node Alias String>
       public_key: <Public Key Hex String>
     }
-    request: <Request Function>
+    send: <Send File Function>
   }
 
   @returns via cbk or Promise
 */
-module.exports = ({backup, id, key, node, request}, cbk) => {
+module.exports = ({backup, id, key, node, send}, cbk) => {
   return new Promise((resolve, reject) => {
     return asyncAuto({
       // Check arguments
@@ -41,8 +40,8 @@ module.exports = ({backup, id, key, node, request}, cbk) => {
           return cbk([400, 'ExpectedNodeToPostUpdatedBackup']);
         }
 
-        if (!request) {
-          return cbk([400, 'ExpectedRequestFunctionToPostUpdatedBackup']);
+        if (!send) {
+          return cbk([400, 'ExpectedSendFunctionToPostUpdatedBackup']);
         }
 
         return cbk();
@@ -51,9 +50,16 @@ module.exports = ({backup, id, key, node, request}, cbk) => {
       // Post the backup file
       post: ['validate', ({}, cbk) => {
         const filename = `${date()}-${node.alias}-${node.public_key}.backup`;
-        const hex = backup;
 
-        return sendFile({filename, hex, id, key, request}, cbk);
+        return (async () => {
+          try {
+            await send(id, {filename, source: hexAsBuffer(backup)});
+
+            return cbk();
+          } catch (err) {
+            return cbk([503, 'UnexpectedErrorSendingBackupFileUpdate', {err}]);
+          }
+        })();
       }],
     },
     returnResult({reject, resolve}, cbk));

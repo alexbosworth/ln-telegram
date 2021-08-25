@@ -11,9 +11,7 @@ const makeArgs = overrides => {
       alias: 'alias',
       public_key: Buffer.alloc(33).toString('hex'),
     },
-    request: ({}, cbk) => {
-      return cbk(null, {statusCode: 200});
-    },
+    send: (id, file) => new Promise((resolve, reject) => resolve()),
   };
 
   Object.keys(overrides).forEach(k => args[k] = overrides[k]);
@@ -43,23 +41,12 @@ const tests = [
     error: [400, 'ExpectedNodeToPostUpdatedBackup'],
   },
   {
-    args: makeArgs({request: undefined}),
-    description: 'Posting an updated backup requires a request function',
-    error: [400, 'ExpectedRequestFunctionToPostUpdatedBackup'],
+    args: makeArgs({send: undefined}),
+    description: 'Posting an updated backup requires a send function',
+    error: [400, 'ExpectedSendFunctionToPostUpdatedBackup'],
   },
   {
-    args: {
-      backup: '00',
-      id: 1,
-      key: 'key',
-      node: {
-        alias: 'alias',
-        public_key: Buffer.alloc(33).toString('hex'),
-      },
-      request: ({}, cbk) => {
-        return cbk(null, {statusCode: 200});
-      },
-    },
+    args: makeArgs({}),
     description: 'An updated backup is posted',
   },
 ];

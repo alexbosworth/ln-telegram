@@ -4,7 +4,6 @@ const postClosedMessage = require('./post_closed_message');
 const postOpenMessage = require('./post_open_message');
 const postSettledInvoice = require('./post_settled_invoice');
 const postUpdatedBackup = require('./post_updated_backup');
-const sendFile = require('./send_file');
 const sendMessage = require('./send_message');
 
 module.exports = {
@@ -14,6 +13,5 @@ module.exports = {
   postOpenMessage,
   postSettledInvoice,
   postUpdatedBackup,
-  sendFile,
   sendMessage,
 };

@@ -7,6 +7,7 @@ const checkAccess = require('./check_access');
 const {sendFile} = require('./../post');
 
 const date = () => new Date().toISOString().substring(0, 10);
+const hexAsBuffer = hex => Buffer.from(hex, 'hex');
 const {isArray} = Array;
 
 /** Execute backup command
@@ -21,42 +22,42 @@ const {isArray} = Array;
       public_key: <Node Public Key Hex String>
     }]
     reply: <Reply Function>
-    request: <Request Function>
+    send: <Send Document Function>
   }
 
   @returns via cbk or Promise
 */
-module.exports = ({from, id, key, logger, nodes, reply, request}, cbk) => {
+module.exports = (args, cbk) => {
   return new Promise((resolve, reject) => {
     return asyncAuto({
       // Check arguments
       validate: cbk => {
-        if (!from) {
+        if (!args.from) {
           return cbk([400, 'ExpectedFromUserIdToExecuteBackupCommand']);
         }
 
-        if (!id) {
+        if (!args.id) {
           return cbk([400, 'ExpectedConnectedUserIdToExecuteBackupCommand']);
         }
 
-        if (!key) {
+        if (!args.key) {
           return cbk([400, 'ExpectedTelegramApiKeyToExecuteBackupCommand']);
         }
 
-        if (!logger) {
+        if (!args.logger) {
           return cbk([400, 'ExpectedLoggerToExecuteBackupCommand']);
         }
 
-        if (!isArray(nodes)) {
+        if (!isArray(args.nodes)) {
           return cbk([400, 'ExpectedNodesArrayToExecuteBackupCommand']);
         }
 
-        if (!reply) {
+        if (!args.reply) {
           return cbk([400, 'ExpectedReplyFunctionToExecuteBackupCommand']);
         }
 
-        if (!request) {
-          return cbk([400, 'ExpectedRequestFunctionToExecuteBackupCommand']);
+        if (!args.send) {
+          return cbk([[400, 'ExpectedSendDocumentFunctionToHandleBackupCmd']]);
         }
 
         return cbk();
@@ -64,27 +65,34 @@ module.exports = ({from, id, key, logger, nodes, reply, request}, cbk) => {
 
       // Check access
       checkAccess: ['validate', ({}, cbk) => {
-        return checkAccess({from, id, reply}, cbk);
+        return checkAccess({
+          from: args.from,
+          id: args.id,
+          reply: args.reply,
+        },
+        cbk);
       }],
 
-      // Get backups
+      // Get backups and send them as documents
       getBackups: ['checkAccess', ({}, cbk) => {
-        return asyncEach(nodes, (node, cbk) => {
-          return getBackups({lnd: node.lnd}, (err, res) => {
+        return asyncEach(args.nodes, (node, cbk) => {
+          return getBackups({lnd: node.lnd}, async (err, res) => {
             if (!!err) {
               return cbk(err);
             }
 
-            sendFile({
-              id,
-              key,
-              request,
-              filename: `${date()}-${node.alias}-${node.public_key}.backup`,
-              hex: res.backup,
-            },
-            err => !!err ? logger.error({err}) : null);
+            const filename = `${date()}-${node.alias}-${node.public_key}`;
 
-            return cbk();
+            try {
+              await args.send({
+                filename: `${filename}.backup`,
+                source: hexAsBuffer(res.backup),
+              });
+            } catch (err) {
+              args.logger.error({err});
+            } finally {
+              return cbk();
+            }
           });
         },
         cbk);

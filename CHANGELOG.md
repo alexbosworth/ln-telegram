@@ -1,6 +1,11 @@
 # Versions
 
-## Verrsion 3.2.10
+## Version 3.2.11
+
+- `handleBackupCommand`: Swap `request` argument for `send` to use native send file
+- `postUpdatedBackup`: Swap `request` argument for `send` to use native send file
+
+## Version 3.2.10
 
 - `handlePendingCommand`: Add check on from and id before pending lookups
 
