@@ -1,4 +1,4 @@
-const {test} = require('tap');
+const {test} = require('@alexbosworth/tap');
 
 const notifyOfPending = require('./../../commands/notify_of_pending');
 

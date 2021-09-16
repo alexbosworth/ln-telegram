@@ -1,4 +1,4 @@
-const {test} = require('tap');
+const {test} = require('@alexbosworth/tap');
 
 const {handleEarningsCommand} = require('./../../');
 
@@ -12,7 +12,6 @@ const tests = [
     args: {
       from: 1,
       id: 1,
-      key: 'key',
       nodes: [{
         from: 'node',
         lnd: {
@@ -45,6 +44,7 @@ const tests = [
       }],
       reply: () => {},
       text: '/earnings',
+      working: () => {},
     },
     description: 'Earnings command is handled',
     expected: {},

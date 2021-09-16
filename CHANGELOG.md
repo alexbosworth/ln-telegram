@@ -1,5 +1,9 @@
 # Versions
 
+## Version 3.3.0
+
+- `handleCostsCommand`: Add command to show rebalance and chain fee costs
+
 ## Version 3.2.11
 
 - `handleBackupCommand`: Swap `request` argument for `send` to use native send file

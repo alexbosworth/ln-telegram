@@ -40,17 +40,16 @@ const weekMs = 1000 * 60 * 60 * 24 * 7;
   {
     from: <Command From User Id Number>
     id: <Connected User Id Number>
-    key: <Telegram API Key String>
     nodes: [{
       from: <From Name String>
       lnd: <Authenticated LND API Object>
       public_key: <Public Key Hex String>
     }]
     reply: <Reply Function>
-    text: <Original Command Text String>
+    working: <Reply Bot is Working Function>
   }
 */
-module.exports = ({from, id, key, nodes, reply, text}, cbk) => {
+module.exports = ({from, id, nodes, reply, working}, cbk) => {
   return new Promise((resolve, reject) => {
     return asyncAuto({
       // Check arguments
@@ -63,16 +62,12 @@ module.exports = ({from, id, key, nodes, reply, text}, cbk) => {
           return cbk([400, 'ExpectedConnectedIdNumberForEarningsCommand']);
         }
 
-        if (!key) {
-          return cbk([400, 'ExpectedTelegramApiKeyForEarningsCommand']);
-        }
-
         if (!reply) {
           return cbk([400, 'ExpectedReplyFunctionForEarningsCommand']);
         }
 
-        if (!text) {
-          return cbk([400, 'ExpectedOriginalCommandTextForEarningsCommand']);
+        if (!working) {
+          return cbk([400, 'ExpectedWorkingFunctionForEarningsCommand']);
         }
 
         return cbk();
@@ -85,6 +80,8 @@ module.exports = ({from, id, key, nodes, reply, text}, cbk) => {
 
       // Get invoices
       getInvoices: ['checkAccess', ({}, cbk) => {
+        working();
+
         return asyncMap(nodes, (node, cbk) => {
           const after = new Date(now() - weekMs).toISOString();
           const dayStart = new Date(now() - dayMs).toISOString();
@@ -155,6 +152,10 @@ module.exports = ({from, id, key, nodes, reply, text}, cbk) => {
                 });
               },
               (err, received) => {
+                if (!!err) {
+                  return cbk(err);
+                }
+
                 const day = received.filter(n => n.confirmed_at >= dayStart);
 
                 return cbk(null, {
@@ -206,6 +207,11 @@ module.exports = ({from, id, key, nodes, reply, text}, cbk) => {
 
           const {from} = nodes.find(n => n.public_key === key);
           const got = getInvoices.find(n => n.public_key === key);
+
+          // Exit early when there are no earnings
+          if (!got.week && !node.week) {
+            return formatReport(from, '- No earnings in the past week');
+          }
 
           const rows = [
             [
