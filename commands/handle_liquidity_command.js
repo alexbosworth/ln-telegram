@@ -11,6 +11,7 @@ const checkAccess = require('./check_access');
 const interaction = require('./../interaction');
 const {sendMessage} = require('./../post');
 
+const {isArray} = Array;
 const uniq = arr => Array.from(new Set(arr));
 
 /** Check peer liquidity
@@ -31,34 +32,39 @@ const uniq = arr => Array.from(new Set(arr));
     reply: <Reply Function>
     request: <Request Function>
     text: <Original Command Text String>
+    working: <Working Function>
   }
 */
-module.exports = ({from, id, key, nodes, reply, request, text}, cbk) => {
+module.exports = (args, cbk) => {
   return new Promise((resolve, reject) => {
     return asyncAuto({
       // Check arguments
       validate: cbk => {
-        if (!from) {
+        if (!args.from) {
           return cbk([400, 'ExpectedFromUserIdNumberForLiquidityCommand']);
         }
 
-        if (!id) {
+        if (!args.id) {
           return cbk([400, 'ExpectedConnectedIdNumberForLiquidityCommand']);
         }
 
-        if (!key) {
+        if (!args.key) {
           return cbk([400, 'ExpectedTelegramApiKeyForLiquidityCommand']);
         }
 
-        if (!reply) {
+        if (!isArray(args.nodes)) {
+          return cbk([400, 'ExpectedNodesForLiquidityCommand']);
+        }
+
+        if (!args.reply) {
           return cbk([400, 'ExpectedReplyFunctionForLiquidityCommand']);
         }
 
-        if (!request) {
+        if (!args.request) {
           return cbk([400, 'ExpectedRequestFunctionForLiquidityCommand']);
         }
 
-        if (!text) {
+        if (!args.text) {
           return cbk([400, 'ExpectedOriginalCommandTextForLiquidityCommand']);
         }
 
@@ -67,12 +73,17 @@ module.exports = ({from, id, key, nodes, reply, request, text}, cbk) => {
 
       // Authenticate the command caller is authorized to this command
       checkAccess: ['validate', ({}, cbk) => {
-        return checkAccess({from, id, reply}, cbk);
+        return checkAccess({
+          from: args.from,
+          id: args.id,
+          reply: args.reply,
+        },
+        cbk);
       }],
 
       // Derive the query if present
       query: ['checkAccess', ({}, cbk) => {
-        const [, query] = text.split(' ');
+        const [, query] = args.text.split(' ');
 
         return cbk(null, query);
       }],
@@ -83,7 +94,9 @@ module.exports = ({from, id, key, nodes, reply, request, text}, cbk) => {
           return cbk();
         }
 
-        return asyncMap(nodes, (node, cbk) => {
+        args.working();
+
+        return asyncMap(args.nodes, (node, cbk) => {
           return getChannels({lnd: node.lnd}, (err, res) => {
             if (!!err) {
               return cbk(err);
@@ -116,9 +129,9 @@ module.exports = ({from, id, key, nodes, reply, request, text}, cbk) => {
 
         if (!withPeer || !!other) {
           sendMessage({
-            id,
-            key,
-            request,
+            key: args.key,
+            id: args.id,
+            request: args.request,
             text: interaction.peer_not_found,
           },
           err => {});
@@ -131,7 +144,9 @@ module.exports = ({from, id, key, nodes, reply, request, text}, cbk) => {
 
       // Fetch inbound liquidity information
       getInboundLiquidity: ['withPeer', ({withPeer}, cbk) => {
-        return asyncMap(nodes, (node, cbk) => {
+        args.working();
+
+        return asyncMap(args.nodes, (node, cbk) => {
           return getLiquidity({lnd: node.lnd, with: withPeer}, (err, res) => {
             if (!!err) {
               return cbk(err);
@@ -148,7 +163,9 @@ module.exports = ({from, id, key, nodes, reply, request, text}, cbk) => {
 
       // Fetch outbound liquidity information
       getOutboundLiquidity: ['withPeer', ({withPeer}, cbk) => {
-        return asyncMap(nodes, (node, cbk) => {
+        args.working();
+
+        return asyncMap(args.nodes, (node, cbk) => {
           return getLiquidity({
             lnd: node.lnd,
             is_outbound: true,
@@ -175,7 +192,7 @@ module.exports = ({from, id, key, nodes, reply, request, text}, cbk) => {
         'withPeer',
         ({getInboundLiquidity, getOutboundLiquidity, withPeer}, cbk) =>
       {
-        const report = nodes.map(node => {
+        const report = args.nodes.map(node => {
           const inbound = getInboundLiquidity
             .find(n => n.public_key === node.public_key);
 
@@ -205,7 +222,15 @@ module.exports = ({from, id, key, nodes, reply, request, text}, cbk) => {
           return lines.filter(n => !!n).join('\n');
         });
 
-        sendMessage({id, key, request, text: report.join('\n\n')}, err => {});
+        args.working();
+
+        sendMessage({
+          id: args.id,
+          key: args.key,
+          request: args.request,
+          text: report.join('\n\n'),
+        },
+        err => {});
 
         return cbk();
       }],

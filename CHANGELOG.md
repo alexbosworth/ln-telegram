@@ -1,5 +1,9 @@
 # Versions
 
+## Version 3.3.1
+
+- `handleCostsCommand`: Correct week chain fee summary
+
 ## Version 3.3.0
 
 - `handleCostsCommand`: Add command to show rebalance and chain fee costs

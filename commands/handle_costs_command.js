@@ -63,6 +63,10 @@ module.exports = ({from, id, nodes, reply, request, working}, cbk) => {
           return cbk([400, 'ExpectedRequestFunctionForCostsCommand']);
         }
 
+        if (!working) {
+          return cbk([400, 'ExpectedWorkingFunctionForCostsCommand']);
+        }
+
         return cbk();
       },
 
@@ -116,7 +120,8 @@ module.exports = ({from, id, nodes, reply, request, working}, cbk) => {
 
             const transactions = res.transactions
               .filter(n => !!n.fee)
-              .filter(n => !!n.is_confirmed);
+              .filter(n => !!n.is_confirmed)
+              .filter(n => n.created_at >= after);
 
             const day = transactions.filter(n => n.created_at >= dayStart);
 
@@ -149,7 +154,7 @@ module.exports = ({from, id, nodes, reply, request, working}, cbk) => {
 
           const rows = [
             [
-              'Rebalance Fees',
+              'Rebalances',
               paidAmount(tokFromMtok(paid.day)).display.trim() || noValue,
               paidAmount(tokFromMtok(paid.week)).display.trim() || noValue,
             ],

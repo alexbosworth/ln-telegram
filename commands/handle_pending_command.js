@@ -27,11 +27,12 @@ const uniq = arr => Array.from(new Set(arr));
       public_key: <Public Key Hex String>
     }]
     reply: <Reply to Telegram Context Function>
+    working: <Working Function>
   }
 
   @returns via cbk or Promise
 */
-module.exports = ({from, id, nodes, reply}, cbk) => {
+module.exports = ({from, id, nodes, reply, working}, cbk) => {
   return new Promise((resolve, reject) => {
     return asyncAuto({
       // Check arguments
@@ -52,6 +53,10 @@ module.exports = ({from, id, nodes, reply}, cbk) => {
           return cbk([400, 'ExpectedReplyFunctionToHandlePendingCommand']);
         }
 
+        if (!working) {
+          return cbk([400, 'ExpectedWorkingFunctionToHandlePendingCommand']);
+        }
+
         return cbk();
       },
 
@@ -62,6 +67,8 @@ module.exports = ({from, id, nodes, reply}, cbk) => {
 
       // Get HTLCs in channels
       getHtlcs: ['checkAccess', ({}, cbk) => {
+        working();
+
         return asyncMap(nodes, ({from, lnd}, cbk) => {
           return getChannels({lnd}, (err, res) => {
             if (!!err) {
@@ -153,6 +160,8 @@ module.exports = ({from, id, nodes, reply}, cbk) => {
 
       // Notify of pending
       notify: ['getHtlcs', 'getPending', ({getHtlcs, getPending}, cbk) => {
+        working();
+
         notifyOfPending({reply, htlcs: getHtlcs, pending: getPending});
 
         return cbk();
