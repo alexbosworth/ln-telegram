@@ -12,6 +12,8 @@ const interaction = require('./../interaction');
 const {sendMessage} = require('./../post');
 
 const {isArray} = Array;
+const peerTitle = (query, k) => `*${query} ${k.substring(0, 8)} liquidity:*`;
+const sanitize = n => (n || '').replace(/_/g, '\\_').replace(/[*~`]/g, '');
 const uniq = arr => Array.from(new Set(arr));
 
 /** Check peer liquidity
@@ -189,8 +191,9 @@ module.exports = (args, cbk) => {
       liquidity: [
         'getInboundLiquidity',
         'getOutboundLiquidity',
+        'query',
         'withPeer',
-        ({getInboundLiquidity, getOutboundLiquidity, withPeer}, cbk) =>
+        ({getInboundLiquidity, getOutboundLiquidity, query, withPeer}, cbk) =>
       {
         const report = args.nodes.map(node => {
           const inbound = getInboundLiquidity
@@ -223,6 +226,10 @@ module.exports = (args, cbk) => {
         });
 
         args.working();
+
+        if (!!withPeer) {
+          report.unshift(peerTitle(sanitize(query), withPeer));
+        }
 
         sendMessage({
           id: args.id,

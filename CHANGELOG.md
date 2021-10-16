@@ -1,6 +1,6 @@
 # Versions
 
-## Version 3.3.1
+## Version 3.3.2
 
 - `handleCostsCommand`: Correct week chain fee summary
 
