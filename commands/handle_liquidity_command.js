@@ -195,35 +195,37 @@ module.exports = (args, cbk) => {
         'withPeer',
         ({getInboundLiquidity, getOutboundLiquidity, query, withPeer}, cbk) =>
       {
-        const report = args.nodes.map(node => {
-          const inbound = getInboundLiquidity
-            .find(n => n.public_key === node.public_key);
+        const report = args.nodes
+          .map(node => {
+            const inbound = getInboundLiquidity
+              .find(n => n.public_key === node.public_key);
 
-          const outbound = getOutboundLiquidity
-            .find(n => n.public_key === node.public_key);
+            const outbound = getOutboundLiquidity
+              .find(n => n.public_key === node.public_key);
 
-          if (!inbound.balance && !outbound.balance) {
-            return '';
-          }
+            if (!inbound.balance && !outbound.balance) {
+              return '';
+            }
 
-          const inboundFormatted = formatTokens({
-            is_monochrome: true,
-            tokens: inbound.balance,
-          });
+            const inboundFormatted = formatTokens({
+              is_monochrome: true,
+              tokens: inbound.balance,
+            });
 
-          const outboundFormatted = formatTokens({
-            is_monochrome: true,
-            tokens: outbound.balance,
-          });
+            const outboundFormatted = formatTokens({
+              is_monochrome: true,
+              tokens: outbound.balance,
+            });
 
-          const lines = [
-            `🌊 ${node.from}:`,
-            !inbound.balance ? '' : `Inbound: ${inboundFormatted.display}`,
-            !outbound.balance ? '' : `Outbound: ${outboundFormatted.display}`,
-          ];
+            const lines = [
+              `🌊 ${node.from}:`,
+              !inbound.balance ? '' : `Inbound: ${inboundFormatted.display}`,
+              !outbound.balance ? '' : `Outbound: ${outboundFormatted.display}`,
+            ];
 
-          return lines.filter(n => !!n).join('\n');
-        });
+            return lines.filter(n => !!n).join('\n');
+          })
+          .filter(n => !!n);
 
         args.working();
 

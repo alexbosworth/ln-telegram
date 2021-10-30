@@ -1,5 +1,9 @@
 # Versions
 
+## Version 3.4.0
+
+- `postSettledPayment`: Add method to post a settled payment to the bot
+
 ## Version 3.3.2
 
 - `handleCostsCommand`: Correct week chain fee summary

@@ -7,11 +7,11 @@
     "url": "https://github.com/alexbosworth/ln-telegram/issues"
   },
   "dependencies": {
-    "async": "3.2.1",
-    "asyncjs-util": "1.2.6",
+    "async": "3.2.2",
+    "asyncjs-util": "1.2.7",
     "goldengate": "10.4.0",
     "ln-accounting": "5.0.3",
-    "ln-service": "52.12.1",
+    "ln-service": "52.14.2",
     "ln-sync": "2.1.0",
     "luxon": "2.0.2",
     "table": "6.7.2"
@@ -38,5 +38,5 @@
   "scripts": {
     "test": "tap --branches=1 --functions=1 --lines=1 --statements=1 test/commands/*.js test/post/*.js"
   },
-  "version": "3.3.2"
+  "version": "3.4.0"
 }

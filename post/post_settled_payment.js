@@ -1,10 +1,13 @@
 const asyncAuto = require('async/auto');
-const {getNode} = require('ln-service');
+const {getNodeAlias} = require('ln-sync');
 const {returnResult} = require('asyncjs-util');
 
 const sendMessage = require('./send_message');
 
 const emoji = '⚡️';
+const {isArray} = Array;
+const niceName = node => node.alias || (node.id || '').substring(0, 8);
+const sanitize = n => (n || '').replace(/_/g, '\\_').replace(/[*~`]/g, '');
 const tokAsBig = tokens => (tokens / 1e8).toFixed(8);
 
 /** Post settled payment
@@ -14,10 +17,11 @@ const tokAsBig = tokens => (tokens / 1e8).toFixed(8);
     id: <Connected User Id Number>
     key: <Telegram API Key String>
     lnd: <Authenticated LND API Object>
+    nodes: [<Node Id Public Key Hex String>]
     payment: [{
       destination: <Payment Destination Public Key Hex String>
       id: <Payment Hash Hex String>
-      request: <Payment BOLT11 Request String>
+      [request]: <Payment BOLT11 Request String>
       safe_fee: <Safe Paid Fee Tokens Number>
       safe_tokens: <Safe Paid Tokens Number>
     }]
@@ -26,7 +30,7 @@ const tokAsBig = tokens => (tokens / 1e8).toFixed(8);
 
   @returns via cbk or Promise
 */
-module.exports = ({from, id, key, lnd, payment, request}, cbk) => {
+module.exports = ({from, id, key, lnd, nodes, payment, request}, cbk) => {
   return new Promise((resolve, reject) => {
     return asyncAuto({
       // Check arguments
@@ -43,6 +47,10 @@ module.exports = ({from, id, key, lnd, payment, request}, cbk) => {
           return cbk([400, 'ExpectedTelegramApiKeyToPostSettledPayment']);
         }
 
+        if (!isArray(nodes)) {
+          return cbk([400, 'ExpectedArrayOfNodesToPostSettledPayment']);
+        }
+
         if (!payment) {
           return cbk([400, 'ExpectedPaymentToPostSettledPayment']);
         }
@@ -56,37 +64,27 @@ module.exports = ({from, id, key, lnd, payment, request}, cbk) => {
 
       // Find the node that was paid to
       getNode: ['validate', ({}, cbk) => {
-        return getNode({
-          lnd,
-          is_omitting_channels: true,
-          public_key: payment.destination,
-        },
-        (err, res) => {
-          // Ignore errors
-          if (!!err) {
-            return cbk(null, {});
-          }
-
-          return cbk(null, res);
-        });
+        return getNodeAlias({lnd, id: payment.destination}, cbk);
       }],
 
       // Create the message details
       details: ['getNode', ({getNode}, cbk) => {
-        const destination = getNode.alias || payment.destination;
+        const isTransfer = nodes.includes(payment.destination);
         const routingFee = `. Paid routing fee: ${tokAsBig(payment.safe_fee)}`;
-        const sent = tokAsBig(payment.safe_tokens);
+        const sent = tokAsBig(payment.safe_tokens - payment.safe_fee);
+        const toNode = `${sanitize(niceName(getNode))}`;
 
+        const action = isTransfer ? 'Transferred' : 'Sent';
         const fee = !payment.safe_fee ? '' : routingFee;
 
-        const details = `Sent ${sent} to ${destination}${fee}`;
+        const details = `${action} ${sent} to ${toNode}${fee}`;
 
         return cbk(null, details);
       }],
 
       // Post message
       post: ['details', ({details}, cbk) => {
-        const text = `${emoji} ${details}\n${from}`;
+        const text = `${emoji} ${details} - ${from}`;
 
         return sendMessage({id, key, request, text}, cbk);
       }],
