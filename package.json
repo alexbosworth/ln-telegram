@@ -9,12 +9,12 @@
   "dependencies": {
     "async": "3.2.2",
     "asyncjs-util": "1.2.7",
-    "goldengate": "10.4.0",
-    "ln-accounting": "5.0.3",
-    "ln-service": "52.14.2",
+    "goldengate": "10.4.2",
+    "ln-accounting": "5.0.5",
+    "ln-service": "52.16.0",
     "ln-sync": "2.1.0",
-    "luxon": "2.0.2",
-    "table": "6.7.2"
+    "luxon": "2.1.1",
+    "table": "6.7.3"
   },
   "description": "Lightning Network Telegram bot commands",
   "devDependencies": {
@@ -38,5 +38,5 @@
   "scripts": {
     "test": "tap --branches=1 --functions=1 --lines=1 --statements=1 test/commands/*.js test/post/*.js"
   },
-  "version": "3.4.0"
+  "version": "3.4.1"
 }
