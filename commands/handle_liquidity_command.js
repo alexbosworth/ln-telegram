@@ -151,7 +151,7 @@ module.exports = (args, cbk) => {
         return asyncMap(args.nodes, (node, cbk) => {
           return getLiquidity({
             lnd: node.lnd,
-            with: [withPeer],
+            with: !!withPeer ? [withPeer] : undefined,
           },
           (err, res) => {
             if (!!err) {
@@ -175,7 +175,7 @@ module.exports = (args, cbk) => {
           return getLiquidity({
             lnd: node.lnd,
             is_outbound: true,
-            with: [withPeer],
+            with: !!withPeer ? [withPeer] : undefined,
           },
           (err, res) => {
             if (!!err) {

@@ -1,6 +1,6 @@
 # Versions
 
-## Version 3.4.1
+## Version 3.4.2
 
 - `postSettledPayment`: Add method to post a settled payment to the bot
 
