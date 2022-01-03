@@ -12,8 +12,9 @@ const interaction = require('./../interaction');
 const {sendMessage} = require('./../post');
 
 const {isArray} = Array;
-const peerTitle = (query, k) => `*${query} ${k.substring(0, 8)} liquidity:*`;
+const peerTitle = (query, k) => `🌊 Liquidity with *${query} ${k}:*`;
 const sanitize = n => (n || '').replace(/_/g, '\\_').replace(/[*~`]/g, '');
+const short = key => key.substring(0, 8);
 const uniq = arr => Array.from(new Set(arr));
 
 /** Check peer liquidity
@@ -121,8 +122,22 @@ module.exports = (args, cbk) => {
         cbk);
       }],
 
+      // Peer alias
+      getAlias: ['getKey', ({getKey}, cbk) => {
+        const [id] = uniq((getKey || []).filter(n => !!n));
+
+        if (!id) {
+          return cbk(null, []);
+        }
+
+        return asyncMap(args.nodes, ({lnd}, cbk) => {
+          return getNodeAlias({id, lnd}, cbk);
+        },
+        cbk);
+      }],
+
       // Liquidity with peer
-      withPeer: ['getKey', ({getKey}, cbk) => {
+      withPeer: ['getKey', 'query', ({getKey, query}, cbk) => {
         if (!getKey) {
           return cbk();
         }
@@ -193,11 +208,19 @@ module.exports = (args, cbk) => {
 
       // Put together liquidity report
       liquidity: [
+        'getAlias',
         'getInboundLiquidity',
         'getOutboundLiquidity',
         'query',
         'withPeer',
-        ({getInboundLiquidity, getOutboundLiquidity, query, withPeer}, cbk) =>
+        ({
+          getAlias,
+          getInboundLiquidity,
+          getOutboundLiquidity,
+          query,
+          withPeer,
+        },
+        cbk) =>
       {
         const report = args.nodes
           .map(node => {
@@ -222,7 +245,7 @@ module.exports = (args, cbk) => {
             });
 
             const lines = [
-              `🌊 ${node.from}:`,
+              `${!args.nodes.length ? '' : node.from}:`,
               !inbound.balance ? '' : `Inbound: ${inboundFormatted.display}`,
               !outbound.balance ? '' : `Outbound: ${outboundFormatted.display}`,
             ];
@@ -233,8 +256,10 @@ module.exports = (args, cbk) => {
 
         args.working();
 
+        const [alias] = getAlias.map(n => n.alias).filter(n => !!n);
+
         if (!!withPeer) {
-          report.unshift(peerTitle(sanitize(query), withPeer));
+          report.unshift(peerTitle(sanitize(alias) || query, short(withPeer)));
         }
 
         sendMessage({
