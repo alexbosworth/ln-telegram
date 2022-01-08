@@ -1,5 +1,12 @@
 # Versions
 
+## Version 3.5.0
+
+- `handleButtonPush`: Add method to handle button pushes
+- `handleInvoiceCommand`: Redesign interface to use buttons
+- `isMessageReplyToInvoice`: Add method to test if reply is reply to invoice
+- `updateInvoiceFromReply`: Add method to update a created invoice from a reply
+
 ## Version 3.4.3
 
 - `postSettledPayment`: Add method to post a settled payment to the bot

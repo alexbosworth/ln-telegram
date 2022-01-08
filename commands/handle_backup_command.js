@@ -3,7 +3,7 @@ const asyncEach = require('async/each');
 const {getBackups} = require('ln-service');
 const {returnResult} = require('asyncjs-util');
 
-const checkAccess = require('./check_access');
+const {checkAccess} = require('./../authentication');
 const {sendFile} = require('./../post');
 
 const date = () => new Date().toISOString().substring(0, 10);

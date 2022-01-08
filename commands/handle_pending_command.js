@@ -6,7 +6,7 @@ const {getNodeAlias} = require('ln-sync');
 const {getPendingChannels} = require('ln-service');
 const {returnResult} = require('asyncjs-util');
 
-const checkAccess = require('./check_access');
+const {checkAccess} = require('./../authentication');
 const notifyOfPending = require('./notify_of_pending');
 const pendingPayments = require('./pending_payments');
 

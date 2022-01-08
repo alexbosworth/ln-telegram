@@ -1,6 +1,6 @@
 const {test} = require('@alexbosworth/tap');
 
-const checkAccess = require('./../../commands/check_access');
+const {checkAccess} = require('./../../authentication');
 
 const makeArgs = overrides => {
   const args = {from: 1, id: 1, reply: () => {}};

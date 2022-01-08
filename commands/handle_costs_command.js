@@ -7,7 +7,7 @@ const renderTable = require('table').table;
 const {formatTokens} = require('ln-sync');
 const {returnResult} = require('asyncjs-util');
 
-const checkAccess = require('./check_access');
+const {checkAccess} = require('./../authentication');
 
 const border = getBorderCharacters('void');
 const dayMs = 1000 * 60 * 60 * 24;

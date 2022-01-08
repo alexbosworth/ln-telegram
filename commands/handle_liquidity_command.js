@@ -7,7 +7,7 @@ const {getLiquidity} = require('ln-sync');
 const {getNodeAlias} = require('ln-sync');
 const {returnResult} = require('asyncjs-util');
 
-const checkAccess = require('./check_access');
+const {checkAccess} = require('./../authentication');
 const interaction = require('./../interaction');
 const {sendMessage} = require('./../post');
 

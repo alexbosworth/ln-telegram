@@ -5,7 +5,7 @@ const {payViaRoutes} = require('ln-service');
 const {returnResult} = require('asyncjs-util');
 const {subscribeToProbeForRoute} = require('ln-service');
 
-const checkAccess = require('./check_access');
+const {checkAccess} = require('./../authentication');
 const decodeCommand = require('./decode_command');
 const interaction = require('./../interaction');
 const {sendMessage} = require('./../post');

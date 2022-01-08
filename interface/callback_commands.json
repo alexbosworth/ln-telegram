@@ -1,0 +1,8 @@
+{
+  "cancelInvoice": "cancel-invoice",
+  "moveInvoiceNode": "switch-invoice-to-",
+  "removeMessage": "remove-message",
+  "setInvoiceDescription": "set-invoice-description",
+  "setInvoiceNode": "set-invoice-node",
+  "setInvoiceTokens": "set-invoice-tokens"
+}

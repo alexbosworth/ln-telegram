@@ -1,42 +1,38 @@
 const asyncAuto = require('async/auto');
-const {createInvoice} = require('ln-service');
 const {returnResult} = require('asyncjs-util');
 
-const checkAccess = require('./check_access');
-const decodeCommand = require('./decode_command');
-const interaction = require('./../interaction');
-const {sendMessage} = require('./../post');
+const {checkAccess} = require('./../authentication');
+const {failureMessage} = require('./../messages');
+const {postCreatedInvoice} = require('./../post');
 
-const expiry = () => new Date(Date.now() + 1000 * 60 * 60 * 3).toISOString();
+const defaultDescription = '';
+const defaultTokens = '';
 const {isArray} = Array;
+const {isInteger} = Number;
 const isNumber = n => !isNaN(n);
-const tinyKey = key => key.slice(0, 8);
+const join = n => n.join(' ');
+const splitArguments = n => n.split(' ');
 
 /** Create invoice
 
   {
-    from: <Command From User Id Number>
+    ctx: <Telegram Context Object>
     id: <Connected Id Number>
-    key: <Telegram API Key String>
     nodes: [{
-      alias: <Alias String>
+      from: <Node Name String>
       lnd: <Authenticated LND gRPC API Object>
-      public_key: <Public Key Hex String>
     }]
-    reply: <Reply Function>
-    request: <Request Function>
-    text: <Message Text String>
   }
 
   @returns via cbk or Promise
 */
-module.exports = ({from, id, key, nodes, reply, request, text}, cbk) => {
+module.exports = ({ctx, id, nodes}, cbk) => {
   return new Promise((resolve, reject) => {
     return asyncAuto({
       // Check arguments
       validate: cbk => {
-        if (!from) {
-          return cbk([400, 'ExpectedFromUserIdToCreateInvoice']);
+        if (!ctx) {
+          return cbk([400, 'ExpectedTelegramMessageContextToCreateInvoice']);
         }
 
         if (!id) {
@@ -47,97 +43,66 @@ module.exports = ({from, id, key, nodes, reply, request, text}, cbk) => {
           return cbk([400, 'ExpectedArrayOfNodesToCreateInvoice']);
         }
 
-        if (!reply) {
-          return cbk([400, 'ExpectedReplyToCreateInvoice']);
-        }
-
-        if (!request) {
-          return cbk([400, 'ExpectedRequestToCreateInvoice']);
-        }
-
-        if (!text) {
-          return cbk([400, 'ExpectedCommandTextToCreateInvoice']);
-        }
-
         return cbk();
       },
 
-      // Check access
+      // Confirm access authorization
       checkAccess: ['validate', ({}, cbk) => {
-        return checkAccess({from, id, reply}, cbk);
-      }],
-
-      // Decode command arguments
-      decodeCommand: ['checkAccess', ({}, cbk) => {
-        const help = {
-          select_node_text: interaction.select_node_for_invoice,
-          syntax_example_text: interaction.create_invoice_syntax,
-        };
-
-        return decodeCommand({help, id, key, nodes, request, text}, cbk);
-      }],
-
-      // Invoice details
-      invoiceDetails: ['decodeCommand', ({decodeCommand}, cbk) => {
-        const [amount, ...description] = decodeCommand.params;
-
-        // Exit early when the amount is unknown
-        if (!isNumber(amount)) {
-          const syntax = interaction.create_invoice_syntax;
-
-          const howMuch = `How much should the invoice be for?\n${syntax}`;
-
-          return sendMessage({id, key, request, text: howMuch}, () => {
-            return cbk([400, 'ExpectedAnAmountToCreateInvoice']);
-          });
-        }
-
-        return cbk(null, {
-          description: description.join(' '),
-          lnd: decodeCommand.lnd,
-          tokens: Number(amount),
-        });
-      }],
-
-      // Status update
-      postStatus: ['invoiceDetails', ({invoiceDetails}, cbk) => {
-        return sendMessage({
+        return checkAccess({
           id,
-          key,
-          request,
-          text: `🤖 Making invoice for ${invoiceDetails.tokens}...`,
+          from: ctx.message.from.id,
+          reply: ctx.reply,
         },
         cbk);
       }],
 
-      // Create
-      create: ['invoiceDetails', ({invoiceDetails}, cbk) => {
-        const {description} = invoiceDetails;
-        const {tokens} = invoiceDetails;
+      // Decode passed command arguments
+      decodeCommand: ['checkAccess', async ({}) => {
+        // Exit early when there are no arguments
+        if (!ctx.match) {
+          return {description: defaultDescription, tokens: defaultTokens};
+        }
 
-        return createInvoice({
-          description,
-          tokens,
-          expires_at: expiry(),
-          is_including_private_channels: true,
-          lnd: invoiceDetails.lnd,
+        // The command can be called as /invoice <amount> <memo>
+        const [amount, ...description] = splitArguments(ctx.match.trim());
+
+        // Exit early when the amount cannot be parsed as tokens
+        if (!isNumber(amount)) {
+          const failure = failureMessage({is_invalid_amount: true});
+
+          return await ctx.reply(failure.message, failure.actions) && null;
+        }
+
+        // Exit early when the amount is fractional
+        if (!isInteger(Number(amount))) {
+          const failure = failureMessage({is_fractional_amount: true});
+
+          return await ctx.reply(failure.message, failure.actions) && null;
+        }
+
+        return {description: join(description), tokens: Number(amount)};
+      }],
+
+      // Remove the command message
+      removeMessage: ['checkAccess', async ({}) => await ctx.deleteMessage()],
+
+      // Try to create the invoice
+      create: ['decodeCommand', ({decodeCommand}, cbk) => {
+        // Exit early when there is no decoded command
+        if (!decodeCommand) {
+          return cbk();
+        }
+
+        const [node] = nodes;
+
+        return postCreatedInvoice({
+          ctx,
+          nodes,
+          description: decodeCommand.description,
+          destination: node.public_key,
+          tokens: decodeCommand.tokens,
         },
-        (err, res) => {
-          // Exit early when there was an issue creating the invoice
-          if (!!err) {
-            const [, message] = err;
-
-            return sendMessage({
-              id,
-              key,
-              request,
-              text: `⚠️ *Failed to create invoice: ${message}*`,
-            },
-            cbk);
-          }
-
-          return sendMessage({id, key, request, text: res.request}, cbk);
-        });
+        cbk);
       }],
     },
     returnResult({reject, resolve}, cbk));
