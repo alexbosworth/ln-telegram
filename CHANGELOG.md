@@ -1,6 +1,6 @@
 # Versions
 
-## Version 3.5.0
+## Version 3.5.1
 
 - `handleButtonPush`: Add method to handle button pushes
 - `handleInvoiceCommand`: Redesign interface to use buttons

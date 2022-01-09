@@ -86,7 +86,7 @@ module.exports = ({ctx, nodes}, cbk) => {
       failure: ['details', async ({details}) => {
         // Exit early when there was no parse failure
         if (!details.error) {
-          return cbk();
+          return;
         }
 
         const [, msg] = details.error;
