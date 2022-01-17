@@ -1,5 +1,10 @@
 # Versions
 
+## Version 3.6.0
+
+- `postCreatedTrade`: Add method to post a created trade-secret
+- `postSettledTrade`: Add method to post a settled trade-secret
+
 ## Version 3.5.1
 
 - `handleButtonPush`: Add method to handle button pushes

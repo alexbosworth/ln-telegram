@@ -14,9 +14,11 @@ const {isMessageReplyToInvoice} = require('./replies');
 const {notifyOfForwards} = require('./post');
 const {postChainTransaction} = require('./post');
 const {postClosedMessage} = require('./post');
+const {postCreatedTrade} = require('./post');
 const {postOpenMessage} = require('./post');
 const {postSettledInvoice} = require('./post');
 const {postSettledPayment} = require('./post');
+const {postSettledTrade} = require('./post');
 const {postUpdatedBackup} = require('./post');
 const {sendMessage} = require('./post');
 const {updateInvoiceFromReply} = require('./replies');
@@ -38,9 +40,11 @@ module.exports = {
   notifyOfForwards,
   postChainTransaction,
   postClosedMessage,
+  postCreatedTrade,
   postOpenMessage,
   postSettledInvoice,
   postSettledPayment,
+  postSettledTrade,
   postUpdatedBackup,
   sendMessage,
   updateInvoiceFromReply,

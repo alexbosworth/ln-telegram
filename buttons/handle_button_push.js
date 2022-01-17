@@ -72,24 +72,31 @@ module.exports = ({ctx, id, nodes}, cbk) => {
       // Perform button action based on type
       action: ['type', ({type}, cbk) => {
         switch (type) {
+        // Pressed to remove a created invoice
         case callbackCommands.cancelInvoice:
           return cancelInvoice({ctx}, cbk);
 
+        // Pressed to move an invoice to a specific saved node
         case callbackCommands.moveInvoiceNode:
           return moveInvoiceNode({ctx, nodes}, cbk);
 
+        // Pressed to remove a generic message
         case callbackCommands.removeMessage:
           return removeMessage({ctx}, cbk);
 
+        // Pressed to set a created invoice description
         case callbackCommands.setInvoiceDescription:
           return setInvoiceDescription({ctx, nodes}, cbk);
 
+        // Pressed to set the node of an invoice
         case callbackCommands.setInvoiceNode:
           return setInvoiceNode({ctx, nodes}, cbk);
 
+        // Pressed to set the invoiced amount
         case callbackCommands.setInvoiceTokens:
           return setInvoiceTokens({ctx, nodes}, cbk);
 
+        // Pressed something unknown
         default:
           return warnUnknownButton({ctx}, cbk);
         }
