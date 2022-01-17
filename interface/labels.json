@@ -2,5 +2,6 @@
   "invoiceMessageCancelButtonLabel": "🗑",
   "invoiceMessageDescriptionButtonLabel": "Set Memo",
   "invoiceMessageNodeButtonLabel": "Node...",
-  "invoiceMessageSetTokensButtonLabel": "Amount..."
+  "invoiceMessageSetTokensButtonLabel": "Amount...",
+  "tradeMessageCancelButtonLabel": "🗑"
 }

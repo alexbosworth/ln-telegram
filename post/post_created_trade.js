@@ -90,6 +90,7 @@ module.exports = (args, cbk) => {
         // Post the new invoice as a message
         return await args.api.sendMessage(args.user, message.text, {
           parse_mode: message.mode,
+          reply_markup: message.markup,
         });
       }],
     },

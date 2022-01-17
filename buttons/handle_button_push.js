@@ -3,6 +3,7 @@ const {returnResult} = require('asyncjs-util');
 
 const {callbackCommands} = require('./../interface');
 const cancelInvoice = require('./cancel_invoice');
+const cancelTrade = require('./cancel_trade');
 const {checkAccess} = require('./../authentication');
 const moveInvoiceNode = require('./move_invoice_node');
 const removeMessage = require('./remove_message');
@@ -75,6 +76,10 @@ module.exports = ({ctx, id, nodes}, cbk) => {
         // Pressed to remove a created invoice
         case callbackCommands.cancelInvoice:
           return cancelInvoice({ctx}, cbk);
+
+        // Pressed to remove a created trade
+        case callbackCommands.cancelTrade:
+          return cancelTrade({ctx, nodes}, cbk);
 
         // Pressed to move an invoice to a specific saved node
         case callbackCommands.moveInvoiceNode:

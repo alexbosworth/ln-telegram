@@ -1,5 +1,9 @@
 # Versions
 
+## Version 3.7.0
+
+- `postCreatedTrade`: Add support for deleting a created trade-secret
+
 ## Version 3.6.0
 
 - `postCreatedTrade`: Add method to post a created trade-secret

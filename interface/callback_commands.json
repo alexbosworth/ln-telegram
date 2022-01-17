@@ -1,5 +1,6 @@
 {
   "cancelInvoice": "cancel-invoice",
+  "cancelTrade": "cancel-trade",
   "moveInvoiceNode": "switch-invoice-to-",
   "removeMessage": "remove-message",
   "setInvoiceDescription": "set-invoice-description",

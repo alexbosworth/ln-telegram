@@ -1,10 +1,15 @@
 const {encodeTrade} = require('paid-services');
+const {InlineKeyboard} = require('grammy');
 
+const {callbackCommands} = require('./../interface');
+const {labels} = require('./../interface');
+
+const {cancelTrade} = callbackCommands;
 const join = arr => arr.filter(n => !!n).join('\n');
-const markup = undefined;
 const mode = 'MarkdownV2';
 const tokensAsBigTokens = tokens => (tokens / 1e8).toFixed(8);
 const escape = text => text.replace(/[_*[\]()~`>#+\-=|{}.!\\]/g, '\\\$&');
+const {tradeMessageCancelButtonLabel} = labels;
 
 /** Created trade message
 
@@ -26,7 +31,10 @@ const escape = text => text.replace(/[_*[\]()~`>#+\-=|{}.!\\]/g, '\\\$&');
   }
 */
 module.exports = args => {
+  const markup = new InlineKeyboard();
   const memo = !args.description ? '' : `“${escape(args.description)}”`;
+
+  markup.text(tradeMessageCancelButtonLabel, cancelTrade);
 
   const {trade} = encodeTrade({
     connect: {
