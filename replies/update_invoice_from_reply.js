@@ -3,10 +3,12 @@ const {createInvoice} = require('ln-service');
 const {parsePaymentRequest} = require('ln-service');
 const {returnResult} = require('asyncjs-util');
 
+const {callbackCommands} = require('./../interface');
 const {checkAccess} = require('./../authentication');
 const {createInvoiceMessage} = require('./../messages');
 const {editQuestions} = require('./../interface');
 const {failureMessage} = require('./../messages');
+const invoiceActionType = require('./invoice_action_type');
 const {postCreatedInvoice} = require('./../post');
 
 const {isArray} = Array;
@@ -73,26 +75,19 @@ module.exports = ({api, ctx, id, nodes}, cbk) => {
 
       // Determine what type of edit message this is
       type: ['checkAccess', ({}, cbk) => {
-        const [,,, question] = split(ctx.update.message.reply_to_message.text);
+        const {text} = ctx.update.message.reply_to_message;
 
-        switch (question) {
-        case editQuestions.editInvoiceDescription:
-          return cbk(null, {description: true});
+        const {type} = invoiceActionType({nodes, text});
 
-        case editQuestions.editInvoiceTokens:
-          return cbk(null, {tokens: true});
-
-        default:
-          return cbk();
-        }
+        return cbk(null, type);
       }],
 
-      // Delete the answer message
+      // Delete the answer message the user just entered
       deleteAnswer: ['type', async ({type}) => {
         return !!type ? await ctx.deleteMessage() : null;
       }],
 
-      // Delete the edit message
+      // Delete the edit message that had the question
       deleteQuestion: ['type', async ({type}) => {
         if (!type) {
           return;
@@ -111,25 +106,34 @@ module.exports = ({api, ctx, id, nodes}, cbk) => {
           return cbk();
         }
 
-        const {text} = ctx.update.message;
-
         const {description} = details;
+        const {text} = ctx.update.message;
         const {tokens} = details;
 
+        switch (type) {
+        case callbackCommands.setInvoiceDescription:
+          return cbk(null, {tokens, description: text});
+
+        case callbackCommands.setInvoiceTokens:
         // Exit early when the amount is an invalid number
-        if (!!type.tokens && !isNumber(text)) {
-          return cbk(null, {description, tokens, is_invalid_amount: true});
-        }
+          if (!isNumber(text)) {
+            return cbk(null, {description, tokens, is_invalid_amount: true});
+          }
 
-        // Exit early when the amount is not an integer
-        if (!!type.tokens && !isInteger(Number(text))) {
-          return cbk(null, {description, tokens, is_fractional_amount: true});
-        }
+          // Exit early when the amount is not an integer
+          if (!isInteger(Number(text))) {
+            return cbk(null, {
+              description,
+              tokens,
+              is_fractional_amount: true,
+            });
+          }
 
-        return cbk(null, {
-          description: type.description ? text : description,
-          tokens: type.tokens ? Number(text) : tokens,
-        });
+          return cbk(null, {description, tokens: Number(text)});
+
+        default:
+          return cbk();
+        }
       }],
 
       // Post the failure

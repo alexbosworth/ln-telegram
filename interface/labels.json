@@ -3,5 +3,6 @@
   "invoiceMessageDescriptionButtonLabel": "Set Memo",
   "invoiceMessageNodeButtonLabel": "Node...",
   "invoiceMessageSetTokensButtonLabel": "Amount...",
-  "tradeMessageCancelButtonLabel": "🗑"
+  "tradeMessageCancelButtonLabel": "🗑",
+  "tradeMessageDescriptionButtonLabel": "Set Description"
 }

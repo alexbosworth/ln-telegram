@@ -3,13 +3,17 @@ const {InlineKeyboard} = require('grammy');
 
 const {callbackCommands} = require('./../interface');
 const {labels} = require('./../interface');
+const {titles} = require('./../interface');
 
 const {cancelTrade} = callbackCommands;
+const escape = text => text.replace(/[_*[\]()~`>#+\-=|{}.!\\]/g, '\\\$&');
 const join = arr => arr.filter(n => !!n).join('\n');
 const mode = 'MarkdownV2';
+const titlePrefix = titles.createdTradePrefix;
 const tokensAsBigTokens = tokens => (tokens / 1e8).toFixed(8);
-const escape = text => text.replace(/[_*[\]()~`>#+\-=|{}.!\\]/g, '\\\$&');
+const {setTradeDescription} = callbackCommands;
 const {tradeMessageCancelButtonLabel} = labels;
+const {tradeMessageDescriptionButtonLabel} = labels;
 
 /** Created trade message
 
@@ -34,6 +38,7 @@ module.exports = args => {
   const markup = new InlineKeyboard();
   const memo = !args.description ? '' : `“${escape(args.description)}”`;
 
+  markup.text(tradeMessageDescriptionButtonLabel, setTradeDescription);
   markup.text(tradeMessageCancelButtonLabel, cancelTrade);
 
   const {trade} = encodeTrade({
@@ -45,7 +50,7 @@ module.exports = args => {
   });
 
   const text = join([
-    `Trade\\\-Secret: ${escape(tokensAsBigTokens(args.tokens))} ${memo}`,
+    `${escape(titlePrefix)}${escape(tokensAsBigTokens(args.tokens))} ${memo}`,
     `\`${trade}\``,
     `${escape(args.from || '')}`,
   ]);

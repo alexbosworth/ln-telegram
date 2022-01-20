@@ -1,4 +1,7 @@
 {
   "editInvoiceDescription": "What is this invoice for?",
-  "editInvoiceTokens": "How much should this invoice be for?"
+  "editInvoiceTokens": "How much should this invoice be for?",
+  "editTradeDescription": "What are you selling?",
+  "invoice": ["editInvoiceDescription", "editInvoiceTokens"],
+  "trade": ["editTradeDescription"]
 }

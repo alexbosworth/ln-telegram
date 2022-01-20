@@ -50,7 +50,6 @@ module.exports = ({ctx, nodes}, cbk) => {
         try {
           decodeTrade({trade});
         } catch (err) {
-console.log("ERRRROR", err)
           return cbk([503, 'FailedToDecodeTradeToCancel', {err}]);
         }
 

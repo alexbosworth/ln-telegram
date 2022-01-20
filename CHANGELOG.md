@@ -1,5 +1,12 @@
 # Versions
 
+## Version 3.8.0
+
+Add support for changing trade-secret descriptions
+
+- `actOnMessageReply`: Change method name of `updateInvoiceFromReply`
+- `isMessageReplyAction`: Change method name of `isMessageReplyToInvoice`
+
 ## Version 3.7.0
 
 - `postCreatedTrade`: Add support for deleting a created trade-secret

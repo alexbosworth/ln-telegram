@@ -1,3 +1,4 @@
+const {actOnMessageReply} = require('./replies');
 const {handleBackupCommand} = require('./commands');
 const {handleBlocknotifyCommand} = require('./commands');
 const {handleButtonPush} = require('./buttons');
@@ -10,7 +11,7 @@ const {handleMempoolCommand} = require('./commands');
 const {handlePayCommand} = require('./commands');
 const {handlePendingCommand} = require('./commands');
 const {handleVersionCommand} = require('./commands');
-const {isMessageReplyToInvoice} = require('./replies');
+const {isMessageReplyAction} = require('./replies');
 const {notifyOfForwards} = require('./post');
 const {postChainTransaction} = require('./post');
 const {postClosedMessage} = require('./post');
@@ -22,8 +23,10 @@ const {postSettledTrade} = require('./post');
 const {postUpdatedBackup} = require('./post');
 const {sendMessage} = require('./post');
 const {updateInvoiceFromReply} = require('./replies');
+const {updateTradeFromReply} = require('./replies');
 
 module.exports = {
+  actOnMessageReply,
   handleBackupCommand,
   handleBlocknotifyCommand,
   handleButtonPush,
@@ -36,7 +39,7 @@ module.exports = {
   handlePayCommand,
   handlePendingCommand,
   handleVersionCommand,
-  isMessageReplyToInvoice,
+  isMessageReplyAction,
   notifyOfForwards,
   postChainTransaction,
   postClosedMessage,

@@ -3,6 +3,7 @@ const {parsePaymentRequest} = require('ln-service');
 
 const {callbackCommands} = require('./../interface');
 const {labels} = require('./../interface');
+const {titles} = require('./../interface');
 
 const {cancelInvoice} = callbackCommands;
 const {invoiceMessageCancelButtonLabel} = labels;
@@ -47,7 +48,7 @@ module.exports = ({from, request}) => {
   const memo = !description ? '' : `“${description}”`;
 
   const text = join([
-    `Invoice: ${tokensAsBigTokens(tokens)} ${memo}`,
+    `${titles.createdInvoicePrefix}${tokensAsBigTokens(tokens)} ${memo}`,
     `\`${request}\``,
     `${from || ''}`,
   ]);

@@ -10,6 +10,7 @@ const removeMessage = require('./remove_message');
 const setInvoiceDescription = require('./set_invoice_description');
 const setInvoiceNode = require('./set_invoice_node');
 const setInvoiceTokens = require('./set_invoice_tokens');
+const setTradeDescription = require('./set_trade_description');
 const warnUnknownButton = require('./warn_unknown_button');
 
 const {isArray} = Array;
@@ -100,6 +101,10 @@ module.exports = ({ctx, id, nodes}, cbk) => {
         // Pressed to set the invoiced amount
         case callbackCommands.setInvoiceTokens:
           return setInvoiceTokens({ctx, nodes}, cbk);
+
+        // Pressed to set a created trade description
+        case callbackCommands.setTradeDescription:
+          return setTradeDescription({ctx, nodes}, cbk);
 
         // Pressed something unknown
         default:
