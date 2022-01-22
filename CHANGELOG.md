@@ -1,6 +1,6 @@
 # Versions
 
-## Version 3.8.0
+## Version 3.8.1
 
 Add support for changing trade-secret descriptions
 
