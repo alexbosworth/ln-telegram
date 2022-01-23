@@ -1,6 +1,7 @@
 const asyncAuto = require('async/auto');
 const {returnResult} = require('asyncjs-util');
 
+const askToUpdateTrade = require('./ask_to_update_trade');
 const {callbackCommands} = require('./../interface');
 const cancelInvoice = require('./cancel_invoice');
 const cancelTrade = require('./cancel_trade');
@@ -10,7 +11,6 @@ const removeMessage = require('./remove_message');
 const setInvoiceDescription = require('./set_invoice_description');
 const setInvoiceNode = require('./set_invoice_node');
 const setInvoiceTokens = require('./set_invoice_tokens');
-const setTradeDescription = require('./set_trade_description');
 const warnUnknownButton = require('./warn_unknown_button');
 
 const {isArray} = Array;
@@ -102,9 +102,10 @@ module.exports = ({ctx, id, nodes}, cbk) => {
         case callbackCommands.setInvoiceTokens:
           return setInvoiceTokens({ctx, nodes}, cbk);
 
-        // Pressed to set a created trade description
+        // Pressed to update a created trade
         case callbackCommands.setTradeDescription:
-          return setTradeDescription({ctx, nodes}, cbk);
+        case callbackCommands.setTradeExpiresAt:
+          return askToUpdateTrade({ctx, nodes, command: type}, cbk);
 
         // Pressed something unknown
         default:

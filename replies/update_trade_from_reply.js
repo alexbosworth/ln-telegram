@@ -3,6 +3,7 @@ const asyncMap = require('async/map');
 const asyncReflect = require('async/reflect');
 const {cancelHodlInvoice} = require('ln-service');
 const {createAnchoredTrade} = require('paid-services');
+const {DateTime} = require('luxon');
 const {decodeTrade} = require('paid-services');
 const {getAnchoredTrade} = require('paid-services');
 const {returnResult} = require('asyncjs-util');
@@ -16,15 +17,19 @@ const {postCreatedTrade} = require('./../post');
 const tradeActionType = require('./trade_action_type');
 
 const failure = message => `⚠️ Failed to update trade: ${message}.`;
+const {fromISO} = DateTime;
 const {isArray} = Array;
 const maxDescriptionLength = 100;
+const {now} = DateTime;
 const split = n => n.split('\n');
+const toISOString = n => n.setZone('utc').toISO();
 
 /** Update the details of a created trade from reply input
 
   {
     api: <Bot API Object>
     ctx: <Telegram Context Object>
+    id: <Connected User Id Number>
     nodes: [{
       lnd: <Authenticated LND API Object>
       public_key: <Node Identity Public Key Hex String>
@@ -88,8 +93,12 @@ module.exports = ({api, ctx, id, nodes}, cbk) => {
           return cbk([400, 'ExpectedOpenTradeIdToUpdateTradeFromReply']);
         }
 
-        return asyncMap(nodes, ({lnd}, cbk) => {
-          return getAnchoredTrade({lnd, id: connect.id}, (err, res) => {
+        return asyncMap(nodes, (node, cbk) => {
+          return getAnchoredTrade({
+            id: connect.id,
+            lnd: node.lnd,
+          },
+          (err, res) => {
             if (!!err) {
               return cbk(err);
             }
@@ -99,7 +108,10 @@ module.exports = ({api, ctx, id, nodes}, cbk) => {
               return cbk();
             }
 
-            return cbk(null, {lnd, trade: res.trade});
+            return cbk(null, {
+              lnd: node.lnd,
+              public_key: node.public_key,
+              trade: res.trade,});
           });
         },
         (err, res) => {
@@ -115,6 +127,7 @@ module.exports = ({api, ctx, id, nodes}, cbk) => {
 
           return cbk(null, {
             description: anchor.trade.description,
+            destination: anchor.public_key,
             expires_at: anchor.trade.expires_at,
             id: connect.id,
             lnd: anchor.lnd,
@@ -166,7 +179,6 @@ module.exports = ({api, ctx, id, nodes}, cbk) => {
 
         switch (type) {
         case callbackCommands.setTradeDescription:
-          // Exit early when the description is too long
           if (!!type.description && text.length > maxDescriptionLength) {
             return cbk([400, 'ExpectedShorterDescriptionForTrade']);
           }
@@ -174,6 +186,28 @@ module.exports = ({api, ctx, id, nodes}, cbk) => {
           return cbk(null, {
             description: text,
             expires_at: getTrade.value.expires_at,
+            id: getTrade.value.id,
+            lnd: getTrade.value.lnd,
+            secret: getTrade.value.secret,
+            tokens: getTrade.value.tokens,
+          });
+
+        case callbackCommands.setTradeExpiresAt:
+          const expiresAt = fromISO(text);
+
+          // Exit early when the trade format is incorrect
+          if (!expiresAt.isValid) {
+            return cbk([400, 'ExpectedValidDateToSetTradeExpiresAt']);
+          }
+
+          // Exit early when the date is in the past
+          if (expiresAt < now()) {
+            return cbk([400, 'ExpectedFutureDateToSetTradeExpiryAt']);
+          }
+
+          return cbk(null, {
+            description: getTrade.value.description,
+            expires_at: toISOString(expiresAt),
             id: getTrade.value.id,
             lnd: getTrade.value.lnd,
             secret: getTrade.value.secret,
@@ -229,13 +263,39 @@ module.exports = ({api, ctx, id, nodes}, cbk) => {
 
         // Exit early when there is no failure
         if (!error) {
-          return;
+          return {};
         }
 
         const {actions} = failureMessage({});
         const [, message] = error;
 
-        return await ctx.reply(failure(message), actions);
+        await ctx.reply(failure(message), actions);
+
+        return {is_failed: true};
+      }],
+
+      // Restore trade
+      restoreFromFailure: [
+        'getTrade',
+        'postFailure',
+        ({getTrade, postFailure}, cbk) =>
+      {
+        if (!getTrade.value || !postFailure.is_failed) {
+          return cbk();
+        }
+
+        return postCreatedTrade({
+          api,
+          nodes,
+          description: getTrade.value.description,
+          destination: getTrade.value.destination,
+          expires_at: getTrade.value.expires_at,
+          id: getTrade.value.id,
+          lnd: getTrade.value.lnd,
+          tokens: getTrade.value.tokens,
+          user: id,
+        },
+        cbk);
       }],
     },
     returnResult({reject, resolve}, cbk));

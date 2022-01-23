@@ -6,5 +6,6 @@
   "setInvoiceDescription": "set-invoice-description",
   "setInvoiceNode": "set-invoice-node",
   "setInvoiceTokens": "set-invoice-tokens",
-  "setTradeDescription": "set-trade-description"
+  "setTradeDescription": "set-trade-description",
+  "setTradeExpiresAt": "set-trade-expires-at"
 }

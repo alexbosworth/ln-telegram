@@ -4,5 +4,6 @@
   "invoiceMessageNodeButtonLabel": "Node...",
   "invoiceMessageSetTokensButtonLabel": "Amount...",
   "tradeMessageCancelButtonLabel": "🗑",
-  "tradeMessageDescriptionButtonLabel": "Set Description"
+  "tradeMessageDescriptionButtonLabel": "Set Description",
+  "tradeMessageExpiresAtLabel": "Expiry..."
 }

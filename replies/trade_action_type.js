@@ -56,6 +56,9 @@ module.exports = ({nodes, text}) => {
   case editQuestions.editTradeDescription:
     return {type: callbackCommands.setTradeDescription};
 
+  case editQuestions.editTradeExpiresAt:
+    return {type: callbackCommands.setTradeExpiresAt};
+
   default:
     return {};
   }

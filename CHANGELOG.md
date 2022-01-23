@@ -1,5 +1,9 @@
 # Versions
 
+## Version 3.9.0
+
+- `postCreatedTrade`: Add support for setting a trade-secret expiration date
+
 ## Version 3.8.1
 
 Add support for changing trade-secret descriptions

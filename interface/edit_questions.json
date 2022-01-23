@@ -2,6 +2,9 @@
   "editInvoiceDescription": "What is this invoice for?",
   "editInvoiceTokens": "How much should this invoice be for?",
   "editTradeDescription": "What are you selling?",
+  "editTradeExpiresAt": "Trade expiry date? (YYYY-MM-DD format)",
   "invoice": ["editInvoiceDescription", "editInvoiceTokens"],
-  "trade": ["editTradeDescription"]
+  "placeholderTradeDescription": "Describe the secret you are selling...",
+  "placeholderTradeExpiresAt": "YYYY-MM-DD",
+  "trade": ["editTradeDescription", "editTradeExpiresAt"]
 }

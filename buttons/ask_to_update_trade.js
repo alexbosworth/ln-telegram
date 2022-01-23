@@ -5,13 +5,13 @@ const {decodeTrade} = require('paid-services');
 const {getAnchoredTrade} = require('paid-services');
 const {returnResult} = require('asyncjs-util');
 
+const {callbackCommands} = require('./../interface');
 const {editQuestions} = require('./../interface');
 const {failureMessage} = require('./../messages');
 
 const code = n => `\`${n}\``;
 const escape = text => text.replace(/[_*[\]()~`>#+\-=|{}.!\\]/g, '\\\$&');
 const failure = msg => `⚠️ Unexpected error \`${msg}\`. Try again?`;
-const inputFieldPlaceholder = 'Describe the secret you are selling...';
 const {isArray} = Array;
 const italic = n => `_${n}_`;
 const join = n => n.join('\n');
@@ -19,9 +19,10 @@ const parseMode = 'MarkdownV2';
 const spacer = '';
 const split = n => n.split('\n');
 
-/** User pressed button to update created invoice description
+/** User pressed button to update created trade
 
   {
+    command: <Callback Command String>
     ctx: <Telegram Context Object>
     nodes: [{
       public_key: <Public Key Hex String>
@@ -30,27 +31,49 @@ const split = n => n.split('\n');
 
   @returns via cbk or Promise
 */
-module.exports = ({ctx, nodes}, cbk) => {
+module.exports = ({command, ctx, nodes}, cbk) => {
   return new Promise((resolve, reject) => {
     return asyncAuto({
       // Check arguments
       validate: cbk => {
         if (!ctx) {
-          return cbk([400, 'ExpectedTelegramContextToSetTradeDescription']);
+          return cbk([400, 'ExpectedTelegramContextToUpdateTradeDetails']);
         }
 
         if (!isArray(nodes)) {
-          return cbk([400, 'ExpectedArrayOfNodesToSetTradeSecretDescription']);
+          return cbk([400, 'ExpectedArrayOfNodesToUpdateTradeDetails']);
         }
 
         return cbk();
       },
 
+      // Derive the labels to put for the command
+      ui: ['validate', ({}, cbk) => {
+        switch (command) {
+        // Update the trade description
+        case callbackCommands.setTradeDescription:
+          return cbk(null, {
+            placeholder: editQuestions.placeholderTradeDescription,
+            question: editQuestions.editTradeDescription,
+          });
+
+        // Update the trade expires_at
+        case callbackCommands.setTradeExpiresAt:
+          return cbk(null, {
+            placeholder: editQuestions.placeholderTradeExpiresAt,
+            question: editQuestions.editTradeExpiresAt,
+          });
+
+        default:
+          return cbk([400, 'ExpectedKnownCommandToUpdateOpenTradeDetails']);
+        }
+      }],
+
       // Stop the loading message
-      respond: ['validate', async ({}) => await ctx.answerCallbackQuery()],
+      respond: ['ui', async ({}) => await ctx.answerCallbackQuery()],
 
       // Pull out the trade id and context labels
-      trade: ['validate', asyncReflect(({}, cbk) => {
+      trade: ['ui', asyncReflect(({}, cbk) => {
         const [title, trade] = split(ctx.update.callback_query.message.text);
 
         if (!title) {
@@ -64,19 +87,19 @@ module.exports = ({ctx, nodes}, cbk) => {
         try {
           decodeTrade({trade});
         } catch (err) {
-          return cbk([400, 'ExpectedValidTradeToSetTradeDescription']);
+          return cbk([400, 'ExpectedValidTradeToUpdateTradeDetails']);
         }
 
         const {connect} = decodeTrade({trade});
 
         if (!connect) {
-          return cbk([400, 'ExpectedOpenTradeToSetTradeDescription']);
+          return cbk([400, 'ExpectedOpenTradeToUpdateTradeDetails']);
         }
 
         const {id} = connect;
 
         if (!id) {
-          return cbk([400, 'ExpectedTradeIdToSetTradeDescription']);
+          return cbk([400, 'ExpectedTradeIdToUpdateTradeDetails']);
         }
 
         // Make sure the trade is present on a node
@@ -98,26 +121,26 @@ module.exports = ({ctx, nodes}, cbk) => {
         });
       })],
 
-      // Post the edit description message
-      post: ['trade', async ({trade}) => {
+      // Post the edit trade message
+      post: ['trade', 'ui', async ({trade, ui}) => {
         // Exit early when there is no trade
         if (!trade.value) {
           return;
         }
 
-        // Post the edit invoice description message
+        // Post the edit trade message
         return await ctx.reply(
           join([
             escape(trade.value.title),
             code(trade.value.encoded),
             spacer,
-            italic(escape(editQuestions.editTradeDescription)),
+            italic(escape(ui.question)),
           ]),
           {
             parse_mode: parseMode,
             reply_markup: {
               force_reply: true,
-              input_field_placeholder: inputFieldPlaceholder,
+              input_field_placeholder: ui.placeholder,
             },
           }
         );

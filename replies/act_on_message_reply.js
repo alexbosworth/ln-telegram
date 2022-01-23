@@ -79,6 +79,7 @@ module.exports = ({api, ctx, id, nodes}, cbk) => {
           return updateInvoiceFromReply({api, ctx, id, nodes}, cbk);
 
         case callbackCommands.setTradeDescription:
+        case callbackCommands.setTradeExpiresAt:
           return updateTradeFromReply({api, ctx, id, nodes}, cbk);
 
         default:
