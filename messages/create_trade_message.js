@@ -1,20 +1,15 @@
 const {encodeTrade} = require('paid-services');
 const {DateTime} = require('luxon');
-const {InlineKeyboard} = require('grammy');
 
-const {callbackCommands} = require('./../interface');
-const {labels} = require('./../interface');
 const {titles} = require('./../interface');
+const tradeEditButtons = require('./trade_edit_buttons');
 
-const {cancelTrade} = callbackCommands;
 const escape = text => text.replace(/[_*[\]()~`>#+\-=|{}.!\\]/g, '\\\$&');
 const {fromISO} = DateTime;
 const join = arr => arr.filter(n => !!n).join('\n');
 const mode = 'MarkdownV2';
 const titlePrefix = titles.createdTradePrefix;
 const tokensAsBigTokens = tokens => (tokens / 1e8).toFixed(8);
-const {setTradeDescription} = callbackCommands;
-const {setTradeExpiresAt} = callbackCommands;
 
 /** Created trade message
 
@@ -25,6 +20,10 @@ const {setTradeExpiresAt} = callbackCommands;
     id: <Trade Id Hex String>
     destination: <Trade Destination Public Key Hex String>
     network: <Network Name String>
+    nodes: [{
+      from: <Saved Node Name>
+      public_key: <Public Key Hex String>
+    }]
     tokens: <Trade Price Number>
   }
 
@@ -37,15 +36,9 @@ const {setTradeExpiresAt} = callbackCommands;
 */
 module.exports = args => {
   const expiry = escape(fromISO(args.expires_at).toLocaleString());
-  const markup = new InlineKeyboard();
+  const {markup} = tradeEditButtons({nodes: args.nodes});
   const memo = !args.description ? '' : `“${escape(args.description)}” `;
   const price = escape(tokensAsBigTokens(args.tokens));
-
-  markup.text(labels.tradeMessageDescriptionButtonLabel, setTradeDescription);
-
-  markup.text(labels.tradeMessageExpiresAtLabel, setTradeExpiresAt);
-
-  markup.text(labels.tradeMessageCancelButtonLabel, cancelTrade);
 
   const {trade} = encodeTrade({
     connect: {

@@ -7,10 +7,12 @@ const cancelInvoice = require('./cancel_invoice');
 const cancelTrade = require('./cancel_trade');
 const {checkAccess} = require('./../authentication');
 const moveInvoiceNode = require('./move_invoice_node');
+const moveTradeNode = require('./move_trade_node');
 const removeMessage = require('./remove_message');
 const setInvoiceDescription = require('./set_invoice_description');
 const setInvoiceNode = require('./set_invoice_node');
 const setInvoiceTokens = require('./set_invoice_tokens');
+const setTradeNode = require('./set_trade_node');
 const warnUnknownButton = require('./warn_unknown_button');
 
 const {isArray} = Array;
@@ -68,6 +70,11 @@ module.exports = ({ctx, id, nodes}, cbk) => {
           return cbk(null, callbackCommands.moveInvoiceNode);
         }
 
+        // Moving a trade has the button name as a prefix
+        if (data.startsWith(callbackCommands.moveTradeNode)) {
+          return cbk(null, callbackCommands.moveTradeNode);
+        }
+
         return cbk(null, data);
       }],
 
@@ -85,6 +92,10 @@ module.exports = ({ctx, id, nodes}, cbk) => {
         // Pressed to move an invoice to a specific saved node
         case callbackCommands.moveInvoiceNode:
           return moveInvoiceNode({ctx, nodes}, cbk);
+
+        // Pressed to move a trade to a specific saved node
+        case callbackCommands.moveTradeNode:
+          return moveTradeNode({ctx, nodes}, cbk);
 
         // Pressed to remove a generic message
         case callbackCommands.removeMessage:
@@ -106,6 +117,10 @@ module.exports = ({ctx, id, nodes}, cbk) => {
         case callbackCommands.setTradeDescription:
         case callbackCommands.setTradeExpiresAt:
           return askToUpdateTrade({ctx, nodes, command: type}, cbk);
+
+        // Pressed to move a trade to a specific saved node
+        case callbackCommands.setTradeNode:
+          return setTradeNode({ctx, nodes}, cbk);
 
         // Pressed something unknown
         default:

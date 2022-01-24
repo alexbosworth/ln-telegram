@@ -8,9 +8,8 @@ const {failureMessage} = require('./../messages');
 const {postCreatedInvoice} = require('./../post');
 
 const {isArray} = Array;
-const {moveInvoiceNode} = callbackCommands;
 const parseFailure = msg => `⚠️ Unexpected error \`${msg}\`. Try again?`;
-const partialNodeId = data => data.slice(moveInvoiceNode.length);
+const partialNodeId = (command, data) => data.slice(command.length);
 const split = n => n.split('\n');
 
 /** User pressed button to move invoice to a different node
@@ -44,6 +43,7 @@ module.exports = ({ctx, nodes}, cbk) => {
 
       // Parse the message and get invoice details
       details: ['validate', asyncReflect(({}, cbk) => {
+        const command = callbackCommands.moveInvoiceNode;
         const {data} = ctx.update.callback_query;
         const originalText = ctx.update.callback_query.message.text;
 
@@ -55,7 +55,7 @@ module.exports = ({ctx, nodes}, cbk) => {
         }
 
         const node = nodes.find(node => {
-          return node.public_key.startsWith(partialNodeId(data));
+          return node.public_key.startsWith(partialNodeId(command, data));
         });
 
         // Make sure the node that we are switching to is there

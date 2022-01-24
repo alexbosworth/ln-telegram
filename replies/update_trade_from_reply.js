@@ -111,7 +111,8 @@ module.exports = ({api, ctx, id, nodes}, cbk) => {
             return cbk(null, {
               lnd: node.lnd,
               public_key: node.public_key,
-              trade: res.trade,});
+              trade: res.trade,
+            });
           });
         },
         (err, res) => {

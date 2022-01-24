@@ -84,6 +84,7 @@ module.exports = (args, cbk) => {
           id: args.id,
           destination: args.destination,
           network: getNetwork.network,
+          nodes: args.nodes,
           tokens: args.tokens,
         });
 

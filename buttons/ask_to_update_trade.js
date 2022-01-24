@@ -36,6 +36,10 @@ module.exports = ({command, ctx, nodes}, cbk) => {
     return asyncAuto({
       // Check arguments
       validate: cbk => {
+        if (!command) {
+          return cbk([400, 'ExpectedButtonCommandToUpdateTradeDetails']);
+        }
+
         if (!ctx) {
           return cbk([400, 'ExpectedTelegramContextToUpdateTradeDetails']);
         }

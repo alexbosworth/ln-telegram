@@ -1,5 +1,9 @@
 # Versions
 
+## Version 3.10.0
+
+- `postCreatedTrade`: Add support for moving a trade-secret to another node
+
 ## Version 3.9.0
 
 - `postCreatedTrade`: Add support for setting a trade-secret expiration date
