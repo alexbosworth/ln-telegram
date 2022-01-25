@@ -7,11 +7,12 @@ const getReceivedMessage = require('./get_received_message');
 const sendMessage = require('./send_message');
 
 const earnEmoji = '💵';
+const escape = text => text.replace(/[_[\]()~>#+\-=|{}.!\\]/g, '\\\$&');
+const markdown = {parse_mode: 'MarkdownV2'};
 const minQuizLength = 2;
 const maxQuizLength = 10;
 const randomIndex = n => Math.floor(Math.random() * n);
 const rebalanceEmoji = '☯️';
-
 /** Post settled invoices
 
   {
@@ -48,11 +49,15 @@ const rebalanceEmoji = '☯️';
 
   @returns via cbk or Promise
 */
-module.exports = ({from, id, invoice, key, lnd, quiz, request}, cbk) => {
+module.exports = ({api, from, id, invoice, lnd, quiz}, cbk) => {
   return new Promise((resolve, reject) => {
     return asyncAuto({
       // Check arguments
       validate: cbk => {
+        if (!api) {
+          return cbk([400, 'ExpectedTelegramApiObjectToPostSettledInvoice']);
+        }
+
         if (!from) {
           return cbk([400, 'ExpectedFromNameToPostSettledInvoice']);
         }
@@ -65,16 +70,8 @@ module.exports = ({from, id, invoice, key, lnd, quiz, request}, cbk) => {
           return cbk([400, 'ExpectedInvoiceToPostSettledInvoice']);
         }
 
-        if (!key) {
-          return cbk([400, 'ExpectedTelegramApiKeyToPostSettledInvoice']);
-        }
-
         if (!lnd) {
           return cbk([400, 'ExpectedLndObjectToPostSettledInvoice']);
-        }
-
-        if (!request) {
-          return cbk([400, 'ExpectedRequestFunctionToPostSettledInvoice']);
         }
 
         return cbk();
@@ -125,17 +122,17 @@ module.exports = ({from, id, invoice, key, lnd, quiz, request}, cbk) => {
       }],
 
       // Post invoice
-      post: ['details', 'getPayment', ({details, getPayment}, cbk) => {
+      post: ['details', 'getPayment', async ({details, getPayment}) => {
         // Exit early when there is nothing to post
         if (!details) {
-          return cbk();
+          return;
         }
 
         const emoji = !getPayment ? earnEmoji : rebalanceEmoji;
 
         const text = `${emoji} ${details.message} - ${from}`;
 
-        return sendMessage({id, key, request, text}, cbk);
+        return await api.sendMessage(id, escape(text), markdown);
       }],
 
       // Post quiz

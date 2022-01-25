@@ -6,15 +6,16 @@ const {getWalletInfo} = require('ln-service');
 const {returnResult} = require('asyncjs-util');
 
 const consolidateForwards = require('./consolidate_forwards');
-const sendMessage = require('./send_message');
 
 const asBigUnit = tokens => (tokens / 1e8).toFixed(8);
 const asPercent = (fee, tokens) => (fee / tokens * 100).toFixed(2);
 const asPpm = (fee, tokens) => (fee / tokens * 1e6).toFixed();
 const consolidate = forwards => consolidateForwards({forwards}).forwards;
+const escape = text => text.replace(/[_[\]()~>#+\-=|{}.!\\]/g, '\\\$&');
 const {isArray} = Array;
 const sanitize = n => (n || '').replace(/_/g, '\\_').replace(/[*~`]/g, '');
 const uniq = arr => Array.from(new Set(arr));
+const markdown = {parse_mode: 'MarkdownV2'};
 
 /** Notify Telegram of forwarded payments
 
@@ -33,11 +34,16 @@ const uniq = arr => Array.from(new Set(arr));
     request: <Request Function>
   }
 */
-module.exports = ({forwards, from, id, key, lnd, node, request}, cbk) => {
+module.exports = ({api, forwards, from, id, lnd, node}, cbk) => {
   return new Promise((resolve, reject) => {
     return asyncAuto({
       // Check arguments
       validate: cbk => {
+
+        if (!api) {
+          return cbk([400, 'ExpectedTelegramApiObjectToNotifyOfForwards']);
+        }
+
         if (!isArray(forwards)) {
           return cbk([400, 'ExpectedForwardsArrayToNotifyOfForwards']);
         }
@@ -50,20 +56,12 @@ module.exports = ({forwards, from, id, key, lnd, node, request}, cbk) => {
           return cbk([400, 'ExpectedConnectedUserIdToNotifyOfForwards']);
         }
 
-        if (!key) {
-          return cbk([400, 'ExpectedTelegramApiKeyToNotifyOfForwards']);
-        }
-
         if (!lnd) {
           return cbk([400, 'ExpectedLndToNotifyOfForwards']);
         }
 
         if (!node) {
           return cbk([400, 'ExpectedFromNodePublicKeyToNotifyOfForwards']);
-        }
-
-        if (!request) {
-          return cbk([400, 'ExpectedRequestFunctionToNotifyOfForwards']);
         }
 
         return cbk();
@@ -111,9 +109,9 @@ module.exports = ({forwards, from, id, key, lnd, node, request}, cbk) => {
       }],
 
       // Send message to Telegram
-      notify: ['getChannels', 'getNodes', ({getChannels, getNodes}, cbk) => {
+      notify: ['getChannels', 'getNodes', async ({getChannels, getNodes}) => {
         if (!forwards.length) {
-          return cbk();
+          return;
         }
 
         const channels = getChannels.filter(n => !!n);
@@ -152,7 +150,7 @@ module.exports = ({forwards, from, id, key, lnd, node, request}, cbk) => {
 
         const text = `💰 ${allForwards.join('\n')} - ${from}`;
 
-        return sendMessage({id, key, request, text}, cbk);
+        return await api.sendMessage(id, escape(text), markdown);
       }],
     },
     returnResult({reject, resolve}, cbk));

@@ -9,9 +9,10 @@ const {returnResult} = require('asyncjs-util');
 
 const {checkAccess} = require('./../authentication');
 const interaction = require('./../interaction');
-const {sendMessage} = require('./../post');
 
 const {isArray} = Array;
+const escape = text => text.replace(/[_[\]()~>#+\-=|{}.!\\]/g, '\\\$&');
+const markdown = {parse_mode: 'MarkdownV2'};
 const peerTitle = (query, k) => `🌊 Liquidity with *${query} ${k}:*`;
 const sanitize = n => (n || '').replace(/_/g, '\\_').replace(/[*~`]/g, '');
 const short = key => key.substring(0, 8);
@@ -43,16 +44,12 @@ module.exports = (args, cbk) => {
     return asyncAuto({
       // Check arguments
       validate: cbk => {
-        if (!args.from) {
-          return cbk([400, 'ExpectedFromUserIdNumberForLiquidityCommand']);
+        if (!args.api) {
+          return cbk([400, 'ExpectedTelegramApiObjectForLiquidityCommand']);
         }
 
         if (!args.id) {
           return cbk([400, 'ExpectedConnectedIdNumberForLiquidityCommand']);
-        }
-
-        if (!args.key) {
-          return cbk([400, 'ExpectedTelegramApiKeyForLiquidityCommand']);
         }
 
         if (!isArray(args.nodes)) {
@@ -61,10 +58,6 @@ module.exports = (args, cbk) => {
 
         if (!args.reply) {
           return cbk([400, 'ExpectedReplyFunctionForLiquidityCommand']);
-        }
-
-        if (!args.request) {
-          return cbk([400, 'ExpectedRequestFunctionForLiquidityCommand']);
         }
 
         if (!args.text) {
@@ -137,26 +130,22 @@ module.exports = (args, cbk) => {
       }],
 
       // Liquidity with peer
-      withPeer: ['getKey', 'query', ({getKey, query}, cbk) => {
+      withPeer: ['getKey', 'query', async ({getKey, query}) => {
         if (!getKey) {
-          return cbk();
+          return;
         }
 
         const [withPeer, other] = uniq(getKey.filter(n => !!n));
 
         if (!withPeer || !!other) {
-          sendMessage({
-            key: args.key,
-            id: args.id,
-            request: args.request,
-            text: interaction.peer_not_found,
-          },
-          err => {});
 
-          return cbk([404, 'FailedToFindPeerMatch']);
+          await args.api.sendMessage(args.id, escape(interaction.peer_not_found), markdown);
+
+          return ([400, 'PeerNotFound']);
         }
-
-        return cbk(null, withPeer);
+        else {
+          return withPeer;
+        }
       }],
 
       // Fetch inbound liquidity information
@@ -213,14 +202,13 @@ module.exports = (args, cbk) => {
         'getOutboundLiquidity',
         'query',
         'withPeer',
-        ({
+        async ({
           getAlias,
           getInboundLiquidity,
           getOutboundLiquidity,
           query,
           withPeer,
-        },
-        cbk) =>
+        }) =>
       {
         const report = args.nodes
           .map(node => {
@@ -262,15 +250,9 @@ module.exports = (args, cbk) => {
           report.unshift(peerTitle(sanitize(alias) || query, short(withPeer)));
         }
 
-        sendMessage({
-          id: args.id,
-          key: args.key,
-          request: args.request,
-          text: report.join('\n\n'),
-        },
-        err => {});
+        const joinedReport = report.join('\n\n');
+        return await args.api.sendMessage(args.id, escape(joinedReport), markdown);
 
-        return cbk();
       }],
     },
     returnResult({reject, resolve}, cbk));

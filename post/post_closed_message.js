@@ -2,9 +2,10 @@ const asyncAuto = require('async/auto');
 const {getPeerLiquidity} = require('ln-sync');
 const {returnResult} = require('asyncjs-util');
 
-const sendMessage = require('./send_message');
 
 const detailsJoiner = ' ';
+const escape = text => text.replace(/[_[\]()~>#+\-=|{}.!\\]/g, '\\\$&');
+const markdown = {parse_mode: 'MarkdownV2'};
 const textJoiner = '\n';
 const tokensAsBigTok = tokens => (tokens / 1e8).toFixed(8);
 
@@ -34,6 +35,11 @@ module.exports = (args, cbk) => {
     return asyncAuto({
       // Check arguments
       validate: cbk => {
+
+        if (!args.api) {
+          return cbk([400, 'ExpectedTelegramApiObjectToPostClosedMessage']);
+        }
+
         if (args.capacity === undefined) {
           return cbk([400, 'ExpectedChannelCapacityToPostClosedMessage']);
         }
@@ -62,20 +68,12 @@ module.exports = (args, cbk) => {
           return cbk([400, 'ExpectedRemoteForceCloseToPostCloseMessage']);
         }
 
-        if (!args.key) {
-          return cbk([400, 'ExpectedTelegramApiKeyToPostCloseMessage']);
-        }
-
         if (!args.lnd) {
           return cbk([400, 'ExpectedAuthenticatedLndToPostCloseMessage']);
         }
 
         if (!args.partner_public_key) {
           return cbk([400, 'ExpectedPartnerPublicKeyToPostCloseMessage']);
-        }
-
-        if (!args.request) {
-          return cbk([400, 'ExpectedRequestFunctionToPostCloseMessage']);
         }
 
         return cbk();
@@ -120,15 +118,10 @@ module.exports = (args, cbk) => {
         return cbk(null, {text: text.join(textJoiner)});
       }],
 
-      // Send channel open message
-      send: ['message', ({message}, cbk) => {
-        return sendMessage({
-          id: args.id,
-          key: args.key,
-          request: args.request,
-          text: message.text,
-        },
-        cbk);
+      // Send channel closed message
+      send: ['message', async ({message}) => {
+
+        return await args.api.sendMessage(args.id, escape(message.text), markdown);
       }],
     },
     returnResult({reject, resolve, of: 'message'}, cbk));

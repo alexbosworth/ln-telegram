@@ -2,10 +2,10 @@ const asyncAuto = require('async/auto');
 const {getNodeAlias} = require('ln-sync');
 const {returnResult} = require('asyncjs-util');
 
-const sendMessage = require('./send_message');
-
 const emoji = '⚡️';
+const escape = text => text.replace(/[_[\]()~>#+\-=|{}.!\\]/g, '\\\$&');
 const {isArray} = Array;
+const markdown = {parse_mode: 'MarkdownV2'};
 const niceName = node => node.alias || (node.id || '').substring(0, 8);
 const sanitize = n => (n || '').replace(/_/g, '\\_').replace(/[*~`]/g, '');
 const tokAsBig = tokens => (tokens / 1e8).toFixed(8);
@@ -30,11 +30,15 @@ const tokAsBig = tokens => (tokens / 1e8).toFixed(8);
 
   @returns via cbk or Promise
 */
-module.exports = ({from, id, key, lnd, nodes, payment, request}, cbk) => {
+module.exports = ({api, from, id, lnd, nodes, payment}, cbk) => {
   return new Promise((resolve, reject) => {
     return asyncAuto({
       // Check arguments
       validate: cbk => {
+        if (!api) {
+          return cbk([400, 'ExpectedTelegramApiObjectToPostPayment']);
+        }
+
         if (!from) {
           return cbk([400, 'ExpectedPaymentFromNameStringToPostPayment']);
         }
@@ -43,20 +47,12 @@ module.exports = ({from, id, key, lnd, nodes, payment, request}, cbk) => {
           return cbk([400, 'ExpectedUserIdToPostSettledPayment']);
         }
 
-        if (!key) {
-          return cbk([400, 'ExpectedTelegramApiKeyToPostSettledPayment']);
-        }
-
         if (!isArray(nodes)) {
           return cbk([400, 'ExpectedArrayOfNodesToPostSettledPayment']);
         }
 
         if (!payment) {
           return cbk([400, 'ExpectedPaymentToPostSettledPayment']);
-        }
-
-        if (!request) {
-          return cbk([400, 'ExpectedRequestFunctionToPostSettledPayment']);
         }
 
         return cbk();
@@ -83,10 +79,10 @@ module.exports = ({from, id, key, lnd, nodes, payment, request}, cbk) => {
       }],
 
       // Post message
-      post: ['details', ({details}, cbk) => {
+      post: ['details', async ({details}) => {
         const text = `${emoji} ${details} - ${from}`;
 
-        return sendMessage({id, key, request, text}, cbk);
+        return await api.sendMessage(id, escape(text), markdown);
       }],
     },
     returnResult({reject, resolve}, cbk));

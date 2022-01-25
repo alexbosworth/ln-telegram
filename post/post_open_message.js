@@ -2,9 +2,9 @@ const asyncAuto = require('async/auto');
 const {getPeerLiquidity} = require('ln-sync');
 const {returnResult} = require('asyncjs-util');
 
-const sendMessage = require('./send_message');
-
 const detailsJoiner = ' ';
+const escape = text => text.replace(/[_[\]()~>#+\-=|{}.!\\]/g, '\\\$&');
+const markdown = {parse_mode: 'MarkdownV2'};
 const textJoiner = '\n';
 const tokensAsBigTok = tokens => (tokens / 1e8).toFixed(8);
 
@@ -32,6 +32,10 @@ module.exports = (args, cbk) => {
     return asyncAuto({
       // Check arguments
       validate: cbk => {
+        if (!args.api) {
+          return cbk([400, 'ExpectedTelegramApiObjectToPostChannelOpenMessage']);
+        }
+
         if (args.capacity === undefined) {
           return cbk([400, 'ExpectedCapacityToPostChannelOpenMessage']);
         }
@@ -48,20 +52,12 @@ module.exports = (args, cbk) => {
           return cbk([400, 'ExpectedPrivateStatusToPostChannelOpenMessage']);
         }
 
-        if (!args.key) {
-          return cbk([400, 'ExpectedTelegramApiKeyToPostChannelOpenMessage']);
-        }
-
         if (!args.lnd) {
           return cbk([400, 'ExpectedLndToPostChannelOpenMessage']);
         }
 
         if (!args.partner_public_key) {
           return cbk([400, 'ExpectedPartnerPublicKeyToPostChanOpenMessage']);
-        }
-
-        if (!args.request) {
-          return cbk([400, 'ExpectedRequestFunctionToPostChanOpenMessage']);
         }
 
         return cbk();
@@ -98,14 +94,9 @@ module.exports = (args, cbk) => {
       }],
 
       // Send channel open message
-      send: ['message', ({message}, cbk) => {
-        return sendMessage({
-          id: args.id,
-          key: args.key,
-          request: args.request,
-          text: message.text,
-        },
-        cbk);
+      send: ['message', async ({message}) => {
+
+        return await args.api.sendMessage(args.id, escape(message.text), markdown);
       }],
     },
     returnResult({reject, resolve, of: 'message'}, cbk));

@@ -1,9 +1,10 @@
 const asyncAuto = require('async/auto');
 const {returnResult} = require('asyncjs-util');
 
-const sendMessage = require('./send_message');
 
 const emoji = '⛓';
+const escape = text => text.replace(/[_[\]()~>#+\-=|{}.!\\]/g, '\\\$&');
+const markdown = {parse_mode: 'MarkdownV2'};
 const tokAsBig = tokens => (tokens / 1e8).toFixed(8);
 
 /** Post chain transaction
@@ -30,25 +31,22 @@ const tokAsBig = tokens => (tokens / 1e8).toFixed(8);
 
   @returns via cbk or Promise
 */
-module.exports = ({confirmed, from, id, key, request, transaction}, cbk) => {
+module.exports = ({api, confirmed, from, id, transaction}, cbk) => {
   return new Promise((resolve, reject) => {
     return asyncAuto({
       // Check arguments
       validate: cbk => {
+
+        if (!api) {
+          return cbk([400, 'ExpectedTelegramApiObjectToPostChainTransaction']);
+        }
+
         if (!from) {
           return cbk([400, 'ExpectedFromNodeFromToPostChainTransaction']);
         }
 
         if (!id) {
           return cbk([400, 'ExpectedConnectedUserIdToPostChainTransaction']);
-        }
-
-        if (!key) {
-          return cbk([400, 'ExpectedApiKeyToPostChainTransaction']);
-        }
-
-        if (!request) {
-          return cbk([400, 'ExpectedRequestToPostChainTransaction']);
         }
 
         if (!transaction) {
@@ -129,16 +127,16 @@ module.exports = ({confirmed, from, id, key, request, transaction}, cbk) => {
       }],
 
       // Post message
-      post: ['details', ({details}, cbk) => {
+      post: ['details', async ({details}) => {
         if (!details) {
-          return cbk();
+          return;
         }
 
         const pending = !confirmed ? '(pending)' : '';
 
         const text = `${emoji} ${pending} ${details}\n${from}`;
 
-        return sendMessage({id, key, request, text}, cbk);
+        return await api.sendMessage(id, escape(text), markdown);
       }],
     },
     returnResult({reject, resolve}, cbk));
