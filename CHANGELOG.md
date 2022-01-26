@@ -1,5 +1,9 @@
 # Versions
 
+## Version 3.11.0
+
+- `handleEditedMessage`: Add method to handle editing of a past message
+
 ## Version 3.10.0
 
 - `postCreatedTrade`: Add support for moving a trade-secret to another node

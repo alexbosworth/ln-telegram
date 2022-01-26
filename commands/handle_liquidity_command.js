@@ -26,14 +26,12 @@ const uniq = arr => Array.from(new Set(arr));
   {
     from: <Command From User Id Number>
     id: <Connected User Id Number>
-    key: <Telegram API Key String>
     nodes: [{
       from: <From Name String>
       lnd: <Authenticated LND API Object>
       public_key: <Public Key Hex String>
     }]
     reply: <Reply Function>
-    request: <Request Function>
     text: <Original Command Text String>
     working: <Working Function>
   }
@@ -51,10 +49,6 @@ module.exports = (args, cbk) => {
           return cbk([400, 'ExpectedConnectedIdNumberForLiquidityCommand']);
         }
 
-        if (!args.key) {
-          return cbk([400, 'ExpectedTelegramApiKeyForLiquidityCommand']);
-        }
-
         if (!isArray(args.nodes)) {
           return cbk([400, 'ExpectedNodesForLiquidityCommand']);
         }
@@ -63,12 +57,12 @@ module.exports = (args, cbk) => {
           return cbk([400, 'ExpectedReplyFunctionForLiquidityCommand']);
         }
 
-        if (!args.request) {
-          return cbk([400, 'ExpectedRequestFunctionForLiquidityCommand']);
-        }
-
         if (!args.text) {
           return cbk([400, 'ExpectedOriginalCommandTextForLiquidityCommand']);
+        }
+
+        if (!args.working) {
+          return cbk([400, 'ExpectedWorkingFunctionForLiquidityCommand']);
         }
 
         return cbk();
@@ -145,13 +139,7 @@ module.exports = (args, cbk) => {
         const [withPeer, other] = uniq(getKey.filter(n => !!n));
 
         if (!withPeer || !!other) {
-          sendMessage({
-            key: args.key,
-            id: args.id,
-            request: args.request,
-            text: interaction.peer_not_found,
-          },
-          err => {});
+          args.reply(interaction.peer_not_found);
 
           return cbk([404, 'FailedToFindPeerMatch']);
         }
@@ -262,13 +250,7 @@ module.exports = (args, cbk) => {
           report.unshift(peerTitle(sanitize(alias) || query, short(withPeer)));
         }
 
-        sendMessage({
-          id: args.id,
-          key: args.key,
-          request: args.request,
-          text: report.join('\n\n'),
-        },
-        err => {});
+        args.reply(report.join('\n\n'));
 
         return cbk();
       }],

@@ -3,6 +3,7 @@ const handleBlocknotifyCommand = require('./handle_blocknotify_command');
 const handleConnectCommand = require('./handle_connect_command');
 const handleCostsCommand = require('./handle_costs_command');
 const handleEarningsCommand = require('./handle_earnings_command');
+const handleEditedMessage = require('./handle_edited_message');
 const handleInvoiceCommand = require('./handle_invoice_command');
 const handleLiquidityCommand = require('./handle_liquidity_command');
 const handleMempoolCommand = require('./handle_mempool_command');
@@ -16,6 +17,7 @@ module.exports = {
   handleConnectCommand,
   handleCostsCommand,
   handleEarningsCommand,
+  handleEditedMessage,
   handleInvoiceCommand,
   handleLiquidityCommand,
   handleMempoolCommand,
