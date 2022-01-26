@@ -12,5 +12,6 @@
   "requesting_mempool": "🤖 Generating mempool report...",
   "requesting_mempool_failed": "🤖 Getting mempool from mempool.space failed ☹️",
   "select_node_for_invoice": "Node to make invoice on?",
-  "select_node_for_payment": "Node to pay with?"
+  "select_node_for_payment": "Node to pay with?",
+  "start_message": "🤖 *Bot started, run /connect to authorize.*"
 }

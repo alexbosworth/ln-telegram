@@ -11,6 +11,7 @@ const {checkAccess} = require('./../authentication');
 
 const border = getBorderCharacters('void');
 const dayMs = 1000 * 60 * 60 * 24;
+const escape = text => text.replace(/[_[\]()~>#+\-=|{}.!\\]/g, '\\\$&');
 const flatten = arr => [].concat(...arr);
 const formatReport = (from, n) => `⚡️ Spent on ${from}\n\n\`\`\`${n}\`\`\``;
 const formatReports = reports => reports.join('\n');
@@ -175,7 +176,7 @@ module.exports = ({from, id, nodes, reply, request, working}, cbk) => {
 
       // Send response to telegram
       reply: ['response', ({response}, cbk) => {
-        reply(response);
+        reply(escape(response));
 
         return cbk();
       }],

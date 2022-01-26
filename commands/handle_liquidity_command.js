@@ -12,6 +12,7 @@ const interaction = require('./../interaction');
 const {sendMessage} = require('./../post');
 
 const {isArray} = Array;
+const escape = text => text.replace(/[_[\]()~`>#+\-=|{}.!\\]/g, '\\\$&');
 const peerTitle = (query, k) => `🌊 Liquidity with *${query} ${k}:*`;
 const sanitize = n => (n || '').replace(/_/g, '\\_').replace(/[*~`]/g, '');
 const short = key => key.substring(0, 8);
@@ -139,7 +140,7 @@ module.exports = (args, cbk) => {
         const [withPeer, other] = uniq(getKey.filter(n => !!n));
 
         if (!withPeer || !!other) {
-          args.reply(interaction.peer_not_found);
+          args.reply(escape(interaction.peer_not_found));
 
           return cbk([404, 'FailedToFindPeerMatch']);
         }
@@ -249,8 +250,8 @@ module.exports = (args, cbk) => {
         if (!!withPeer) {
           report.unshift(peerTitle(sanitize(alias) || query, short(withPeer)));
         }
-
-        args.reply(report.join('\n\n'));
+        const joinedReport = report.join('\n\n');
+        args.reply(escape(joinedReport));
 
         return cbk();
       }],

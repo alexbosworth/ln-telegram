@@ -6,6 +6,7 @@ const {returnResult} = require('asyncjs-util');
 const interaction = require('./../interaction');
 
 const border = getBorderCharacters('void');
+const escape = text => text.replace(/[_[\]()~>#+\-=|{}.!\\]/g, '\\\$&');
 const feeAsRate = medianFee => `~${Math.ceil(medianFee)}/vByte`;
 const fillRatio = vsize => Array(Math.ceil(vsize / 1e6 * 6)).fill('█');
 const formatReport = n => `${interaction.mempool_report}\n\n\`\`\`${n}\`\`\``;
@@ -44,7 +45,7 @@ module.exports = ({reply, request}, cbk) => {
 
       // Get block data from mempool.space
       getMempool: ['validate', ({}, cbk) => {
-        reply(interaction.requesting_mempool);
+        reply(escape(interaction.requesting_mempool));
 
         return request({url, json: true}, (err, r, mempool) => {
           if (!!err || !r || r.statusCode !== ok || !isArray(mempool)) {
@@ -79,7 +80,7 @@ module.exports = ({reply, request}, cbk) => {
 
       // Send response to telegram
       reply: ['response', ({response}, cbk) => {
-        reply(response);
+        reply(escape(response));
 
         return cbk();
       }],

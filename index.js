@@ -11,6 +11,7 @@ const {handleLiquidityCommand} = require('./commands');
 const {handleMempoolCommand} = require('./commands');
 const {handlePayCommand} = require('./commands');
 const {handlePendingCommand} = require('./commands');
+const {handleStartCommand} = require('./commands');
 const {handleVersionCommand} = require('./commands');
 const {isMessageReplyAction} = require('./replies');
 const {notifyOfForwards} = require('./post');
@@ -40,6 +41,7 @@ module.exports = {
   handleMempoolCommand,
   handlePayCommand,
   handlePendingCommand,
+  handleStartCommand,
   handleVersionCommand,
   isMessageReplyAction,
   notifyOfForwards,

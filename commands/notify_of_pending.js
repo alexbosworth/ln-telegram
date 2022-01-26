@@ -3,6 +3,7 @@ const {DateTime} = require('luxon');
 const {bot} = require('./../interaction');
 
 const blocksAsEpoch = blocks => Date.now() + blocks * 1000 * 60 * 10;
+const escape = text => text.replace(/[_[\]()~`>#+\-=|{}.!\\]/g, '\\\$&');
 const flatten = arr => [].concat(...arr);
 const fromNow = ms => !ms ? undefined : DateTime.fromMillis(ms).toRelative();
 const nodeAlias = (alias, id) => `${alias} ${id.substring(0, 8)}`.trim();
@@ -128,12 +129,13 @@ module.exports = ({htlcs, pending, reply}) => {
   // Notify of pending channels
   channels.forEach(node => {
     if (!node.channels.length) {
-      return reply(`${bot} ${node.from}: No pending channels.`);
+      return reply(escape(`${bot} ${node.from}: No pending channels.`));
     }
 
     const summary = [].concat(`⏳ ${node.from}:`).concat(node.channels);
+    const joinedSummary = summary.join('\n');
 
-    return reply(summary.join('\n'));
+    return reply(escape(joinedSummary));
   });
 
   // Notify of pending payments
@@ -141,8 +143,8 @@ module.exports = ({htlcs, pending, reply}) => {
     .filter(n => !!n.payments.length)
     .forEach(node => {
       const summary = [].concat(`💸 ${node.from}:`).concat(node.payments);
-
-      return reply(summary.join('\n'));
+      const joinedSummary = summary.join('\n');
+      return reply(escape(joinedSummary));
     });
 
   return;

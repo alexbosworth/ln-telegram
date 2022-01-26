@@ -19,6 +19,7 @@ const defaultInvoicesLimit = 100;
 const earnedAmount = tokens => formatTokens({tokens, is_monochrome: true});
 const earnedViaInvoices = 'Invoiced';
 const earnedViaRouting = 'Routing';
+const escape = text => text.replace(/[_[\]()~>#+\-=|{}.!\\]/g, '\\\$&');
 const formatReport = (from, n) => `💰 Earned on ${from}\n\n\`\`\`${n}\`\`\``;
 const formatReports = reports => reports.join('\n');
 const header = ['', 'Day', 'Week'];
@@ -236,7 +237,7 @@ module.exports = ({from, id, nodes, reply, working}, cbk) => {
 
       // Send response to telegram
       reply: ['response', ({response}, cbk) => {
-        reply(response);
+        reply(escape(response));
 
         return cbk();
       }],

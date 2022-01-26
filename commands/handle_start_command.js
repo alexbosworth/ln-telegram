@@ -14,10 +14,10 @@ const escape = text => text.replace(/[_[\]()~`>#+\-=|{}.!\\]/g, '\\\$&');
     reply: <Reply Function>
   }
 */
-module.exports = ({from, id, reply}) => {
+module.exports = ({id, reply}) => {
   if (!!id) {
     return reply(escape(interaction.bot_is_connected));
   }
 
-  return reply(escape(`🤖 Connection code is: *${from}*`));
+  return reply(escape(interaction.start_message));
 };
