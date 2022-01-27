@@ -3,7 +3,6 @@ const {returnResult} = require('asyncjs-util');
 
 const {bot} = require('./../interaction');
 
-const escape = text => text.replace(/[_[\]()~`>#+\-=|{}.!\\]/g, '\\\$&');
 const failedToGetVersion = `${bot} Failed to get version information from NPM`;
 const currentVersion = n => `${bot} Running version: ${n}`;
 const latestVersion = n => `${bot} Latest version: ${n}`;
@@ -47,7 +46,7 @@ module.exports = ({named, reply, request, version}, cbk) => {
 
       // Get version from NPM
       getVersion: ['validate', ({}, cbk) => {
-        reply(escape(currentVersion(version)));
+        reply(currentVersion(version));
 
         return request({json: true, url: url(named)}, (err, r, pkg) => {
           if (!!err || !r || r.statusCode !== ok || !pkg || !pkg.version) {
@@ -56,7 +55,7 @@ module.exports = ({named, reply, request, version}, cbk) => {
             return cbk();
           }
 
-          reply(escape(latestVersion(pkg.version)));
+          reply(latestVersion(pkg.version));
 
           return cbk();
         });

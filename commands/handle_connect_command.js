@@ -1,7 +1,5 @@
 const interaction = require('./../interaction');
 
-const escape = text => text.replace(/[_[\]()~`>#+\-=|{}.!\\]/g, '\\\$&');
-
 /** Handle connect command
 
   Syntax of command:
@@ -16,8 +14,8 @@ const escape = text => text.replace(/[_[\]()~`>#+\-=|{}.!\\]/g, '\\\$&');
 */
 module.exports = ({from, id, reply}) => {
   if (!!id) {
-    return reply(escape(interaction.bot_is_connected));
+    return reply(interaction.bot_is_connected);
   }
 
-  return reply(escape(`🤖 Connection code is: *${from}*`));
+  return reply(`🤖 Connection code is: \`${from}\``);
 };

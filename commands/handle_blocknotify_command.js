@@ -5,7 +5,6 @@ const {subscribeToBlocks} = require('goldengate');
 const interaction = require('./../interaction');
 
 const delay = 1000 * 60;
-const escape = text => text.replace(/[_[\]()~`>#+\-=|{}.!\\]/g, '\\\$&');
 const join = arr => arr.join('. ');
 const network = 'btc';
 
@@ -50,14 +49,13 @@ module.exports = ({reply, request}, cbk) => {
           if (!currentHeight) {
             currentHeight = height;
 
-            const joinedMessage = join([interaction.requesting_block_notification, heightMessage]);      
-
-            return reply(escape(joinedMessage));
+            return reply(join([
+              interaction.requesting_block_notification,
+              heightMessage,
+            ]));
           }
 
-          const joinedMessage = join([interaction.block_notification, heightMessage]);
-
-          reply(escape(joinedMessage));
+          reply(join([interaction.block_notification, heightMessage]));
 
           sub.removeAllListeners();
 

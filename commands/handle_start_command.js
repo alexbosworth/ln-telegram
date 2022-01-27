@@ -1,12 +1,10 @@
 const interaction = require('./../interaction');
 
-const escape = text => text.replace(/[_[\]()~`>#+\-=|{}.!\\]/g, '\\\$&');
-
-/** Handle connect command
+/** Handle start command
 
   Syntax of command:
 
-  /connect
+  /start
 
   {
     from: <Message From User Id Number>
@@ -15,9 +13,10 @@ const escape = text => text.replace(/[_[\]()~`>#+\-=|{}.!\\]/g, '\\\$&');
   }
 */
 module.exports = ({id, reply}) => {
+  // Exit early when the bot is already connected
   if (!!id) {
-    return reply(escape(interaction.bot_is_connected));
+    return reply(interaction.bot_is_connected);
   }
 
-  return reply(escape(interaction.start_message));
+  return reply(interaction.start_message);
 };
