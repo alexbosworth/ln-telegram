@@ -1,5 +1,9 @@
 # Versions
 
+## Version 3.12.0
+
+- `handleStartCommand`: Add method to handle the bot start button command
+
 ## Version 3.11.0
 
 - `handleEditedMessage`: Add method to handle editing of a past message
