@@ -44,7 +44,7 @@ module.exports = ({confirmed, from, id, key, send, transaction}, cbk) => {
         }
 
         if (!send) {
-          return cbk([400, 'ExpectedSendToPostChainTransaction']);
+          return cbk([400, 'ExpectedSendFunctionToPostChainTransaction']);
         }
 
         if (!transaction) {
