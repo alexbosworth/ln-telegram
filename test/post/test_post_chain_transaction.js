@@ -46,8 +46,7 @@ const makeArgs = overrides => {
   const args = {
     from: 'from',
     id: 1,
-    key: 'key',
-    request: ({}, cbk) => cbk(null, {statusCode: 200}, {}),
+    send: ({}) => new Promise(resolve => resolve()),
     transaction: makeTransaction({}),
   };
 
@@ -68,14 +67,9 @@ const tests = [
     error: [400, 'ExpectedConnectedUserIdToPostChainTransaction'],
   },
   {
-    args: makeArgs({key: undefined}),
-    description: 'An api key is expected',
-    error: [400, 'ExpectedApiKeyToPostChainTransaction'],
-  },
-  {
-    args: makeArgs({request: undefined}),
-    description: 'A request function is expected',
-    error: [400, 'ExpectedRequestToPostChainTransaction'],
+    args: makeArgs({send: undefined}),
+    description: 'A send function is expected',
+    error: [400, 'ExpectedSendFunctionToPostChainTransaction'],
   },
   {
     args: makeArgs({transaction: undefined}),

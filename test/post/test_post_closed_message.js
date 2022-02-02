@@ -17,7 +17,6 @@ const makeArgs = (overrides => {
     is_cooperative_close: false,
     is_local_force_close: false,
     is_remote_force_close: false,
-    key: 'key',
     lnd: {
       default: {
         getChanInfo: ({}, cbk) => cbk(null, chanInfoResponse),
@@ -27,7 +26,7 @@ const makeArgs = (overrides => {
       },
     },
     partner_public_key: pubKey,
-    request: ({}, cbk) => cbk(null, {statusCode: 200}),
+    send: ({}) => new Promise(resolve => resolve()),
   };
 
   Object.keys(overrides).forEach(key => args[key] = overrides[key]);
@@ -72,11 +71,6 @@ const tests = [
     error: [400, 'ExpectedRemoteForceCloseToPostCloseMessage'],
   },
   {
-    args: makeArgs({key: ''}),
-    description: 'Telegram API key is required',
-    error: [400, 'ExpectedTelegramApiKeyToPostCloseMessage'],
-  },
-  {
     args: makeArgs({lnd: undefined}),
     description: 'LND object is required',
     error: [400, 'ExpectedAuthenticatedLndToPostCloseMessage'],
@@ -87,9 +81,9 @@ const tests = [
     error: [400, 'ExpectedPartnerPublicKeyToPostCloseMessage'],
   },
   {
-    args: makeArgs({request: undefined}),
-    description: 'A request function is required',
-    error: [400, 'ExpectedRequestFunctionToPostCloseMessage'],
+    args: makeArgs({send: undefined}),
+    description: 'A send function is required',
+    error: [400, 'ExpectedSendFunctionToPostCloseMessage'],
   },
   {
     args: makeArgs({}),

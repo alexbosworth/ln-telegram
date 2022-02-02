@@ -15,7 +15,6 @@ const makeArgs = (overrides => {
     id: 1,
     is_partner_initiated: true,
     is_private: true,
-    key: 'key',
     lnd: {
       default: {
         getChanInfo: ({}, cbk) => cbk(null, chanInfoResponse),
@@ -25,7 +24,7 @@ const makeArgs = (overrides => {
       },
     },
     partner_public_key: pubKey,
-    request: ({}, cbk) => cbk(null, {statusCode: 200}),
+    send: ({}) => new Promise(resolve => resolve()),
   };
 
   Object.keys(overrides).forEach(key => args[key] = overrides[key]);
@@ -55,11 +54,6 @@ const tests = [
     error: [400, 'ExpectedPrivateStatusToPostChannelOpenMessage'],
   },
   {
-    args: makeArgs({key: ''}),
-    description: 'A telegram API key is expected',
-    error: [400, 'ExpectedTelegramApiKeyToPostChannelOpenMessage'],
-  },
-  {
     args: makeArgs({lnd: undefined}),
     description: 'An LND object is expected',
     error: [400, 'ExpectedLndToPostChannelOpenMessage'],
@@ -70,9 +64,9 @@ const tests = [
     error: [400, 'ExpectedPartnerPublicKeyToPostChanOpenMessage'],
   },
   {
-    args: makeArgs({request: undefined}),
-    description: 'A request function is expected',
-    error: [400, 'ExpectedRequestFunctionToPostChanOpenMessage'],
+    args: makeArgs({send: undefined}),
+    description: 'A send function is expected',
+    error: [400, 'ExpectedSendFunctionToPostChanOpenMessage'],
   },
   {
     args: makeArgs({}),

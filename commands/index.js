@@ -10,6 +10,7 @@ const handleMempoolCommand = require('./handle_mempool_command');
 const handlePayCommand = require('./handle_pay_command');
 const handlePendingCommand = require('./handle_pending_command');
 const handleStartCommand = require('./handle_start_command');
+const handleStopCommand = require('./handle_stop_command');
 const handleVersionCommand = require('./handle_version_command');
 
 module.exports = {
@@ -25,5 +26,6 @@ module.exports = {
   handlePayCommand,
   handlePendingCommand,
   handleStartCommand,
+  handleStopCommand,
   handleVersionCommand,
 };
