@@ -139,7 +139,7 @@ module.exports = ({confirmed, from, id, key, send, transaction}, cbk) => {
   
             return cbk();
           } catch (err) {
-            return cbk([503, 'UnexpectedErrorPostingChannelOpenMessage', {err}]);
+            return cbk([503, 'UnexpectedErrorPostingChainTransaction', {err}]);
           }
         })();
       }],
