@@ -62,10 +62,6 @@ module.exports = (args, cbk) => {
           return cbk([400, 'ExpectedRemoteForceCloseToPostCloseMessage']);
         }
 
-        if (!args.key) {
-          return cbk([400, 'ExpectedTelegramApiKeyToPostCloseMessage']);
-        }
-
         if (!args.lnd) {
           return cbk([400, 'ExpectedAuthenticatedLndToPostCloseMessage']);
         }
@@ -74,8 +70,8 @@ module.exports = (args, cbk) => {
           return cbk([400, 'ExpectedPartnerPublicKeyToPostCloseMessage']);
         }
 
-        if (!args.request) {
-          return cbk([400, 'ExpectedRequestFunctionToPostCloseMessage']);
+        if (!args.send) {
+          return cbk([400, 'ExpectedSendFunctionToPostCloseMessage']);
         }
 
         return cbk();
@@ -122,13 +118,15 @@ module.exports = (args, cbk) => {
 
       // Send channel open message
       send: ['message', ({message}, cbk) => {
-        return sendMessage({
-          id: args.id,
-          key: args.key,
-          request: args.request,
-          text: message.text,
-        },
-        cbk);
+        return (async () => {
+        try {
+          await args.send(args.id, message.text);
+
+          return cbk();
+        } catch (err) {
+          return cbk([503, 'UnexpectedErrorPostingChannelClosedMessage', {err}]);
+        }
+      })();
       }],
     },
     returnResult({reject, resolve, of: 'message'}, cbk));

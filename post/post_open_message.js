@@ -48,10 +48,6 @@ module.exports = (args, cbk) => {
           return cbk([400, 'ExpectedPrivateStatusToPostChannelOpenMessage']);
         }
 
-        if (!args.key) {
-          return cbk([400, 'ExpectedTelegramApiKeyToPostChannelOpenMessage']);
-        }
-
         if (!args.lnd) {
           return cbk([400, 'ExpectedLndToPostChannelOpenMessage']);
         }
@@ -60,8 +56,8 @@ module.exports = (args, cbk) => {
           return cbk([400, 'ExpectedPartnerPublicKeyToPostChanOpenMessage']);
         }
 
-        if (!args.request) {
-          return cbk([400, 'ExpectedRequestFunctionToPostChanOpenMessage']);
+        if (!args.send) {
+          return cbk([400, 'ExpectedSendFunctionToPostChanOpenMessage']);
         }
 
         return cbk();
@@ -99,13 +95,15 @@ module.exports = (args, cbk) => {
 
       // Send channel open message
       send: ['message', ({message}, cbk) => {
-        return sendMessage({
-          id: args.id,
-          key: args.key,
-          request: args.request,
-          text: message.text,
-        },
-        cbk);
+        return (async () => {
+          try {
+            await args.send(args.id, message.text);
+  
+            return cbk();
+          } catch (err) {
+            return cbk([503, 'UnexpectedErrorPostingChannelOpenMessage', {err}]);
+          }
+        })();
       }],
     },
     returnResult({reject, resolve, of: 'message'}, cbk));

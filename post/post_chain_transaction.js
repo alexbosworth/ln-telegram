@@ -30,7 +30,7 @@ const tokAsBig = tokens => (tokens / 1e8).toFixed(8);
 
   @returns via cbk or Promise
 */
-module.exports = ({confirmed, from, id, key, request, transaction}, cbk) => {
+module.exports = ({confirmed, from, id, key, send, transaction}, cbk) => {
   return new Promise((resolve, reject) => {
     return asyncAuto({
       // Check arguments
@@ -43,12 +43,8 @@ module.exports = ({confirmed, from, id, key, request, transaction}, cbk) => {
           return cbk([400, 'ExpectedConnectedUserIdToPostChainTransaction']);
         }
 
-        if (!key) {
-          return cbk([400, 'ExpectedApiKeyToPostChainTransaction']);
-        }
-
-        if (!request) {
-          return cbk([400, 'ExpectedRequestToPostChainTransaction']);
+        if (!send) {
+          return cbk([400, 'ExpectedSendToPostChainTransaction']);
         }
 
         if (!transaction) {
@@ -137,8 +133,15 @@ module.exports = ({confirmed, from, id, key, request, transaction}, cbk) => {
         const pending = !confirmed ? '(pending)' : '';
 
         const text = `${emoji} ${pending} ${details}\n${from}`;
-
-        return sendMessage({id, key, request, text}, cbk);
+        return (async () => {
+          try {
+            await send(id, text);
+  
+            return cbk();
+          } catch (err) {
+            return cbk([503, 'UnexpectedErrorPostingChannelOpenMessage', {err}]);
+          }
+        })();
       }],
     },
     returnResult({reject, resolve}, cbk));
