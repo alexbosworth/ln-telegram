@@ -1,6 +1,6 @@
 # Versions
 
-## Version 3.12.0
+## Version 3.12.1
 
 - `handleStartCommand`: Add method to handle the bot start button command
 
