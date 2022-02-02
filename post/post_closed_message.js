@@ -2,8 +2,6 @@ const asyncAuto = require('async/auto');
 const {getPeerLiquidity} = require('ln-sync');
 const {returnResult} = require('asyncjs-util');
 
-const sendMessage = require('./send_message');
-
 const detailsJoiner = ' ';
 const textJoiner = '\n';
 const tokensAsBigTok = tokens => (tokens / 1e8).toFixed(8);
@@ -18,10 +16,9 @@ const tokensAsBigTok = tokens => (tokens / 1e8).toFixed(8);
     is_cooperative_close: <Is Cooperative Close Bool>
     is_local_force_close: <Is Local Force Close Bool>
     is_remote_force_close: <Is Remote Force close Bool>
-    key: <Telegram API Key String>
     lnd: <Authenticated LND API Object>
     partner_public_key: <Partner Public Key Hex String>
-    request: <Request Function>
+    send: <Send Message to Telegram User Function>
   }
 
   @returns via cbk or Promise
@@ -117,16 +114,8 @@ module.exports = (args, cbk) => {
       }],
 
       // Send channel open message
-      send: ['message', ({message}, cbk) => {
-        return (async () => {
-        try {
-          await args.send(args.id, message.text);
-
-          return cbk();
-        } catch (err) {
-          return cbk([503, 'UnexpectedErrorPostingChannelClosedMessage', {err}]);
-        }
-      })();
+      send: ['message', async ({message}) => {
+        return await args.send(args.id, message.text);
       }],
     },
     returnResult({reject, resolve, of: 'message'}, cbk));

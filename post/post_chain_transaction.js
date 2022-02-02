@@ -1,8 +1,6 @@
 const asyncAuto = require('async/auto');
 const {returnResult} = require('asyncjs-util');
 
-const sendMessage = require('./send_message');
-
 const emoji = '⛓';
 const tokAsBig = tokens => (tokens / 1e8).toFixed(8);
 
@@ -12,8 +10,7 @@ const tokAsBig = tokens => (tokens / 1e8).toFixed(8);
     confirmed: <Transaction is Confirmed Bool>
     from: <From Node String>
     id: <Connected User Id Number>
-    key: <Telegram API Key String>
-    request: <Request Function>
+    send: <Send Message to Telegram Function>
     transaction: [{
       [chain_fee]: <Paid Transaction Fee Tokens Number>
       [received]: <Received Tokens Number>
@@ -30,7 +27,7 @@ const tokAsBig = tokens => (tokens / 1e8).toFixed(8);
 
   @returns via cbk or Promise
 */
-module.exports = ({confirmed, from, id, key, send, transaction}, cbk) => {
+module.exports = ({confirmed, from, id, send, transaction}, cbk) => {
   return new Promise((resolve, reject) => {
     return asyncAuto({
       // Check arguments
@@ -125,23 +122,14 @@ module.exports = ({confirmed, from, id, key, send, transaction}, cbk) => {
       }],
 
       // Post message
-      post: ['details', ({details}, cbk) => {
+      post: ['details', async ({details}) => {
         if (!details) {
-          return cbk();
+          return;
         }
 
         const pending = !confirmed ? '(pending)' : '';
 
-        const text = `${emoji} ${pending} ${details}\n${from}`;
-        return (async () => {
-          try {
-            await send(id, text);
-  
-            return cbk();
-          } catch (err) {
-            return cbk([503, 'UnexpectedErrorPostingChainTransaction', {err}]);
-          }
-        })();
+        return await send(id, `${emoji} ${pending} ${details}\n${from}`);
       }],
     },
     returnResult({reject, resolve}, cbk));
