@@ -6,6 +6,7 @@ const {handleConnectCommand} = require('./commands');
 const {handleCostsCommand} = require('./commands');
 const {handleEarningsCommand} = require('./commands');
 const {handleEditedMessage} = require('./commands');
+const {handleGraphCommand} = require('./commands');
 const {handleInvoiceCommand} = require('./commands');
 const {handleLiquidityCommand} = require('./commands');
 const {handleMempoolCommand} = require('./commands');
@@ -37,6 +38,7 @@ module.exports = {
   handleCostsCommand,
   handleEarningsCommand,
   handleEditedMessage,
+  handleGraphCommand,
   handleInvoiceCommand,
   handleLiquidityCommand,
   handleMempoolCommand,
