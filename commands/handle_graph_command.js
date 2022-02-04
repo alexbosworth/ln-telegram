@@ -1,36 +1,38 @@
 const asyncAuto = require('async/auto');
 const asyncMap = require('async/map');
-const asyncEach = require('async/each');
+const asyncReflect = require('async/reflect');
 const {findKey} = require('ln-sync');
 const {formatTokens} = require('ln-sync');
-const {getChannel} = require('ln-service');
-const {getChannels} = require('ln-service');
 const {getNode} = require('ln-service');
+const {parsePaymentRequest} = require('ln-service');
 const {returnResult} = require('asyncjs-util');
-const {getBorderCharacters} = require('table');
-const renderTable = require('table').table;
 
 const {checkAccess} = require('./../authentication');
-const interaction = require('./../interaction');
+const {icons} = require('./../interface');
+const {makeRemoveButton} = require('./../buttons');
 
 const {isArray} = Array;
-const border = getBorderCharacters('void');
-const header = ['*Sockets:*'];
 
-const isPublicKey = n => !!n && /^0[2-3][0-9A-F]{64}$/i.test(n);
+const argsFromText = text => text.split(' ');
+const bigType = 'large_channels';
+const escape = text => text.replace(/[_*[\]()~`>#+\-=|{}.!\\]/g, '\\\$&');
+const expectedQueryErrorMessage = 'ExpectedQueryForGraphCommand';
 const ipv4Match = /^((25[0-5]|(2[0-4]|1\d|[1-9]|)\d)(\.(?!$)|$)){4}$/;
 const ipv6Match = /^[a-fA-F0-9:]+$/;
-const nodeCapacity = tokens => Number((formatTokens({tokens, is_monochrome: true}).display)).toFixed(3);
-const peerTitle = (query, k) => `🌊 Liquidity with *${query} ${k}:*`;
+const markup = {parse_mode: 'MarkdownV2'};
+const noQueryMsg = 'Missing graph query, try `/graph (public key/peer alias)`';
+const notFoundCode = 404;
+const notFoundMsg = query => `\`${query}\` not found\\\. Wrong public key?`;
+const replyMarkdownV1 = reply => n => reply(n, {parse_mode: 'Markdown'});
 const sanitize = n => (n || '').replace(/_/g, '\\_').replace(/[*~`]/g, '');
-const short = key => key.substring(0, 8);
+const shortKey = key => key.substring(0, 16);
+const socketHost = n => n.split(':').slice(0, -1).join(':');
+const sumOf = arr => arr.reduce((sum, n) => sum + n, 0);
+const tokensAsBigTokens = tokens => (tokens / 1e8).toFixed(8);
 const torV3Match = /[a-z2-7]{56}.onion/i;
 const uniq = arr => Array.from(new Set(arr));
-const join = arr => arr.filter(n => !!n).join('\n');
 
-
-
-/** Check peer liquidity
+/** Get details about a node in the graph
 
   Syntax of command:
 
@@ -49,198 +51,207 @@ const join = arr => arr.filter(n => !!n).join('\n');
     working: <Working Function>
   }
 */
-module.exports = (args, cbk) => {
+module.exports = ({from, id, nodes, remove, reply, text, working}, cbk) => {
   return new Promise((resolve, reject) => {
     return asyncAuto({
       // Check arguments
       validate: cbk => {
-        if (!args.from) {
+        if (!from) {
           return cbk([400, 'ExpectedFromUserIdNumberForGraphCommand']);
         }
 
-        if (!args.id) {
+        if (!id) {
           return cbk([400, 'ExpectedConnectedIdNumberForGraphCommand']);
         }
 
-        if (!isArray(args.nodes)) {
+        if (!isArray(nodes)) {
           return cbk([400, 'ExpectedNodesForGraphCommand']);
         }
 
-        if (!args.reply) {
+        if (!reply) {
           return cbk([400, 'ExpectedReplyFunctionForGraphCommand']);
         }
 
-        if (!args.text) {
+        if (!text) {
           return cbk([400, 'ExpectedOriginalCommandTextForGraphCommand']);
         }
 
-        if (!args.working) {
+        if (!working) {
           return cbk([400, 'ExpectedWorkingFunctionForGraphCommand']);
         }
 
         return cbk();
       },
 
-      // Authenticate the command caller is authorized to this command
+      // Authenticate that the caller is authorized to call this command
       checkAccess: ['validate', ({}, cbk) => {
-        return checkAccess({
-          from: args.from,
-          id: args.id,
-          reply: args.reply,
-        },
-        cbk);
+        return checkAccess({from, id, reply: replyMarkdownV1(reply)}, cbk);
       }],
+
+      // Remove the query
+      remove: ['checkAccess', async ({}) => await remove()],
 
       // Derive the public key query if present
       query: ['checkAccess', ({}, cbk) => {
-        const [, query] = args.text.split(' ');
+        const [, query] = argsFromText(text);
+
+        // Check if a payment request was entered
+        try {
+          const {destination} = parsePaymentRequest({request: query});
+
+          return cbk(null, destination);
+        } catch (err) {
+          // Ignore errors
+        }
 
         return cbk(null, query);
       }],
 
+      // Send indication that the graph command has started working
+      init: ['query', async ({}) => await working()],
+
       // Get public key filter
-      getKey: ['query', ({query}, cbk) => {
+      getKey: ['query', asyncReflect(({query}, cbk) => {
         if (!query) {
-          args.reply('Invalid Query');
-
-          return cbk([400, 'ExpectedQueryForGraphCommand']);
+          return cbk([400, expectedQueryErrorMessage]);
         }
 
-        args.working();
-
-        return asyncMap(args.nodes, (node, cbk) => {
-          return findKey({
-            query,
-            lnd: node.lnd,
-          },
-          (err, found) => {
+        // Look for a match
+        return asyncMap(nodes, ({lnd}, cbk) => {
+          return findKey({lnd, query}, (err, res) => {
             if (!!err) {
-              return cbk();
+              return cbk(null, {});
             }
 
-            return cbk(null, found.public_key);
-            });
-        },
-        cbk);
-      }],
-
-      //Get node info, exit early if one saved node returns data
-      getNodeInfo: ['query', 'getKey', ({query, getKey}, cbk) => {
-        //Exit early if there are no pubkeys
-        if (!getKey || !getKey.length) {
-          args.reply(interaction.node_not_found);
-
-          return cbk([400, 'NodeNotFoundForGraphCommand']);
-        }
-        const key = getKey.find(n => !!n);
-        //Exit early if no key is found
-        if (!key) {
-          args.reply(interaction.node_not_found);
-
-          return cbk([400, 'NodeNotFoundForGraphCommand']);
-        }
-        //Get the node info
-        return asyncMap(args.nodes, (node, cbk) => {
-          getNode({
-            lnd: node.lnd,
-            public_key: key,
-          },
-          (err, res) => {
-            if (!!err) {
-              return cbk(err);
-            }
-            return cbk(null, {res, key});
-  
+            return cbk(null, {lnd, id: res.public_key});
           });
         },
         cbk);
-      }], 
+      })],
 
-      //Get node info, exit early if one saved node returns data
-      getPeerPubkeys: ['getNodeInfo', ({getNodeInfo}, cbk) => {
-        const [info] = getNodeInfo;
-        //Exit early if no info
-        if (!info) {
-          args.reply(interaction.node_not_found);
-
-          return cbk([400, 'NodeNotFound']);
+      // Get node info, exit early if one saved node returns data
+      getNodeInfo: ['query', 'getKey', asyncReflect(({query, getKey}, cbk) => {
+        // Exit early when there is no get key result
+        if (!!getKey.error) {
+          return cbk();
         }
 
-        const publickeys = [];
-        //Get peer public keys associated with all channels
-        info.res.channels.forEach(channel => {
+        const [node] = getKey.value.filter(n => !!n.id);
 
-          channel.policies.forEach(policy => {
-            
-            if (policy.public_key !== info.key) {
-              publickeys.push(policy.public_key);
-            }
-          })
+        if (!node) {
+          return cbk([404, 'FailedToFindMatchingNodeForQuery']);
+        }
+
+        return getNode({lnd: node.lnd, public_key: node.id}, (err, res) => {
+          if (!!err) {
+            return cbk(err);
+          }
+
+          const keys = res.channels.map(({policies}) => {
+            return policies.find(n => n.public_key !== node.id).public_key;
+          });
+
+          const isMissingCapacity = !!res.channels.find(n => !n.capacity);
+
+          return cbk(null, {
+            alias: res.alias,
+            capacity: !isMissingCapacity ? res.capacity : undefined,
+            features: res.features,
+            id: node.id,
+            peer_count: uniq(keys).length,
+            sockets: res.sockets.map(n => n.socket),
+          });
         });
-        //Remove duplicates pubkeys
-        const uniquePubkeys = [...new Set(publickeys)];
+      })],
 
-        return cbk(null, uniquePubkeys);
-      }], 
-      
-      graph: [
-      'getNodeInfo',
-      'getPeerPubkeys',
-      ({
-        getNodeInfo,
-        getPeerPubkeys,
-      }, 
-      cbk) => {
-        try {
-          const [info] = getNodeInfo;
-
-          const findFeature = info.res.features.find(feature => feature.type === 'large_channels');
-
-          const {alias, capacity, sockets} = info.res;
-          //Construct response
-          const response = {
-            alias,
-            capacity: `${nodeCapacity(capacity)} BTC`,
-            is_accepting_large_channels: !!findFeature ? true : false,
-            is_onion: false,
-            is_clearnet: false,
-            peer_count: getPeerPubkeys.length || Number(0),
-            pubkey: info.key,
-          };
-          //Get sockets check for onion/clearnet
-          sockets.forEach(socket => {
-          const [port, ...host] = socket.socket.split(':').reverse();
-          const hostName = host.reverse().join(':');
-
-          if (ipv4Match.test(hostName) || ipv6Match.test(hostName)) {
-            response.is_clearnet = true;
-          }
-
-          if (torV3Match.test(hostName)) {
-            response.is_onion = true;
-          }
-          });
-          //Build the message
-          const text = join([
-            `*${response.alias}*`,
-            `\`${response.pubkey}\`\n`,
-            `is a *${response.capacity}* node with *${response.peer_count}* peers and *${response.is_accepting_large_channels ? 'accepts' : 'does not accept'}* large channels.\n`,
-            `*${!!response.is_onion && !!response.is_clearnet ? '🧅 Onion and 🌐 Clearnet' : (!!response.is_onion? '🧅 Onion': '🌐 Clearnet')}* connections accepted.`,
-          ]);
-
-          return cbk(null, text);
-        } catch (err) {
-        return cbk([400, 'ErrorConstructingResponseForGraphCommand']);
+      // Put together the fetched node info into a concise summary of the node
+      summary: ['getNodeInfo', ({getNodeInfo}, cbk) => {
+        // Exit early when there is no node info
+        if (!getNodeInfo.value) {
+          return cbk();
         }
+
+        const node = getNodeInfo.value;
+
+        const capacity = `${tokensAsBigTokens(node.capacity)} capacity `;
+        const isBig = !!node.features.find(n => n.type === bigType);
+        const isIpV4 = !!node.sockets.find(n => ipv4Match.test(socketHost(n)));
+        const isIpV6 = !!node.sockets.find(n => ipv6Match.test(socketHost(n)));
+        const isTor = !!node.sockets.find(n => torV3Match.test(socketHost(n)));
+
+        const isClearnet = isIpV4 || isIpV6;
+
+        const isUnconnectable = !isClearnet && !isTor;
+
+        const [connection] = [
+          isUnconnectable ? `They do not publish any network address.` : '',
+          !isClearnet && isTor ? 'Only Tor connections are supported.' : '',
+          isClearnet ? 'Clearnet connections are accepted.' : '',
+        ].filter(n => !!n);
+
+
+        const summary = [
+          `A ${!!node.capacity ? escape(capacity) : ''}node`,
+          ` with ${node.peer_count} peer${node.peer_count > 1 ? 's' : ''}`,
+          isBig ? ' that accepts large channels' : '',
+          escape('.'),
+          !!connection ? ` ${escape(connection)}` : '',
+        ];
+
+        const report = [
+          `Node: *${escape(node.alias) || shortKey(node.id)}* \`${node.id}\``,
+          summary.filter(n => !!n).join(''),
+        ];
+
+        return cbk(null, report.join('\n'));
       }],
 
-      // Send the response
-      send: ['graph', ({graph}, cbk) => {
-        args.reply(graph);
+      // Send a failure message
+      sendFailure: [
+        'getKey',
+        'getNodeInfo',
+        'query',
+        async ({getKey, getNodeInfo, query}) =>
+      {
+        // Exit early when there is no failure to send
+        if (!getKey.error && !getNodeInfo.error) {
+          return;
+        }
 
-        return cbk();
+        const [code, msg] = getKey.error || getNodeInfo.error;
+        const icon = icons.bot;
+        const parseMode = markup.parse_mode;
+        const removeButton = makeRemoveButton({}).markup;
+
+        const options = {parse_mode: parseMode, reply_markup: removeButton};
+
+        // Exit early when the user entered a public key that can't be found
+        if (code === notFoundCode) {
+          const entry = escape(query);
+
+          return await reply(`${icon} ${notFoundMsg(entry)}`, options);
+        }
+
+        // Exit early when the user entered no query message at all
+        if (msg === expectedQueryErrorMessage) {
+          return await reply(`${icon} ${noQueryMsg}`, options);
+        }
+
+        // Return the unexpected failure message
+        const message = `${icon} Failed to find match: \`${escape(msg)}\``;
+
+        return await reply(message, options);
       }],
 
+      // Send the summary response
+      sendSuccess: ['summary', async ({summary}) => {
+        // Exit early when there is no summary to send
+        if (!summary) {
+          return;
+        }
+
+        return await reply(summary, markup);
+      }],
     },
     returnResult({reject, resolve}, cbk));
   });
