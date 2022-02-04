@@ -1,5 +1,9 @@
 # Versions
 
+## Version 3.14.0
+
+- `handleGraphCommand`: Add method to lookup a node in the network graph
+
 ## Version 3.13.0
 
 - `handleStopCommand`: Add method to handle the bot stop command
