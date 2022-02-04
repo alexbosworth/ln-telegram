@@ -3,6 +3,8 @@ const {getPeerLiquidity} = require('ln-sync');
 const {returnResult} = require('asyncjs-util');
 
 const detailsJoiner = ' ';
+const escape = text => text.replace(/[_*[\]()~`>#+\-=|{}.!\\]/g, '\\\$&');
+const markup = {parse_mode: 'MarkdownV2'};
 const textJoiner = '\n';
 const tokensAsBigTok = tokens => (tokens / 1e8).toFixed(8);
 
@@ -110,12 +112,12 @@ module.exports = (args, cbk) => {
 
         const text = [`🥀 ${details.join(detailsJoiner)}`, args.from];
 
-        return cbk(null, {text: text.join(textJoiner)});
+        return cbk(null, {text: escape(text.join(textJoiner))});
       }],
 
       // Send channel open message
       send: ['message', async ({message}) => {
-        return await args.send(args.id, message.text);
+        return await args.send(args.id, message.text, markup);
       }],
     },
     returnResult({reject, resolve, of: 'message'}, cbk));

@@ -1,5 +1,9 @@
 # Versions
 
+## Version 3.14.1
+
+- `postClosedMessage`, `postOpenMessage`: upgrade to MarkdownV2
+
 ## Version 3.14.0
 
 - `handleGraphCommand`: Add method to lookup a node in the network graph
