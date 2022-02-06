@@ -1,5 +1,6 @@
 const asyncAuto = require('async/auto');
 const asyncEach = require('async/each');
+const asyncMap = require('async/map');
 const {getBackups} = require('ln-service');
 const {returnResult} = require('asyncjs-util');
 
@@ -75,27 +76,42 @@ module.exports = (args, cbk) => {
 
       // Get backups and send them as documents
       getBackups: ['checkAccess', ({}, cbk) => {
-        return asyncEach(args.nodes, (node, cbk) => {
-          return getBackups({lnd: node.lnd}, async (err, res) => {
+        return asyncMap(args.nodes, (node, cbk) => {
+          return getBackups({lnd: node.lnd}, (err, res) => {
             if (!!err) {
               return cbk(err);
             }
 
-            const filename = `${date()}-${node.alias}-${node.public_key}`;
-
-            try {
-              await args.send({
-                filename: `${filename}.backup`,
-                source: hexAsBuffer(res.backup),
-              });
-            } catch (err) {
-              args.logger.error({err});
-            } finally {
-              return cbk();
-            }
+            return cbk(null, {
+              alias: node.alias,
+              backup: res.backup,
+              channels: res.channels,
+              public_key: node.public_key,
+            });
           });
         },
         cbk);
+      }],
+
+      // Post the backups
+      postBackups: ['getBackups', async ({getBackups}) => {
+        return await asyncEach(getBackups, async (node) => {
+          const channels = `${node.channels.length} channels`;
+          const filename = `${date()}-${node.alias}-${node.public_key}`;
+          const named = `${node.alias} ${node.public_key}`;
+
+          try {
+            return await args.send({
+              filename: `${filename}.backup`,
+              source: hexAsBuffer(node.backup),
+            },
+            {
+              caption: `Backup for ${channels} on ${named}`,
+            });
+          } catch (err) {
+            return args.logger.error({err});
+          }
+        });
       }],
     },
     returnResult({reject, resolve}, cbk));

@@ -9,11 +9,11 @@
   "dependencies": {
     "async": "3.2.3",
     "asyncjs-util": "1.2.8",
-    "goldengate": "11.0.0",
+    "goldengate": "11.0.1",
     "grammy": "1.7.0",
     "ln-accounting": "5.0.5",
-    "ln-service": "53.7.1",
-    "ln-sync": "3.9.0",
+    "ln-service": "53.7.3",
+    "ln-sync": "3.9.3",
     "luxon": "2.3.0",
     "paid-services": "3.11.0",
     "table": "6.8.0"
@@ -40,5 +40,5 @@
   "scripts": {
     "test": "tap --branches=1 --functions=1 --lines=1 --statements=1 test/commands/*.js test/post/*.js"
   },
-  "version": "3.14.1"
+  "version": "3.14.2"
 }

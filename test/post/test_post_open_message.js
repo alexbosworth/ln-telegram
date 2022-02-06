@@ -73,7 +73,7 @@ const tests = [
     description: 'Post channel open message to Telegram',
     expected: {
       text: [
-        `🌹 Accepted new 0.00000001 private channel from alias ${pubKey}. Inbound liquidity now: 0.00000001. Outbound liquidity now: 0.00000001.`,
+        `🌹 Accepted new 0\\.00000001 private channel from alias ${pubKey}\\. Inbound liquidity now: 0\\.00000001\\. Outbound liquidity now: 0\\.00000001\\.`,
         'node1',
       ],
     },
@@ -83,7 +83,7 @@ const tests = [
     description: 'Post channel open message to Telegram for self-channel',
     expected: {
       text: [
-        `🌹 Opened new 0.00000001 channel to alias ${pubKey}. Inbound liquidity now: 0.00000001. Outbound liquidity now: 0.00000001.`,
+        `🌹 Opened new 0\\.00000001 channel to alias ${pubKey}\\. Inbound liquidity now: 0\\.00000001\\. Outbound liquidity now: 0\\.00000001\\.`,
         'node1',
       ],
     },
