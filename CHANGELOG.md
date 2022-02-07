@@ -1,5 +1,9 @@
 # Versions
 
+## Version 3.15.0
+
+- `postOpeningMessage`: Add method to notify of a new opening channel
+
 ## Version 3.14.2
 
 - `postClosedMessage`, `postOpenMessage`: upgrade to MarkdownV2
