@@ -53,28 +53,28 @@ const tests = [
     args: makeArgs({}),
     description: 'Rebalancing results in a rebalance message',
     expected: {
-      message: 'Rebalanced 0.00000001 out 00000000 *→* 00000000. Fee 0.00000001 100.00% (1000000)',
+      message: 'Rebalanced 0\\.00000001 out 00000000 *→* 00000000\\. Fee: 0\\.00000001 100\\.00% \\(1000000\\)',
     },
   },
   {
     args: makeArgs({hops: []}),
     description: 'Rebalancing where there are no hops',
     expected: {
-      message: 'Rebalanced 0.00000001 out  *→* 00000000. Fee 0.00000001 100.00% (1000000)',
+      message: 'Rebalanced 0\\.00000001 out  *→* 00000000\\. Fee: 0\\.00000001 100\\.00% \\(1000000\\)',
     },
   },
   {
     args: makeArgs({payments: []}),
     description: 'Absent a payment a rebalance message is still generated',
     expected: {
-      message: 'Rebalanced 0.00000001 out 00000000. Fee: 0.00000001 100.00% (1000000)',
+      message: 'Rebalanced 0\\.00000001 out 00000000\\. Fee: 0\\.00000001 100\\.00% \\(1000000\\)',
     },
   },
   {
     args: makeArgs({payments: [{in_channel: '0x0x2'}]}),
     description: 'Absent a matching HTLC a rebalance message is still made',
     expected: {
-      message: 'Rebalanced 0.00000001 out 00000000. Fee: 0.00000001 100.00% (1000000)',
+      message: 'Rebalanced 0\\.00000001 out 00000000\\. Fee: 0\\.00000001 100\\.00% \\(1000000\\)',
     },
   },
 ];

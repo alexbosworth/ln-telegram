@@ -53,28 +53,28 @@ const tests = [
     args: makeArgs({}),
     description: 'Got received message for a received invoice',
     expected: {
-      message:  'Received 0.00000001 for “description”\nSender message: “message”',
+      message:  'Received 0\\.00000001 for “description” \\- Sender message: “message”',
     },
   },
   {
     args: makeArgs({description: ''}),
     description: 'Got received message for a received invoice with no desc',
     expected: {
-      message:  'Received 0.00000001\nSender message: “message”',
+      message:  'Received 0\\.00000001 \\- Sender message: “message”',
     },
   },
   {
     args: makeArgs({payments: [{messages: []}]}),
     description: 'Got received message for a received invoice',
     expected: {
-      message:  'Received 0.00000001 for “description”',
+      message:  'Received 0\\.00000001 for “description”',
     },
   },
   {
     args: makeArgs({payments: []}),
     description: 'Got received message for a received invoice with message',
     expected: {
-      message:  'Received 0.00000001 for “description”',
+      message:  'Received 0\\.00000001 for “description”',
     },
   },
   {
@@ -94,9 +94,9 @@ const tests = [
     }),
     description: 'Got received message with a from key and message',
     expected: {
-      message: 'Received 0.00000001 for “description”\n' +
-        'Sender message: “message”\n' +
-        'Marked as from: 000000000000000000000000000000000000000000000000000000000000000000 (unverified/unsigned)',
+      message: 'Received 0\\.00000001 for “description” \\- ' +
+        'Sender message: “message” \\- ' +
+        'Marked as from: 000000000000000000000000000000000000000000000000000000000000000000 \\(unverified/unsigned\\)',
     },
   },
   {
@@ -116,7 +116,7 @@ const tests = [
     }),
     description: 'Got received message with a from key and signed message',
     expected: {
-      message: 'Received 0.00000001 for “description”\nSender message: “message”',
+      message: 'Received 0\\.00000001 for “description” \\- Sender message: “message”',
     },
   },
   {
@@ -144,8 +144,8 @@ const tests = [
     }),
     description: 'Got received message with a from key and signed message',
     expected: {
-      message: 'Received 0.00000001 for “description”\n' +
-        'Sender message: “message”\n' +
+      message: 'Received 0\\.00000001 for “description” \\- ' +
+        'Sender message: “message” \\- ' +
         'From: 000000000000000000000000000000000000000000000000000000000000000000',
     },
   },
@@ -183,9 +183,9 @@ const tests = [
     }),
     description: 'Got received message with a from key and signed message',
     expected: {
-      message: 'Received 0.00000001 for “description”\n' +
-        'Sender message: “message”\n' +
-        'Marked as from: 000000000000000000000000000000000000000000000000000000000000000000 (unverified/unsigned)',
+      message: 'Received 0\\.00000001 for “description” \\- ' +
+        'Sender message: “message” \\- ' +
+        'Marked as from: 000000000000000000000000000000000000000000000000000000000000000000 \\(unverified/unsigned\\)',
     },
   },
 ];

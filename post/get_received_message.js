@@ -1,12 +1,14 @@
 const asyncAuto = require('async/auto');
+const {getIdentity} = require('ln-service');
 const {getNodeAlias} = require('ln-sync');
-const {getWalletInfo} = require('ln-service');
 const {returnResult} = require('asyncjs-util');
 const {verifyBytesSignature} = require('ln-service');
 
 const asBigUnit = tokens => (tokens / 1e8).toFixed(8);
 const bufFromHex = hex => Buffer.from(hex, 'hex');
+const dash = ' - ';
 const dateType = '34349343';
+const escape = text => text.replace(/[_*[\]()~`>#+\-=|{}.!\\]/g, '\\\$&');
 const fromKeyType = '34349339';
 const hexAsUtf8 = hex => Buffer.from(hex, 'hex').toString('utf8');
 const hexFromBuf = buffer => buffer.toString('hex');
@@ -104,7 +106,7 @@ module.exports = ({description, lnd, payments, received}, cbk) => {
           return cbk();
         }
 
-        return getWalletInfo({lnd}, cbk);
+        return getIdentity({lnd}, cbk);
       }],
 
       // Determine if the message signature is valid
@@ -175,7 +177,7 @@ module.exports = ({description, lnd, payments, received}, cbk) => {
 
         // Exit early when there is no from key
         if (!messageDetails.from) {
-          return cbk(null, [receiveLine, senderLine].join(newLine));
+          return cbk(null, [receiveLine, senderLine].join(dash));
         }
 
         const from = getFromNode.alias || getFromNode.id;
@@ -184,12 +186,12 @@ module.exports = ({description, lnd, payments, received}, cbk) => {
         if (!isSignatureValid) {
           const fromLine = `Marked as from: ${from} (unverified/unsigned)`;
 
-          return cbk(null, [receiveLine, senderLine, fromLine].join(newLine));
+          return cbk(null, [receiveLine, senderLine, fromLine].join(dash));
         }
 
         const signedLine = `From: ${from}`;
 
-        return cbk(null, [receiveLine, senderLine, signedLine].join(newLine));
+        return cbk(null, [receiveLine, senderLine, signedLine].join(dash));
       }],
 
       // Final received message
@@ -203,11 +205,11 @@ module.exports = ({description, lnd, payments, received}, cbk) => {
         }
 
         if (!messageDetails) {
-          return cbk(null, {message: receivedMessage});
+          return cbk(null, {message: escape(receivedMessage)});
         }
 
         return cbk(null, {
-          message: receivedMessage,
+          message: escape(receivedMessage),
           quiz: messageDetails.quiz,
           title: bufFromHex(messageDetails.message.value).toString(),
         });

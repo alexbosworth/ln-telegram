@@ -6,6 +6,7 @@ const {subscribeToPastPayment} = require('ln-service');
 
 const asPercent = (fee, tokens) => (fee / tokens * 100).toFixed(2);
 const asPpm = (fee, tokens) => (fee / tokens * 1e6).toFixed();
+const escape = text => text.replace(/[_*[\]()~`>#+\-=|{}.!\\]/g, '\\\$&');
 const {isArray} = Array;
 const niceName = node => node.alias || (node.id || '').substring(0, 8);
 const sanitize = n => (n || '').replace(/_/g, '\\_').replace(/[*~`]/g, '');
@@ -103,22 +104,24 @@ module.exports = ({fee, hops, lnd, payments, received}, cbk) => {
 
       // Derive a description of the rebalance
       rebalanceDescription: ['getIn', 'getOut', ({getIn, getOut}, cbk) => {
-        const amount = tokensAsBigUnit(received);
-        const feePercent = asPercent(fee, received);
-        const feeRate = asPpm(fee, received);
-        const withNode = `${sanitize(niceName(getOut))}`;
+        const amount = escape(tokensAsBigUnit(received));
+        const feeAmount = escape(tokensAsBigUnit(fee));
+        const feePercent = escape(asPercent(fee, received));
+        const feeRate = escape(`(${asPpm(fee, received)})`);
+        const separator = escape('. Fee: ');
+        const withNode = `${escape(niceName(getOut))}`;
 
-        const feeInfo = `${tokensAsBigUnit(fee)} ${feePercent}% (${feeRate})`;
+        const feeInfo = `${feeAmount} ${feePercent}% ${feeRate}`;
         const increase = `Rebalanced ${amount} out ${withNode}`;
 
         // Exit early when there is no inbound peer info
         if (!getIn) {
-          return cbk(null, `${increase}. Fee: ${feeInfo}`);
+          return cbk(null, `${increase}${separator}${feeInfo}`);
         }
 
-        const fromNode = sanitize(niceName(getIn));
+        const fromNode = escape(niceName(getIn));
 
-        return cbk(null, `${increase} *→* ${fromNode}. Fee ${feeInfo}`);
+        return cbk(null, `${increase} *→* ${fromNode}${separator}${feeInfo}`);
       }],
 
       // Final message result

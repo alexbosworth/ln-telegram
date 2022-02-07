@@ -1,16 +1,18 @@
 const asyncAuto = require('async/auto');
+const asyncDetect = require('async/detect');
 const {returnResult} = require('asyncjs-util');
 const {subscribeToPastPayment} = require('ln-service');
 
 const getRebalanceMessage = require('./get_rebalance_message');
 const getReceivedMessage = require('./get_received_message');
-const sendMessage = require('./send_message');
+const {icons} = require('./../interface');
 
-const earnEmoji = '💵';
+const escape = text => text.replace(/[_*[\]()~`>#+\-=|{}.!\\]/g, '\\\$&');
+const {isArray} = Array;
 const minQuizLength = 2;
 const maxQuizLength = 10;
 const randomIndex = n => Math.floor(Math.random() * n);
-const rebalanceEmoji = '☯️';
+const sendOptions = {parse_mode: 'MarkdownV2'};
 
 /** Post settled invoices
 
@@ -40,15 +42,20 @@ const rebalanceEmoji = '☯️';
       }]
       received: <Received Tokens Number>
     }
-    key: <Telegram API Key String>
+    key: <Node Public Key Id Hex String>
     lnd: <Authenticated LND API Object>
+    nodes: [{
+      from: <From Node String>
+      lnd: <Authenticated LND API Object>
+      public_key: <Node Identity Public Key Hex String>
+    }]
     quiz: ({answers: [<String>], correct: <Number>, question: <String>}) => {}
-    request: <Request Function>
+    send: <Send Message Function> (id, message, options) => {}
   }
 
   @returns via cbk or Promise
 */
-module.exports = ({from, id, invoice, key, lnd, quiz, request}, cbk) => {
+module.exports = ({from, id, invoice, key, lnd, nodes, quiz, send}, cbk) => {
   return new Promise((resolve, reject) => {
     return asyncAuto({
       // Check arguments
@@ -66,15 +73,23 @@ module.exports = ({from, id, invoice, key, lnd, quiz, request}, cbk) => {
         }
 
         if (!key) {
-          return cbk([400, 'ExpectedTelegramApiKeyToPostSettledInvoice']);
+          return cbk([400, 'ExpectedNodeIdentityKeyToPostSettledInvoice']);
         }
 
         if (!lnd) {
           return cbk([400, 'ExpectedLndObjectToPostSettledInvoice']);
         }
 
-        if (!request) {
-          return cbk([400, 'ExpectedRequestFunctionToPostSettledInvoice']);
+        if (!isArray(nodes)) {
+          return cbk([400, 'ExpectedArrayOfNodesToPostSettledInvoice']);
+        }
+
+        if (!quiz) {
+          return cbk([400, 'ExpectedSendQuizFunctionToPostSettledInvoice']);
+        }
+
+        if (!send) {
+          return cbk([400, 'ExpectedSendFunctionToPostSettledInvoice']);
         }
 
         return cbk();
@@ -96,10 +111,38 @@ module.exports = ({from, id, invoice, key, lnd, quiz, request}, cbk) => {
         return;
       }],
 
-      // Details for message
-      details: ['getPayment', ({getPayment}, cbk) => {
+      // Find associated transfer
+      getTransfer: ['validate', ({}, cbk) => {
         // Exit early when the invoice has yet to be confirmed
         if (!invoice.is_confirmed) {
+          return cbk();
+        }
+
+        const otherNodes = nodes.filter(n => n.public_key !== key);
+
+        return asyncDetect(otherNodes, ({lnd}, cbk) => {
+          const sub = subscribeToPastPayment({lnd, id: invoice.id});
+
+          sub.once('confirmed', payment => cbk(null, true));
+          sub.once('error', () => cbk(null, false));
+          sub.once('failed', () => cbk(null, false));
+        },
+        cbk);
+      }],
+
+      // Details for message
+      details: [
+        'getPayment',
+        'getTransfer',
+        ({getPayment, getTransfer}, cbk) =>
+      {
+        // Exit early when the invoice has yet to be confirmed
+        if (!invoice.is_confirmed) {
+          return cbk();
+        }
+
+        // Exit early when this is a node to node transfer
+        if (!!getTransfer) {
           return cbk();
         }
 
@@ -125,29 +168,30 @@ module.exports = ({from, id, invoice, key, lnd, quiz, request}, cbk) => {
       }],
 
       // Post invoice
-      post: ['details', 'getPayment', ({details, getPayment}, cbk) => {
+      post: ['details', 'getPayment', async ({details, getPayment}) => {
         // Exit early when there is nothing to post
         if (!details) {
-          return cbk();
+          return;
         }
 
-        const emoji = !getPayment ? earnEmoji : rebalanceEmoji;
+        const emoji = !getPayment ? icons.receive : icons.rebalance;
+        const receivedOnNode = nodes.length > [key].length ? ` - ${from}` : '';
 
-        const text = `${emoji} ${details.message} - ${from}`;
+        const text = `${emoji} ${details.message}${escape(receivedOnNode)}`;
 
-        return sendMessage({id, key, request, text}, cbk);
+        return await send(id, text, sendOptions);
       }],
 
       // Post quiz
-      quiz: ['details', 'post', ({details, post}, cbk) => {
+      quiz: ['details', 'post', async ({details, post}) => {
         // Exit early when there is no quiz
         if (!details || !details.quiz || details.quiz.length < minQuizLength) {
-          return cbk();
+          return;
         }
 
         // Exit early when the quiz has too many answers
         if (details.quiz.length > maxQuizLength) {
-          return cbk();
+          return;
         }
 
         const [answer] = details.quiz;
@@ -168,9 +212,7 @@ module.exports = ({from, id, invoice, key, lnd, quiz, request}, cbk) => {
           return n;
         });
 
-        quiz({answers, correct, question: details.title});
-
-        return cbk();
+        return await quiz({answers, correct, question: details.title});
       }],
     },
     returnResult({reject, resolve}, cbk));

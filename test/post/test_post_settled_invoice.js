@@ -157,7 +157,9 @@ const makeArgs = overrides => {
       },
       version: makeLndVersion({}),
     },
-    request: ({}, cbk) => cbk(null, {statusCode: 200}, {}),
+    nodes: [],
+    quiz: () => {},
+    send: () => new Promise(resolve => resolve()),
   };
 
   Object.keys(overrides).forEach(k => args[k] = overrides[k]);
@@ -183,8 +185,8 @@ const tests = [
   },
   {
     args: makeArgs({key: undefined}),
-    description: 'A telegram API key is required to post settled invoice',
-    error: [400, 'ExpectedTelegramApiKeyToPostSettledInvoice'],
+    description: 'A node key is required to post settled invoice',
+    error: [400, 'ExpectedNodeIdentityKeyToPostSettledInvoice'],
   },
   {
     args: makeArgs({lnd: undefined}),
@@ -192,9 +194,9 @@ const tests = [
     error: [400, 'ExpectedLndObjectToPostSettledInvoice'],
   },
   {
-    args: makeArgs({request: undefined}),
-    description: 'A request is required to post settled invoice',
-    error: [400, 'ExpectedRequestFunctionToPostSettledInvoice'],
+    args: makeArgs({send: undefined}),
+    description: 'Send is required to post settled invoice',
+    error: [400, 'ExpectedSendFunctionToPostSettledInvoice'],
   },
   {
     args: makeArgs({}),
