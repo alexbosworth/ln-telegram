@@ -114,7 +114,7 @@ module.exports = ({forwards, from, id, lnd, node, send}, cbk) => {
       // Send message to Telegram
       notify: ['getChannels', 'getNodes', async ({getChannels, getNodes}) => {
         if (!forwards.length) {
-          return cbk();
+          return;
         }
 
         const channels = getChannels.filter(n => !!n);
