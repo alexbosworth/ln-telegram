@@ -2,10 +2,9 @@ const asyncAuto = require('async/auto');
 const {getNodeAlias} = require('ln-sync');
 const {returnResult} = require('asyncjs-util');
 
-const sendMessage = require('./send_message');
-
 const emoji = '⚡️';
 const {isArray} = Array;
+const markup = {parse_mode: 'Markdown'};
 const niceName = node => node.alias || (node.id || '').substring(0, 8);
 const sanitize = n => (n || '').replace(/_/g, '\\_').replace(/[*~`]/g, '');
 const tokAsBig = tokens => (tokens / 1e8).toFixed(8);
@@ -15,7 +14,6 @@ const tokAsBig = tokens => (tokens / 1e8).toFixed(8);
   {
     from: <Payment From Node String>
     id: <Connected User Id Number>
-    key: <Telegram API Key String>
     lnd: <Authenticated LND API Object>
     nodes: [<Node Id Public Key Hex String>]
     payment: [{
@@ -25,12 +23,15 @@ const tokAsBig = tokens => (tokens / 1e8).toFixed(8);
       safe_fee: <Safe Paid Fee Tokens Number>
       safe_tokens: <Safe Paid Tokens Number>
     }]
-    request: <Request Function>
+    send: <Send Message to Telegram User Function>
   }
 
   @returns via cbk or Promise
+  {
+    text: <Settled Payment Message Text String>
+  }
 */
-module.exports = ({from, id, key, lnd, nodes, payment, request}, cbk) => {
+module.exports = ({from, id, lnd, nodes, payment, send}, cbk) => {
   return new Promise((resolve, reject) => {
     return asyncAuto({
       // Check arguments
@@ -43,10 +44,6 @@ module.exports = ({from, id, key, lnd, nodes, payment, request}, cbk) => {
           return cbk([400, 'ExpectedUserIdToPostSettledPayment']);
         }
 
-        if (!key) {
-          return cbk([400, 'ExpectedTelegramApiKeyToPostSettledPayment']);
-        }
-
         if (!isArray(nodes)) {
           return cbk([400, 'ExpectedArrayOfNodesToPostSettledPayment']);
         }
@@ -55,8 +52,8 @@ module.exports = ({from, id, key, lnd, nodes, payment, request}, cbk) => {
           return cbk([400, 'ExpectedPaymentToPostSettledPayment']);
         }
 
-        if (!request) {
-          return cbk([400, 'ExpectedRequestFunctionToPostSettledPayment']);
+        if (!send) {
+          return cbk([400, 'ExpectedSendFunctionToPostSettledPayment']);
         }
 
         return cbk();
@@ -83,10 +80,10 @@ module.exports = ({from, id, key, lnd, nodes, payment, request}, cbk) => {
       }],
 
       // Post message
-      post: ['details', ({details}, cbk) => {
+      post: ['details', async ({details}) => {
         const text = `${emoji} ${details} - ${from}`;
 
-        return sendMessage({id, key, request, text}, cbk);
+        return await send(id, text, markup); 
       }],
     },
     returnResult({reject, resolve}, cbk));
