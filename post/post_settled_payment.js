@@ -3,8 +3,9 @@ const {getNodeAlias} = require('ln-sync');
 const {returnResult} = require('asyncjs-util');
 
 const emoji = '⚡️';
+const escape = text => text.replace(/[_*[\]()~`>#+\-=|{}.!\\]/g, '\\\$&');
 const {isArray} = Array;
-const markup = {parse_mode: 'Markdown'};
+const markup = {parse_mode: 'MarkdownV2'};
 const niceName = node => node.alias || (node.id || '').substring(0, 8);
 const sanitize = n => (n || '').replace(/_/g, '\\_').replace(/[*~`]/g, '');
 const tokAsBig = tokens => (tokens / 1e8).toFixed(8);
@@ -81,7 +82,7 @@ module.exports = ({from, id, lnd, nodes, payment, send}, cbk) => {
 
       // Post message
       post: ['details', async ({details}) => {
-        const text = `${emoji} ${details} - ${from}`;
+        const text = escape(`${emoji} ${details} - ${from}`);
 
         return await send(id, text, markup); 
       }],

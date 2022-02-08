@@ -11,8 +11,9 @@ const asBigUnit = tokens => (tokens / 1e8).toFixed(8);
 const asPercent = (fee, tokens) => (fee / tokens * 100).toFixed(2);
 const asPpm = (fee, tokens) => (fee / tokens * 1e6).toFixed();
 const consolidate = forwards => consolidateForwards({forwards}).forwards;
+const escape = text => text.replace(/[_[\]()~`>#+\-=|{}.!\\]/g, '\\\$&');
 const {isArray} = Array;
-const markup = {parse_mode: 'Markdown'};
+const markup = {parse_mode: 'MarkdownV2'};
 const sanitize = n => (n || '').replace(/_/g, '\\_').replace(/[*~`]/g, '');
 const uniq = arr => Array.from(new Set(arr));
 
@@ -150,7 +151,7 @@ module.exports = ({forwards, from, id, lnd, node, send}, cbk) => {
           return `${action} ${between}. Earned ${feeInfo}`;
         });
 
-        const text = `💰 ${allForwards.join('\n')} - ${from}`;
+        const text = escape(`💰 ${allForwards.join('\n')} - ${from}`);
 
         return await send(id, text, markup);
       }],
