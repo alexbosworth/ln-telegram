@@ -1,115 +1,90 @@
 const asyncAuto = require('async/auto');
-const {getNode} = require('ln-service');
-const {getChannels} = require('ln-service');
+const asyncMap = require('async/map');
+const {getNodeAlias} = require('ln-sync');
 const {returnResult} = require('asyncjs-util');
 
 const channelPoint = (txid, tx_vout) => `${txid}:${tx_vout}`;
 const escape = text => text.replace(/[_[\]()~`>#+\-=|{}.!\\]/g, '\\\$&');
+const {isArray} = Array;
 const markup = {parse_mode: 'MarkdownV2'};
 const textJoiner = '\n';
 const tokensAsBigTok = tokens => (tokens / 1e8).toFixed(8);
 
-/** Post a channel closing message for Telegram
+/** Send channel closing message to telegram
 
   {
-    from: <Node From String>
+    from: <Node From Name String>
     id: <Connected Telegram User Id String>
     lnd: <Authenticated LND API Object>
-    transaction_id: <Funding transaction Id String>
-    transaction_vout: <Funding transaction output Index>
-    send: <Send Message to Telegram User Function>
+    closing: [{
+      capacity: <Channel Token Capacity Number>
+      partner_public_key: <Channel Partner Public Key String>
+    }]
+    send: <Send Message to Telegram User Id Function>
   }
 
   @returns via cbk or Promise
   {
-    text: <Channel Closing Message Text String>
+    text: <Posted Channel Closing Message String>
   }
 */
-module.exports = (args, cbk) => {
+module.exports = ({closing, from, id, lnd, send}, cbk) => {
   return new Promise((resolve, reject) => {
     return asyncAuto({
       // Check arguments
       validate: cbk => {
-        if (!args.from) {
-          return cbk([400, 'ExpectedFromNodeToPostClosingMessage']);
+        if (!from) {
+          return cbk([400, 'ExpectedFromNameToPostChannelClosingMessage']);
         }
 
-        if (!args.id) {
-          return cbk([400, 'ExpectedConnectedUserIdToPostClosingMessage'])
+        if (!id) {
+          return cbk([400, 'ExpectedUserIdToPostChannelClosingMessage']);
         }
 
-        if (!args.lnd) {
-          return cbk([400, 'ExpectedAuthenticatedLndToPostClosingMessage']);
+        if (!lnd) {
+          return cbk([400, 'ExpectedLndToPostChannelClosingMessage']);
         }
 
-        if (!args.send) {
-          return cbk([400, 'ExpectedSendFunctionToPostClosingMessage']);
+        if (!isArray(closing)) {
+          return cbk([400, 'ExpectedClosingChannelsToPostChannelClosingMessage']);
         }
 
-        if (!args.transaction_id) {
-          return cbk([400, 'ExpectedTransactionIdToPostClosingMessage']);
-        }
-
-        if (args.transaction_vout === undefined) {
-          return cbk([400, 'ExpectedTransactionVoutToPostClosingMessage']);
+        if (!send) {
+          return cbk([400, 'ExpectedSendFunctionToPostChanClosingMessage']);
         }
 
         return cbk();
       },
 
-      //Get closing channel details
-      getClosingChannel: ['validate', ({}, cbk) => {
-          return getChannels({lnd: args.lnd}, (err, res) => {
-            if (!!err) {
-              return cbk([400, 'FailedToGetChannelsToPostClosingMessage', err]);
-            }
-
-            const closing = res.channels.find(n => {
-              return n.transaction_id === args.transaction_id;
-            });
-
-            if (!closing) {
-              return cbk([400, 'FailedToFindChannelToPostClosingMessage']);
-            }
-  
-            return cbk(null, closing);
-          });
+      // Get peer aliases
+      getAliases: ['validate', ({}, cbk) => {
+        return asyncMap(closing, (channel, cbk) => {
+          return getNodeAlias({lnd, id: channel.partner_public_key}, cbk);
+        },
+        cbk);
       }],
 
-      //Get Closing peer
-      getClosingPeer: ['getClosingChannel', ({getClosingChannel}, cbk) => {
-        return getNode({lnd: args.lnd, public_key: getClosingChannel.partner_public_key}, (err, res) => {
-          if (!!err) {
-            return cbk([400, 'FailedToGetClosingPeerToPostClosingMessage', err]);
-          }
-          const closingPeer = {
-            alias: res.alias,
-            capacity: getClosingChannel.capacity,
-            partner_public_key: getClosingChannel.partner_public_key,
-            transaction_id: args.transaction_id,
-            transaction_vout: args.transaction_vout,
-          }
-          return cbk(null, closingPeer);
+      // Put together the message to summarize the channels closing
+      message: ['getAliases', ({getAliases}, cbk) => {
+        const lines = closing.map(chan => {
+          const node = getAliases.find(n => n.id === chan.partner_public_key);
+
+          const details = [
+            `⏳ Closing ${tokensAsBigTok(chan.capacity)} with ${node.alias} ${node.id}`,
+            `*Funding Outpoint:* ${channelPoint(chan.transaction_id, chan.transaction_vout)}`,
+            `${from}`,
+          ];
+
+          return details.join(textJoiner);
         });
+        const [text] = lines;
+
+        return cbk(null, {text: escape(text)});
       }],
 
-      //build the closing message
-      message: ['getClosingPeer', ({getClosingPeer}, cbk) => {
-        const closingPeer = getClosingPeer;
-        const details = [
-          `⏳ Closing ${tokensAsBigTok(closingPeer.capacity)} with ${closingPeer.alias} ${closingPeer.partner_public_key}`,
-          `*Funding Outpoint:* ${channelPoint(closingPeer.transaction_id, closingPeer.transaction_vout)}`,
-          `${args.from}`,
-        ];
-
-        const text = escape(`${details.join(textJoiner)}`);
-
-        return cbk(null, {text});
-      }],
-
-      // Send channel closing message
+      // Send channel open message
       send: ['message', async ({message}) => {
-        return await args.send(args.id, message.text, markup);
+        return await send(id, message.text, markup);
       }],
     },
     returnResult({reject, resolve, of: 'message'}, cbk));
