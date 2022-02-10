@@ -13,6 +13,10 @@ const makeArgs = overrides => {
     id: 1,
     lnd: {},
     node: Buffer.alloc(33).toString('hex'),
+    nodes: [
+      {public_key: Buffer.alloc(33, 2).toString('hex')},
+      {public_key: Buffer.alloc(33, 3).toString('hex')},
+    ],
     send: ({}) => new Promise(resolve => resolve()),
   };
 
@@ -50,6 +54,11 @@ const tests = [
     error: [400, 'ExpectedFromNodePublicKeyToNotifyOfForwards'],
   },
   {
+    args: makeArgs({nodes: undefined}),
+    description: 'Nodes are required to notify of forwards',
+    error: [400, 'ExpectedArrayOfNodesToNotifyOfForwards'],
+  },
+  {
     args: makeArgs({send: undefined}),
     description: 'A send function is required to notify of forwards',
     error: [400, 'ExpectedSendFunctionToNotifyOfForwards'],
@@ -61,7 +70,7 @@ const tests = [
   {
     args: makeArgs({
       forwards: [{
-        fee: 1, 
+        fee: 1,
         incoming_channel: '0x0x1',
         outgoing_channel: '1x1x1',
         tokens: 1,
@@ -78,51 +87,7 @@ const tests = [
       },
     }),
     description: 'A forward is mapped to a forward notification',
-    expected: '💰 Forwarded 0\\.00000001 alias *→* alias\\. Earned 0\\.00000001 100\\.00% \\(1000000\\) \\- from',
-  },
-  {
-    args: makeArgs({
-      forwards: [{
-        fee: 1,
-        incoming_channel: '0x0x1',
-        outgoing_channel: '1x1x1',
-        tokens: 1,
-      }],
-      lnd: {
-        default: {
-          getChanInfo: (args, cbk) => cbk('err'),
-          getInfo: ({}, cbk) => cbk(null, getInfoRes()),
-          getNodeInfo: ({}, cbk) => cbk(null, nodeInfoResult),
-        },
-        version: {
-          getVersion: ({}, cbk) => cbk(null, versionInfo),
-        },
-      },
-    }),
-    description: 'Get channel error reverts back to channel ids',
-    expected: '💰 Forwarded 0\\.00000001 alias *→* alias\\. Earned 0\\.00000001 100\\.00% \\(1000000\\) \\- from',
-  },
-  {
-    args: makeArgs({
-      forwards: [{
-        fee: 1,
-        incoming_channel: '0x0x1',
-        outgoing_channel: '1x1x1',
-        tokens: 1,
-      }],
-      lnd: {
-        default: {
-          getChanInfo: (args, cbk) => cbk('err'),
-          getInfo: ({}, cbk) => cbk(null, getInfoRes()),
-          getNodeInfo: ({}, cbk) => cbk(null, nodeInfoResult),
-        },
-        version: {
-          getVersion: ({}, cbk) => cbk(null, versionInfo),
-        },
-      },
-    }),
-    description: 'Get channel error reverts back to channel ids',
-    expected: '💰 Forwarded 0\\.00000001 alias *→* alias\\. Earned 0\\.00000001 100\\.00% \\(1000000\\) \\- from',
+    expected: '💰 Forwarded 0\\.00000001 alias *→* alias\\. Earned 0\\.00000001 100\\.00% \\(1000000\\) \\- _from_',
   },
   {
     args: makeArgs({
@@ -136,27 +101,50 @@ const tests = [
         default: {
           getChanInfo: (args, cbk) => cbk(null, chanInfoResult),
           getInfo: ({}, cbk) => cbk(null, getInfoRes()),
-          getNodeInfo: ({}, cbk) => cbk('err'),
+          getNodeInfo: ({}, cbk) => cbk(null, nodeInfoResult),
         },
         version: {
           getVersion: ({}, cbk) => cbk(null, versionInfo),
         },
       },
+      nodes: [{}],
     }),
-    description: 'Get node error reverts back to channel ids',
-    expected: '💰 Forwarded 0\\.00000001 alias *→* alias\\. Earned 0\\.00000001 100\\.00% \\(1000000\\) \\- from',
+    description: 'From is dropped when there is only one node',
+    expected: '💰 Forwarded 0\\.00000001 alias *→* alias\\. Earned 0\\.00000001 100\\.00% \\(1000000\\)',
+  },
+  {
+    args: makeArgs({
+      forwards: [{
+        fee: 1,
+        incoming_channel: '0x0x1',
+        outgoing_channel: '1x1x1',
+        tokens: 1,
+      }],
+      lnd: {
+        default: {
+          getChanInfo: (args, cbk) => cbk('err'),
+          getInfo: ({}, cbk) => cbk(null, getInfoRes()),
+          getNodeInfo: ({}, cbk) => cbk(null, nodeInfoResult),
+        },
+        version: {
+          getVersion: ({}, cbk) => cbk(null, versionInfo),
+        },
+      },
+      nodes: [{}],
+    }),
+    description: 'Channel aliases skipped when a channel error is returned',
+    expected: '💰 Forwarded 0\\.00000001 0x0x1 *→* 1x1x1\\. Earned 0\\.00000001 100\\.00% \\(1000000\\)',
   },
 ];
 
 tests.forEach(({args, description, error, expected}) => {
-  return test(description, async ({end, equal, rejects}) => {
+  return test(description, async ({end, equal, rejects, strictSame}) => {
     if (!!error) {
       await rejects(notifyOfForwards(args), error, 'Got expected error');
     } else {
-      await notifyOfForwards(Object.assign(args, {request: (args, cbk) => {
-        equal(args.qs.text, expected);
-        return cbk(null, {statusCode: 200});
-      }}));
+      const res = await notifyOfForwards(args);
+
+      strictSame(res, expected, 'Got expected result');
     }
 
     return end();

@@ -1,20 +1,22 @@
 const asyncAuto = require('async/auto');
 const asyncMap = require('async/map');
 const {getChannel} = require('ln-service');
-const {getNode} = require('ln-service');
+const {getNodeAlias} = require('ln-sync');
 const {getWalletInfo} = require('ln-service');
 const {returnResult} = require('asyncjs-util');
 
 const consolidateForwards = require('./consolidate_forwards');
+const {icons} = require('./../interface');
 
 const asBigUnit = tokens => (tokens / 1e8).toFixed(8);
 const asPercent = (fee, tokens) => (fee / tokens * 100).toFixed(2);
 const asPpm = (fee, tokens) => (fee / tokens * 1e6).toFixed();
 const consolidate = forwards => consolidateForwards({forwards}).forwards;
-const escape = text => text.replace(/[_[\]()~`>#+\-=|{}.!\\]/g, '\\\$&');
+const escape = text => text.replace(/[_*[\]()~`>#+\-=|{}.!\\]/g, '\\\$&');
 const {isArray} = Array;
+const join = n => n.filter(n => !!n).join(' ');
+const joinAsLines = n => n.join('\n');
 const markup = {parse_mode: 'MarkdownV2'};
-const sanitize = n => (n || '').replace(/_/g, '\\_').replace(/[*~`]/g, '');
 const uniq = arr => Array.from(new Set(arr));
 
 /** Notify Telegram of forwarded payments
@@ -30,6 +32,9 @@ const uniq = arr => Array.from(new Set(arr));
     id: <Connected User Id Number>
     lnd: <Authenticated LND API Object>
     node: <From Node Public Key Hex String>
+    nodes: [{
+      public_key: <Node Public Key Hex String>
+    }]
     send: <Send Message to Telegram User Function>
   }
 
@@ -38,7 +43,7 @@ const uniq = arr => Array.from(new Set(arr));
     text: <Forward Notify Message Text String>
   }
 */
-module.exports = ({forwards, from, id, lnd, node, send}, cbk) => {
+module.exports = ({forwards, from, id, lnd, node, nodes, send}, cbk) => {
   return new Promise((resolve, reject) => {
     return asyncAuto({
       // Check arguments
@@ -61,6 +66,10 @@ module.exports = ({forwards, from, id, lnd, node, send}, cbk) => {
 
         if (!node) {
           return cbk([400, 'ExpectedFromNodePublicKeyToNotifyOfForwards']);
+        }
+
+        if (!isArray(nodes)) {
+          return cbk([400, 'ExpectedArrayOfNodesToNotifyOfForwards']);
         }
 
         if (!send) {
@@ -94,31 +103,20 @@ module.exports = ({forwards, from, id, lnd, node, send}, cbk) => {
       // Get nodes associated with channels
       getNodes: ['getChannels', ({getChannels}, cbk) => {
         return asyncMap(getChannels.filter(n => !!n), (channel, cbk) => {
-          return getNode({
-            lnd,
-            is_omitting_channels: true,
-            public_key: channel.key,
-          },
-          (err, res) => {
-            // Ignore errors
-            if (!!err) {
-              return cbk();
-            }
-
-            return cbk(null, {alias: res.alias, key: channel.key});
-          });
+          return getNodeAlias({lnd, id: channel.key}, cbk);
         },
         cbk);
       }],
 
-      // Send message to Telegram
-      notify: ['getChannels', 'getNodes', async ({getChannels, getNodes}) => {
+      // Construct message to send to telegram
+      message: ['getChannels', 'getNodes', ({getChannels, getNodes}, cbk) => {
+        // Exit early when there are no forwards
         if (!forwards.length) {
-          return;
+          return cbk();
         }
 
         const channels = getChannels.filter(n => !!n);
-        const nodes = getNodes.filter(n => !!n);
+        const aliases = getNodes.filter(n => !!n);
 
         const details = consolidate(forwards).map(forward => {
           const inboundChannel = channels
@@ -127,8 +125,8 @@ module.exports = ({forwards, from, id, lnd, node, send}, cbk) => {
           const outboundChannel = channels
             .find(channel => channel.id === forward.outgoing_channel) || {};
 
-          const inbound = nodes.find(({key}) => key === inboundChannel.key);
-          const outbound = nodes.find(({key}) => key === outboundChannel.key);
+          const inbound = aliases.find(({id}) => id === inboundChannel.key);
+          const outbound = aliases.find(({id}) => id === outboundChannel.key);
 
           return {
             fee: forward.fee,
@@ -141,21 +139,41 @@ module.exports = ({forwards, from, id, lnd, node, send}, cbk) => {
         const allForwards = details.map(({fee, inbound, outbound, tokens}) => {
           const feePercent = asPercent(fee, tokens);
           const feeRate = asPpm(fee, tokens);
-          const fromPeer = inbound.alias || inbound.key || inbound.channel;
-          const toPeer = outbound.alias || outbound.key || outbound.channel;
+          const fromPeer = inbound.alias || inbound.id || inbound.channel;
+          const toPeer = outbound.alias || outbound.id || outbound.channel;
 
-          const action = `Forwarded ${asBigUnit(tokens)}`;
-          const between = `${sanitize(fromPeer)} *→* ${sanitize(toPeer)}`;
+          const between = `${escape(fromPeer)} *→* ${escape(toPeer)}`;
           const feeInfo = `${asBigUnit(fee)} ${feePercent}% (${feeRate})`;
 
-          return `${action} ${between}. Earned ${feeInfo}`;
+          return join([
+            `${icons.earn} Forwarded ${escape(asBigUnit(tokens))}`,
+            `${between}${escape('.')}`,
+            escape(`Earned ${feeInfo}`),
+          ]);
         });
 
-        const text = escape(`💰 ${allForwards.join('\n')} - ${from}`);
+        const lines = joinAsLines(allForwards);
 
-        return await send(id, text, markup);
+        const [, otherNode] = nodes;
+
+        // Exit early when there is just a single node
+        if (!otherNode) {
+          return cbk(null, lines);
+        }
+
+        return cbk(null, join([lines, escape('-'), `_${escape(from)}_`]));
+      }],
+
+      // Send the forwards report message
+      send: ['message', async ({message}) => {
+        // Exit early when there is no message to send
+        if (!message) {
+          return;
+        }
+
+        return await send(id, message, markup);
       }],
     },
-    returnResult({reject, resolve}, cbk));
+    returnResult({reject, resolve, of: 'message'}, cbk));
   });
 };

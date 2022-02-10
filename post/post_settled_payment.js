@@ -2,12 +2,12 @@ const asyncAuto = require('async/auto');
 const {getNodeAlias} = require('ln-sync');
 const {returnResult} = require('asyncjs-util');
 
-const emoji = '⚡️';
+const {icons} = require('./../interface');
+
 const escape = text => text.replace(/[_*[\]()~`>#+\-=|{}.!\\]/g, '\\\$&');
 const {isArray} = Array;
 const markup = {parse_mode: 'MarkdownV2'};
-const niceName = node => node.alias || (node.id || '').substring(0, 8);
-const sanitize = n => (n || '').replace(/_/g, '\\_').replace(/[*~`]/g, '');
+const niceName = node => node.alias || node.id.substring(0, 8);
 const tokAsBig = tokens => (tokens / 1e8).toFixed(8);
 
 /** Post settled payment
@@ -17,13 +17,13 @@ const tokAsBig = tokens => (tokens / 1e8).toFixed(8);
     id: <Connected User Id Number>
     lnd: <Authenticated LND API Object>
     nodes: [<Node Id Public Key Hex String>]
-    payment: [{
+    payment: {
       destination: <Payment Destination Public Key Hex String>
       id: <Payment Hash Hex String>
       [request]: <Payment BOLT11 Request String>
       safe_fee: <Safe Paid Fee Tokens Number>
       safe_tokens: <Safe Paid Tokens Number>
-    }]
+    }
     send: <Send Message to Telegram User Function>
   }
 
@@ -43,6 +43,10 @@ module.exports = ({from, id, lnd, nodes, payment, send}, cbk) => {
 
         if (!id) {
           return cbk([400, 'ExpectedUserIdToPostSettledPayment']);
+        }
+
+        if (!lnd) {
+          return cbk([400, 'ExpectedLndToPostSettledPayment']);
         }
 
         if (!isArray(nodes)) {
@@ -66,27 +70,25 @@ module.exports = ({from, id, lnd, nodes, payment, send}, cbk) => {
       }],
 
       // Create the message details
-      details: ['getNode', ({getNode}, cbk) => {
+      message: ['getNode', ({getNode}, cbk) => {
         const isTransfer = nodes.includes(payment.destination);
         const routingFee = `. Paid routing fee: ${tokAsBig(payment.safe_fee)}`;
         const sent = tokAsBig(payment.safe_tokens - payment.safe_fee);
-        const toNode = `${sanitize(niceName(getNode))}`;
+        const toNode = niceName(getNode);
 
         const action = isTransfer ? 'Transferred' : 'Sent';
         const fee = !payment.safe_fee ? '' : routingFee;
 
-        const details = `${action} ${sent} to ${toNode}${fee}`;
+        const details = escape(`${action} ${sent} to ${toNode}${fee} -`);
 
-        return cbk(null, details);
+        return cbk(null, `${icons.spent} ${details} _${escape(from)}_`);
       }],
 
-      // Post message
-      post: ['details', async ({details}) => {
-        const text = escape(`${emoji} ${details} - ${from}`);
-
-        return await send(id, text, markup); 
+      // Post message summarizing the payment
+      post: ['message', async ({message}) => {
+        return await send(id, message, markup);
       }],
     },
-    returnResult({reject, resolve}, cbk));
+    returnResult({reject, resolve, of: 'message'}, cbk));
   });
 };
