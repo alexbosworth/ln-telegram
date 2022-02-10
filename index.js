@@ -19,6 +19,7 @@ const {isMessageReplyAction} = require('./replies');
 const {notifyOfForwards} = require('./post');
 const {postChainTransaction} = require('./post');
 const {postClosedMessage} = require('./post');
+const {postClosingMessage} = require('./post');
 const {postCreatedTrade} = require('./post');
 const {postOpenMessage} = require('./post');
 const {postOpeningMessage} = require('./post');
@@ -52,6 +53,7 @@ module.exports = {
   notifyOfForwards,
   postChainTransaction,
   postClosedMessage,
+  postClosingMessage,
   postCreatedTrade,
   postOpenMessage,
   postOpeningMessage,
