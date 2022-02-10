@@ -1,5 +1,9 @@
 # Versions
 
+## Version 3.16.0
+
+- `postClosingMessage`: Add method to notify of a new pending closing channel
+
 ## Version 3.15.2
 
 - `postOpeningMessage`: Add method to notify of a new opening channel
