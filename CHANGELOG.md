@@ -1,6 +1,6 @@
 # Versions
 
-## Version 3.15.1
+## Version 3.15.2
 
 - `postOpeningMessage`: Add method to notify of a new opening channel
 

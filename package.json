@@ -12,7 +12,7 @@
     "goldengate": "11.0.1",
     "grammy": "1.7.0",
     "ln-accounting": "5.0.5",
-    "ln-service": "53.7.3",
+    "ln-service": "53.8.0",
     "ln-sync": "3.10.0",
     "luxon": "2.3.0",
     "paid-services": "3.11.0",
@@ -40,5 +40,5 @@
   "scripts": {
     "test": "tap --branches=1 --functions=1 --lines=1 --statements=1 test/commands/*.js test/post/*.js"
   },
-  "version": "3.15.1"
+  "version": "3.15.2"
 }
