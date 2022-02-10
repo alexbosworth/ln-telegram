@@ -3,12 +3,15 @@ const asyncMap = require('async/map');
 const {getNodeAlias} = require('ln-sync');
 const {returnResult} = require('asyncjs-util');
 
-const channelPoint = (txid, tx_vout) => `${txid}:${tx_vout}`;
-const escape = text => text.replace(/[_[\]()~`>#+\-=|{}.!\\]/g, '\\\$&');
+const {icons} = require('./../interface');
+
+const channelPoint = n => `${n.transaction_id}:${n.transaction_vout}`;
+const escape = text => text.replace(/[_*[\]()~`>#+\-=|{}.!\\]/g, '\\\$&');
 const {isArray} = Array;
+const joinLines = lines => lines.filter(n => !!n).join('\n');
 const markup = {parse_mode: 'MarkdownV2'};
-const textJoiner = '\n';
 const tokensAsBigTok = tokens => (tokens / 1e8).toFixed(8);
+const uniq = arr => Array.from(new Set(arr));
 
 /** Send channel closing message to telegram
 
@@ -19,6 +22,11 @@ const tokensAsBigTok = tokens => (tokens / 1e8).toFixed(8);
     closing: [{
       capacity: <Channel Token Capacity Number>
       partner_public_key: <Channel Partner Public Key String>
+      transaction_id: <Channel Transaction Id Hex String>
+      transaction_vout: <Channel Transaction Output Index Number>
+    }]
+    nodes: [{
+      public_key: <Node Public Key Hex String>
     }]
     send: <Send Message to Telegram User Id Function>
   }
@@ -28,11 +36,15 @@ const tokensAsBigTok = tokens => (tokens / 1e8).toFixed(8);
     text: <Posted Channel Closing Message String>
   }
 */
-module.exports = ({closing, from, id, lnd, send}, cbk) => {
+module.exports = ({closing, from, id, lnd, nodes, send}, cbk) => {
   return new Promise((resolve, reject) => {
     return asyncAuto({
       // Check arguments
       validate: cbk => {
+        if (!isArray(closing)) {
+          return cbk([400, 'ExpectedClosingChannelsToPostClosingMessage']);
+        }
+
         if (!from) {
           return cbk([400, 'ExpectedFromNameToPostChannelClosingMessage']);
         }
@@ -45,8 +57,8 @@ module.exports = ({closing, from, id, lnd, send}, cbk) => {
           return cbk([400, 'ExpectedLndToPostChannelClosingMessage']);
         }
 
-        if (!isArray(closing)) {
-          return cbk([400, 'ExpectedClosingChannelsToPostChannelClosingMessage']);
+        if (!isArray(nodes)) {
+          return cbk([400, 'ExpectedArrayOfSavedNodesToPostClosingMessage']);
         }
 
         if (!send) {
@@ -58,34 +70,39 @@ module.exports = ({closing, from, id, lnd, send}, cbk) => {
 
       // Get peer aliases
       getAliases: ['validate', ({}, cbk) => {
-        return asyncMap(closing, (channel, cbk) => {
-          return getNodeAlias({lnd, id: channel.partner_public_key}, cbk);
-        },
-        cbk);
+        const ids = uniq(closing.map(n => n.partner_public_key));
+
+        return asyncMap(ids, (id, cbk) => getNodeAlias({id, lnd}, cbk), cbk);
       }],
 
       // Put together the message to summarize the channels closing
       message: ['getAliases', ({getAliases}, cbk) => {
-        const lines = closing.map(chan => {
+        const [, otherNode] = nodes;
+
+        const details = closing.map(chan => {
+          const amount = tokensAsBigTok(chan.capacity);
           const node = getAliases.find(n => n.id === chan.partner_public_key);
 
+          const peer = escape(`${node.alias} ${node.id}`.trim());
+
           const details = [
-            `⏳ Closing ${tokensAsBigTok(chan.capacity)} with ${node.alias} ${node.id}`,
-            `*Funding Outpoint:* ${channelPoint(chan.transaction_id, chan.transaction_vout)}`,
-            `${from}`,
+            `${icons.closing} Closing ${escape(amount)} channel with ${peer}`,
+            `*Funding Outpoint:* \`${channelPoint(chan)}\``,
           ];
 
-          return details.join(textJoiner);
+          return joinLines(details);
         });
-        const [text] = lines;
 
-        return cbk(null, {text: escape(text)});
+        const lines = [
+          joinLines(details),
+          !!otherNode ? `_${escape(from)}_` : '',
+        ];
+
+        return cbk(null, joinLines(lines));
       }],
 
-      // Send channel open message
-      send: ['message', async ({message}) => {
-        return await send(id, message.text, markup);
-      }],
+      // Send the channel closing message
+      send: ['message', async ({message}) => await send(id, message, markup)],
     },
     returnResult({reject, resolve, of: 'message'}, cbk));
   });
