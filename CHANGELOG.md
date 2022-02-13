@@ -1,6 +1,6 @@
 # Versions
 
-## Version 3.17.2
+## Version 3.17.3
 
 - `handleLiquidityCommand`: Handle scenario where no liquidity exists
 

@@ -46,6 +46,7 @@ const makeArgs = overrides => {
   const args = {
     from: 'from',
     id: 1,
+    nodes: [{}],
     send: ({}) => new Promise(resolve => resolve()),
     transaction: makeTransaction({}),
   };
@@ -67,6 +68,11 @@ const tests = [
     error: [400, 'ExpectedConnectedUserIdToPostChainTransaction'],
   },
   {
+    args: makeArgs({nodes: undefined}),
+    description: 'An array of nodes is expected',
+    error: [400, 'ExpectedArrayOfNodesToPostChainTransaction'],
+  },
+  {
     args: makeArgs({send: undefined}),
     description: 'A send function is expected',
     error: [400, 'ExpectedSendFunctionToPostChainTransaction'],
@@ -77,6 +83,16 @@ const tests = [
     error: [400, 'ExpectedTransactionRecordToPostChainTransaction'],
   },
   {
+    args: makeArgs({}),
+    description: 'A regular chain transaction is posted',
+    expected: '⛓ \\(pending\\) Sent 0\\.00000001\\. Paid 0\\.00000001 fee\\. Sent to address\\. Related: Closing channel with \\. Cooperatively closed with \\. Force closed channel with \\. Opened channel with \\. Opening channel with \\.  force closed channel\\.  force closing channel',
+  },
+  {
+    args: makeArgs({nodes: [{}, {}]}),
+    description: 'A regular chain transaction is posted from multiple nodes',
+    expected: '⛓ \\(pending\\) Sent 0\\.00000001\\. Paid 0\\.00000001 fee\\. Sent to address\\. Related: Closing channel with \\. Cooperatively closed with \\. Force closed channel with \\. Opened channel with \\. Opening channel with \\.  force closed channel\\.  force closing channel \\- _from_',
+  },
+  {
     args: makeArgs({
       transaction: makeTransaction({related_channels: undefined}),
     }),
@@ -84,21 +100,20 @@ const tests = [
     error: [400, 'ExpectedRelatedChannelsInTransactionToPost'],
   },
   {
-    args: makeArgs({}),
-    description: 'A chain transaction is posted',
-  },
-  {
     args: makeArgs({transaction: makeTransaction({received: 1})}),
-    description: 'A chain transaction is posted',
+    description: 'A receive chain transaction is posted',
+    expected: '⛓ \\(pending\\) Received 0\\.00000001\\. Paid 0\\.00000001 fee\\. Related: Closing channel with \\. Cooperatively closed with \\. Force closed channel with \\. Opened channel with \\. Opening channel with \\.  force closed channel\\.  force closing channel',
   },
   {
     args: makeArgs({
+      confirmed: true,
       transaction: makeTransaction({
         received: undefined,
         related_channels: [],
       }),
     }),
     description: 'A chain transaction is posted',
+    expected: '⛓ Sent 0\\.00000001\\. Paid 0\\.00000001 fee\\. Sent to address',
   },
   {
     args: makeArgs({
@@ -110,6 +125,7 @@ const tests = [
       },
     }),
     description: 'A receive chain transaction is posted',
+    expected: '⛓ \\(pending\\) Received 0\\.00000001',
   },
   {
     args: makeArgs({
@@ -125,6 +141,7 @@ const tests = [
   {
     args: makeArgs({transaction: makeTransaction({sent_to: undefined})}),
     description: 'A chain transaction is posted with no addresses',
+    expected: '⛓ \\(pending\\) Sent 0\\.00000001\\. Paid 0\\.00000001 fee\\. Related: Closing channel with \\. Cooperatively closed with \\. Force closed channel with \\. Opened channel with \\. Opening channel with \\.  force closed channel\\.  force closing channel',
   },
   {
     args: makeArgs({
@@ -136,6 +153,7 @@ const tests = [
       }),
     }),
     description: 'A chain transaction is posted with no related channels',
+    expected: '⛓ \\(pending\\) Received 0\\.00000001\\. Paid 0\\.00000001 fee',
   },
 ];
 
@@ -144,7 +162,9 @@ tests.forEach(({args, description, error, expected}) => {
     if (!!error) {
       await rejects(postChainTransaction(args), error, 'Got expected error');
     } else {
-      await postChainTransaction(args);
+      const message = await postChainTransaction(args);
+
+      equal(message, expected, 'Got expected message');
     }
 
     return end();

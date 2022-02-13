@@ -1,7 +1,12 @@
 const asyncAuto = require('async/auto');
 const {returnResult} = require('asyncjs-util');
 
-const emoji = '⛓';
+const {icons} = require('./../interface');
+
+const escape = text => text.replace(/[_*[\]()~`>#+\-=|{}.!\\]/g, '\\\$&');
+const {isArray} = Array;
+const joinElements = arr => arr.join(' ');
+const markup = {parse_mode: 'MarkdownV2'};
 const tokAsBig = tokens => (tokens / 1e8).toFixed(8);
 
 /** Post chain transaction
@@ -10,6 +15,9 @@ const tokAsBig = tokens => (tokens / 1e8).toFixed(8);
     confirmed: <Transaction is Confirmed Bool>
     from: <From Node String>
     id: <Connected User Id Number>
+    nodes: [{
+      public_key: <Node Public Key Hex String>
+    }]
     send: <Send Message to Telegram Function>
     transaction: [{
       [chain_fee]: <Paid Transaction Fee Tokens Number>
@@ -27,7 +35,7 @@ const tokAsBig = tokens => (tokens / 1e8).toFixed(8);
 
   @returns via cbk or Promise
 */
-module.exports = ({confirmed, from, id, send, transaction}, cbk) => {
+module.exports = ({confirmed, from, id, nodes, send, transaction}, cbk) => {
   return new Promise((resolve, reject) => {
     return asyncAuto({
       // Check arguments
@@ -38,6 +46,10 @@ module.exports = ({confirmed, from, id, send, transaction}, cbk) => {
 
         if (!id) {
           return cbk([400, 'ExpectedConnectedUserIdToPostChainTransaction']);
+        }
+
+        if (!isArray(nodes)) {
+          return cbk([400, 'ExpectedArrayOfNodesToPostChainTransaction']);
         }
 
         if (!send) {
@@ -121,17 +133,40 @@ module.exports = ({confirmed, from, id, send, transaction}, cbk) => {
         return cbk();
       }],
 
-      // Post message
-      post: ['details', async ({details}) => {
+      // Message to post
+      message: ['details', ({details}, cbk) => {
+        // Exit early when the chain tx is not sending or receiving
         if (!details) {
+          return cbk();
+        }
+
+        const [, otherNode] = nodes;
+        const pending = !confirmed ? `(pending) ${details}` : details;
+
+        const action = escape(`${icons.chain} ${pending.trim()}`);
+
+        // Exit early when there is no multi-node to specify
+        if (!otherNode) {
+          return cbk(null, action);
+        }
+
+        return cbk(null, joinElements([
+          action,
+          escape('-'),
+          `_${escape(from)}_`,
+        ]));
+      }],
+
+      // Post message to Telegram
+      post: ['message', async ({message}) => {
+        // Exit early when there is no message to send
+        if (!message) {
           return;
         }
 
-        const pending = !confirmed ? '(pending)' : '';
-
-        return await send(id, `${emoji} ${pending} ${details}\n${from}`);
+        return await send(id, message, markup);
       }],
     },
-    returnResult({reject, resolve}, cbk));
+    returnResult({reject, resolve, of: 'message'}, cbk));
   });
 };
