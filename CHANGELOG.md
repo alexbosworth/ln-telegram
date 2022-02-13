@@ -1,5 +1,9 @@
 # Versions
 
+## Version 3.17.2
+
+- `handleLiquidityCommand`: Handle scenario where no liquidity exists
+
 ## Version 3.17.1
 
 - `postNodesOffline`: Add method to notify of nodes going offline

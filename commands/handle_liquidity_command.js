@@ -9,9 +9,9 @@ const {returnResult} = require('asyncjs-util');
 
 const {checkAccess} = require('./../authentication');
 const interaction = require('./../interaction');
-const {sendMessage} = require('./../post');
 
 const {isArray} = Array;
+const noLiquidityMessage = `🌊 No channel liquidity`;
 const peerTitle = (query, k) => `🌊 Liquidity with *${query} ${k}:*`;
 const sanitize = n => (n || '').replace(/_/g, '\\_').replace(/[*~`]/g, '');
 const short = key => key.substring(0, 8);
@@ -250,7 +250,9 @@ module.exports = (args, cbk) => {
           report.unshift(peerTitle(sanitize(alias) || query, short(withPeer)));
         }
 
-        args.reply(report.join('\n\n'));
+        const message = report.join('\n\n') || noLiquidityMessage;
+
+        args.reply(message);
 
         return cbk();
       }],
