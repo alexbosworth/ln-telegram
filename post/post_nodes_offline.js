@@ -59,6 +59,10 @@ module.exports = ({bot, connected, offline}, cbk) => {
 
       // Send the message
       send: ['message', async ({message}) => {
+        if (!message) {
+          return;
+        }
+
         return await bot.api.sendMessage(connected, message, markup);
       }],
     },
