@@ -4,6 +4,8 @@ const postClosedMessage = require('./post_closed_message');
 const postClosingMessage = require('./post_closing_message');
 const postCreatedInvoice = require('./post_created_invoice');
 const postCreatedTrade = require('./post_created_trade');
+const postNodesOffline = require('./post_nodes_offline');
+const postNodesOnline = require('./post_nodes_online');
 const postOpenMessage = require('./post_open_message');
 const postOpeningMessage = require('./post_opening_message');
 const postSettledInvoice = require('./post_settled_invoice');
@@ -19,6 +21,8 @@ module.exports = {
   postClosingMessage,
   postCreatedInvoice,
   postCreatedTrade,
+  postNodesOffline,
+  postNodesOnline,
   postOpenMessage,
   postOpeningMessage,
   postSettledInvoice,

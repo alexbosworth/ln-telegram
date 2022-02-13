@@ -9,7 +9,6 @@ const hexAsBuffer = hex => Buffer.from(hex, 'hex');
   {
     backup: <Backup File Hex String>
     id: <Connected User Id Number>
-    key: <Telegram API Key String>
     node: {
       alias: <Node Alias String>
       public_key: <Public Key Hex String>
@@ -19,7 +18,7 @@ const hexAsBuffer = hex => Buffer.from(hex, 'hex');
 
   @returns via cbk or Promise
 */
-module.exports = ({backup, id, key, node, send}, cbk) => {
+module.exports = ({backup, id, node, send}, cbk) => {
   return new Promise((resolve, reject) => {
     return asyncAuto({
       // Check arguments
@@ -30,10 +29,6 @@ module.exports = ({backup, id, key, node, send}, cbk) => {
 
         if (!id) {
           return cbk([400, 'ExpectedIdToPostUpdatedBackup']);
-        }
-
-        if (!key) {
-          return cbk([400, 'ExpectedApiKeyToPostUpdatedBackup']);
         }
 
         if (!node) {

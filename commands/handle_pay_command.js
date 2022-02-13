@@ -7,6 +7,7 @@ const {subscribeToProbeForRoute} = require('ln-service');
 
 const {checkAccess} = require('./../authentication');
 const decodeCommand = require('./decode_command');
+const {icons} = require('./../interface');
 const interaction = require('./../interaction');
 const {sendMessage} = require('./../post');
 
@@ -29,10 +30,7 @@ const pathfindTimeoutMs = 1000 * 60;
   {
     budget: <Max Spendable Tokens Limit Number>
     from: <Command From User Id Number>
-    id: <Connected User Id Number>
-    key: <Telegram API Key String>
     reply: <Reply Function>
-    request: <Request Function>
     text: <Original Command Text String>
   }
 
@@ -41,7 +39,7 @@ const pathfindTimeoutMs = 1000 * 60;
     tokens: <Spent Tokens Number>
   }
 */
-module.exports = ({budget, from, id, key, nodes, reply, request, text}, cbk) => {
+module.exports = ({budget, from, id, nodes, reply, text}, cbk) => {
   return new Promise((resolve, reject) => {
     return asyncAuto({
       // Check arguments
@@ -54,20 +52,12 @@ module.exports = ({budget, from, id, key, nodes, reply, request, text}, cbk) => 
           return cbk([400, 'ExpectedCommandFromUserIdNumberToPayCommand']);
         }
 
-        if (!id) {
-          return cbk([400, 'ExpectedConnectedIdForPayCommand']);
-        }
-
-        if (!key) {
-          return cbk([400, 'ExpectedTelegramApiKeyForPayCommand']);
-        }
-
         if (!isArray(nodes) || !nodes.length) {
           return cbk([400, 'ExpectedNodesForPayCommand']);
         }
 
-        if (!request) {
-          return cbk([400, 'ExpectedRequestFunctionForPayCommand']);
+        if (!reply) {
+          return cbk([400, 'ExpectedReplyFunctionForPayCommand']);
         }
 
         if (!text) {
@@ -89,7 +79,7 @@ module.exports = ({budget, from, id, key, nodes, reply, request, text}, cbk) => 
           syntax_example_text: interaction.pay_syntax,
         };
 
-        return decodeCommand({help, id, key, nodes, request, text}, cbk);
+        return decodeCommand({help, nodes, reply, text}, cbk);
       }],
 
       // Decode payment request
@@ -142,14 +132,8 @@ module.exports = ({budget, from, id, key, nodes, reply, request, text}, cbk) => 
       }],
 
       // Status update
-      postStatus: ['decodeRequest', 'maxTokens', ({decodeRequest}, cbk) => {
-        return sendMessage({
-          id,
-          key,
-          request,
-          text: `🤖 Paying ${decodeRequest.tokens}...`,
-        },
-        cbk);
+      postStatus: ['decodeRequest', 'maxTokens', async ({decodeRequest}) => {
+        return await reply(`${icons.bot} Paying ${decodeRequest.tokens}...`);
       }],
 
       // Execute a probe
@@ -216,7 +200,7 @@ module.exports = ({budget, from, id, key, nodes, reply, request, text}, cbk) => 
 
           const text = `${fail.reason} ${at} ${from}`;
 
-          return sendMessage({id, key, request, text}, err => {});
+          return reply(text);
         });
 
         // Finish with successful probe
@@ -282,7 +266,7 @@ module.exports = ({budget, from, id, key, nodes, reply, request, text}, cbk) => 
           if (!!res.is_pending) {
             const text = interaction.payment_is_stuck;
 
-            sendMessage({id, key, request, text}, err => {});
+            reply(text);
 
             return cbk([503, 'PaymentStuckInPendingState']);
           }
@@ -304,18 +288,9 @@ module.exports = ({budget, from, id, key, nodes, reply, request, text}, cbk) => 
       success: [
         'decodeRequest',
         'getPayment',
-        ({decodeRequest, getPayment}, cbk) =>
+        async ({decodeRequest, getPayment}) =>
       {
-        return sendMessage({
-          id,
-          key,
-          request,
-          text: `Sent ${decodeRequest.tokens}! Fee: ${getPayment.fee}.`
-        },
-        err => {
-          // Ignore errors
-          return cbk();
-        });
+        await reply(`Sent ${decodeRequest.tokens}! Fee: ${getPayment.fee}.`);
       }],
     },
     (err, res) => {
@@ -376,7 +351,7 @@ module.exports = ({budget, from, id, key, nodes, reply, request, text}, cbk) => 
           return returnResult({reject, resolve, of: 'getPayment'}, cbk)(err);
         }
 
-        sendMessage({id, key, request, text}, err => {});
+        reply(text);
 
         return returnResult({reject, resolve, of: 'getPayment'}, cbk)(null, {
           getPayment: {tokens: 0},

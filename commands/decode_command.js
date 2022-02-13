@@ -2,7 +2,6 @@ const asyncAuto = require('async/auto');
 const {returnResult} = require('asyncjs-util');
 
 const interaction = require('./../interaction');
-const {sendMessage} = require('./../post');
 
 const {isArray} = Array;
 
@@ -13,13 +12,11 @@ const {isArray} = Array;
       select_node_text: <Select Node Help String>
       syntax_example_text: <Syntax Example String>
     }
-    id: <Connected User Id Number>
-    key: <Telegram API Key String>
     nodes: [{
       from: <Node Identification String>
       lnd: <Authenticated LND gRPC API Object>
     }]
-    request: <Request Function>
+    reply: <Reply Function>
     text: <Original Command Text String>
   }
 
@@ -29,25 +26,21 @@ const {isArray} = Array;
     params: [<Parameter String>]
   }
 */
-module.exports = ({help, id, key, nodes, request, text}, cbk) => {
+module.exports = ({help, nodes, reply, text}, cbk) => {
   return new Promise((resolve, reject) => {
     return asyncAuto({
       // Check arguments
       validate: cbk => {
-        if (!id) {
-          return cbk([400, 'ExpectedConnectedUserIdToDecodeCommand']);
-        }
-
-        if (!key) {
-          return cbk([400, 'ExpectedApiKeyToDecodeCommand']);
+        if (!help) {
+          return cbk([400, 'ExpectedHelpTextToDecodeCommand']);
         }
 
         if (!isArray(nodes)) {
           return cbk([400, 'ExpectedNodesWhenDecodingCommand']);
         }
 
-        if (!request) {
-          return cbk([400, 'ExpectedRequestFunctionToDecodeCommand']);
+        if (!reply) {
+          return cbk([400, 'ExpectedReplyFunctionToDecodeCommand']);
         }
 
         if (!text) {
@@ -80,9 +73,9 @@ module.exports = ({help, id, key, nodes, request, text}, cbk) => {
             .concat(nodes.map(({from}, i) => `- ${i + 1}: ${from}`))
             .concat([syntax.join(' ')]);
 
-          return sendMessage({id, key, request, text: text.join('\n')}, () => {
-            return cbk([400, 'UnknownNodeToUseForCommand']);
-          });
+          reply(text.join('\n'));
+
+          return cbk([400, 'UnknownNodeToUseForCommand']);
         }
 
         const params = nodes.length === 1 ? elements : elements.slice(1);

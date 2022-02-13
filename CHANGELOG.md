@@ -1,5 +1,10 @@
 # Versions
 
+## Version 3.17.0
+
+- `postNodesOffline`: Add method to notify of nodes going offline
+- `postNodesOnline`: Add method to notify of nodes connected
+
 ## Version 3.16.0
 
 - `postClosingMessage`: Add method to notify of a new pending closing channel

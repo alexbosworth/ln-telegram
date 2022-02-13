@@ -6,7 +6,6 @@ const makeArgs = overrides => {
   const args = {
     backup: '00',
     id: 1,
-    key: 'key',
     node: {
       alias: 'alias',
       public_key: Buffer.alloc(33).toString('hex'),
@@ -29,11 +28,6 @@ const tests = [
     args: makeArgs({id: undefined}),
     description: 'Posting an updated backup requires a user id',
     error: [400, 'ExpectedIdToPostUpdatedBackup'],
-  },
-  {
-    args: makeArgs({key: undefined}),
-    description: 'Posting an updated backup requires an api key',
-    error: [400, 'ExpectedApiKeyToPostUpdatedBackup'],
   },
   {
     args: makeArgs({node: undefined}),
