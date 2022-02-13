@@ -1,6 +1,6 @@
 # Versions
 
-## Version 3.17.0
+## Version 3.17.1
 
 - `postNodesOffline`: Add method to notify of nodes going offline
 - `postNodesOnline`: Add method to notify of nodes connected
