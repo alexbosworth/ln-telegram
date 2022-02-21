@@ -12,10 +12,10 @@
     "goldengate": "11.0.1",
     "grammy": "1.7.0",
     "ln-accounting": "5.0.5",
-    "ln-service": "53.8.0",
-    "ln-sync": "3.10.0",
+    "ln-service": "53.9.1",
+    "ln-sync": "3.10.1",
     "luxon": "2.3.0",
-    "paid-services": "3.11.0",
+    "paid-services": "3.11.4",
     "table": "6.8.0"
   },
   "description": "Lightning Network Telegram bot commands",
@@ -38,7 +38,7 @@
     "url": "https://github.com/alexbosworth/ln-telegram.git"
   },
   "scripts": {
-    "test": "tap --branches=1 --functions=1 --lines=1 --statements=1 test/commands/*.js test/post/*.js"
+    "test": "tap --branches=1 --functions=1 --lines=1 --statements=1 test/commands/*.js test/messages/*.js test/post/*.js"
   },
-  "version": "3.17.3"
+  "version": "3.17.4"
 }

@@ -1,20 +1,19 @@
 const asyncAuto = require('async/auto');
 const asyncMap = require('async/map');
 const {findKey} = require('ln-sync');
-const {formatTokens} = require('ln-sync');
 const {getChannels} = require('ln-service');
 const {getLiquidity} = require('ln-sync');
 const {getNodeAlias} = require('ln-sync');
 const {returnResult} = require('asyncjs-util');
 
 const {checkAccess} = require('./../authentication');
+const {icons} = require('./../interface');
 const interaction = require('./../interaction');
+const {liquiditySummary} = require('./../messages');
 
 const {isArray} = Array;
-const noLiquidityMessage = `🌊 No channel liquidity`;
-const peerTitle = (query, k) => `🌊 Liquidity with *${query} ${k}:*`;
-const sanitize = n => (n || '').replace(/_/g, '\\_').replace(/[*~`]/g, '');
-const short = key => key.substring(0, 8);
+const markup = {parse_mode: 'MarkdownV2'};
+const noLiquidityMessage = `${icons.liquidity} No channel liquidity`;
 const uniq = arr => Array.from(new Set(arr));
 
 /** Check peer liquidity
@@ -199,62 +198,26 @@ module.exports = (args, cbk) => {
         'getAlias',
         'getInboundLiquidity',
         'getOutboundLiquidity',
-        'query',
         'withPeer',
-        ({
+        async ({
           getAlias,
           getInboundLiquidity,
           getOutboundLiquidity,
-          query,
           withPeer,
         },
         cbk) =>
       {
-        const report = args.nodes
-          .map(node => {
-            const inbound = getInboundLiquidity
-              .find(n => n.public_key === node.public_key);
-
-            const outbound = getOutboundLiquidity
-              .find(n => n.public_key === node.public_key);
-
-            if (!inbound.balance && !outbound.balance) {
-              return '';
-            }
-
-            const inboundFormatted = formatTokens({
-              is_monochrome: true,
-              tokens: inbound.balance,
-            });
-
-            const outboundFormatted = formatTokens({
-              is_monochrome: true,
-              tokens: outbound.balance,
-            });
-
-            const lines = [
-              `${!args.nodes.length ? '' : node.from}:`,
-              !inbound.balance ? '' : `Inbound: ${inboundFormatted.display}`,
-              !outbound.balance ? '' : `Outbound: ${outboundFormatted.display}`,
-            ];
-
-            return lines.filter(n => !!n).join('\n');
-          })
-          .filter(n => !!n);
-
-        args.working();
-
         const [alias] = getAlias.map(n => n.alias).filter(n => !!n);
 
-        if (!!withPeer) {
-          report.unshift(peerTitle(sanitize(alias) || query, short(withPeer)));
-        }
+        const {message} = liquiditySummary({
+          alias,
+          inbound: getInboundLiquidity,
+          nodes: args.nodes,
+          outbound: getOutboundLiquidity,
+          peer: withPeer,
+        });
 
-        const message = report.join('\n\n') || noLiquidityMessage;
-
-        args.reply(message);
-
-        return cbk();
+        return await args.reply(message, markup);
       }],
     },
     returnResult({reject, resolve}, cbk));
