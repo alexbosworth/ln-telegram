@@ -60,10 +60,6 @@ module.exports = ({from, id, nodes, remove, reply, text, working}, cbk) => {
           return cbk([400, 'ExpectedFromUserIdNumberForGraphCommand']);
         }
 
-        if (!id) {
-          return cbk([400, 'ExpectedConnectedIdNumberForGraphCommand']);
-        }
-
         if (!isArray(nodes)) {
           return cbk([400, 'ExpectedNodesForGraphCommand']);
         }

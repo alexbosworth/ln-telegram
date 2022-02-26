@@ -1,5 +1,9 @@
 # Versions
 
+## Version 3.17.5
+
+- `handleBackupCommand`, `handleInvoiceCommand`: Handle posting wrong user err
+
 ## Version 3.17.4
 
 - `handleLiquidityCommand`: Handle scenario where no liquidity exists

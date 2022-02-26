@@ -41,10 +41,6 @@ module.exports = ({from, id, nodes, reply, working}, cbk) => {
           return cbk([400, 'ExpectedFromUserIdNumberForPendingCommand']);
         }
 
-        if (!id) {
-          return cbk([400, 'ExpectedConnectedIdNumberForPendingCommand']);
-        }
-
         if (!isArray(nodes)) {
           return cbk([400, 'ExpectedNodesToHandlePendingCommand']);
         }

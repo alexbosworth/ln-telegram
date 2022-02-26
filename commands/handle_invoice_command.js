@@ -11,6 +11,7 @@ const {isArray} = Array;
 const {isInteger} = Number;
 const isNumber = n => !isNaN(n);
 const join = n => n.join(' ');
+const replyMarkdownV1 = reply => n => reply(n, {parse_mode: 'Markdown'});
 const splitArguments = n => n.split(' ');
 
 /** Create invoice
@@ -35,10 +36,6 @@ module.exports = ({ctx, id, nodes}, cbk) => {
           return cbk([400, 'ExpectedTelegramMessageContextToCreateInvoice']);
         }
 
-        if (!id) {
-          return cbk([400, 'ExpectedConnectedIdToCreateInvoice']);
-        }
-
         if (!isArray(nodes) || !nodes.length) {
           return cbk([400, 'ExpectedArrayOfNodesToCreateInvoice']);
         }
@@ -51,7 +48,7 @@ module.exports = ({ctx, id, nodes}, cbk) => {
         return checkAccess({
           id,
           from: ctx.message.from.id,
-          reply: ctx.reply,
+          reply: replyMarkdownV1(() => ctx.reply),
         },
         cbk);
       }],

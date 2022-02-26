@@ -29,10 +29,6 @@ module.exports = ({from, id, quit, reply}, cbk) => {
           return cbk([400, 'ExpectedFromUserIdToExecuteStopCommand']);
         }
 
-        if (!id) {
-          return cbk([400, 'ExpectedConnectedUserIdToExecuteStopCommand']);
-        }
-
         if (!quit) {
           return cbk([400, 'ExpectedQuitFunctionToExecuteStopCommand']);
         }

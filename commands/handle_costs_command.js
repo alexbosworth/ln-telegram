@@ -51,10 +51,6 @@ module.exports = ({from, id, nodes, reply, request, working}, cbk) => {
           return cbk([400, 'ExpectedFromUserIdNumberForCostsCommand']);
         }
 
-        if (!id) {
-          return cbk([400, 'ExpectedConnectedIdNumberForCostsCommand']);
-        }
-
         if (!reply) {
           return cbk([400, 'ExpectedReplyFunctionForCostsCommand']);
         }

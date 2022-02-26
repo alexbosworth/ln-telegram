@@ -19,7 +19,7 @@ const tests = [
   {
     args: makeArgs({id: undefined}),
     description: 'Checking access requires an allowed user id',
-    error: [400, 'ExpectedConnectedUserIdToCheckAccess'],
+    error: [401, 'CommandRequiresConnectCode'],
   },
   {
     args: makeArgs({reply: undefined}),

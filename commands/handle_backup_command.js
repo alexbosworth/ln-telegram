@@ -9,6 +9,7 @@ const {checkAccess} = require('./../authentication');
 const date = () => new Date().toISOString().substring(0, 10);
 const hexAsBuffer = hex => Buffer.from(hex, 'hex');
 const {isArray} = Array;
+const replyMarkdownV1 = reply => n => reply(n, {parse_mode: 'Markdown'});
 
 /** Execute backup command
 
@@ -35,10 +36,6 @@ module.exports = ({from, id, nodes, reply, send}, cbk) => {
           return cbk([400, 'ExpectedFromUserIdToExecuteBackupCommand']);
         }
 
-        if (!id) {
-          return cbk([400, 'ExpectedConnectedUserIdToExecuteBackupCommand']);
-        }
-
         if (!isArray(nodes)) {
           return cbk([400, 'ExpectedNodesArrayToExecuteBackupCommand']);
         }
@@ -56,7 +53,12 @@ module.exports = ({from, id, nodes, reply, send}, cbk) => {
 
       // Check access
       checkAccess: ['validate', ({}, cbk) => {
-        return checkAccess({from, id, reply}, cbk);
+        return checkAccess({
+          from,
+          id,
+          reply: replyMarkdownV1(() => reply),
+        },
+        cbk);
       }],
 
       // Get backups and send them as documents
