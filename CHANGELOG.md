@@ -1,5 +1,9 @@
 # Versions
 
+## Version 3.17.6
+
+- `handleBlocknotifyCommand`: Add access checking on command invocation
+
 ## Version 3.17.5
 
 - `handleBackupCommand`, `handleInvoiceCommand`: Handle posting wrong user err
