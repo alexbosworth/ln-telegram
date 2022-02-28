@@ -167,8 +167,30 @@ module.exports = ({from, id, invoice, key, lnd, nodes, quiz, send}, cbk) => {
         cbk);
       }],
 
+      //Post balanced open message
+      postBalancedOpen: ['details', async ({details}) => {
+        //Exit early if this is not a balanced open
+        if (!details || !details.is_balanced_open) {
+          return;
+        }
+
+        const emoji = icons.balanced_open;
+        const text = `${emoji} ${details.message}`;
+
+        await send(id, text, sendOptions);
+        return true;
+      }],
+
       // Post invoice
-      post: ['details', 'getPayment', async ({details, getPayment}) => {
+      post: [
+        'details', 
+        'getPayment', 
+        'postBalancedOpen',
+        async ({details, getPayment, postBalancedOpen}) => {
+        // Exit early when this is a balanced open
+        if (!!postBalancedOpen) {
+          return;
+        }
         // Exit early when there is nothing to post
         if (!details) {
           return;
@@ -183,7 +205,16 @@ module.exports = ({from, id, invoice, key, lnd, nodes, quiz, send}, cbk) => {
       }],
 
       // Post quiz
-      quiz: ['details', 'post', async ({details, post}) => {
+      quiz: [
+        'details', 
+        'post', 
+        'postBalancedOpen',
+        async ({details, post, postBalancedOpen}) => {
+        // Exit early if its a balanced open
+        if (!!postBalancedOpen) {
+          return;
+        }
+
         // Exit early when there is no quiz
         if (!details || !details.quiz || details.quiz.length < minQuizLength) {
           return;
