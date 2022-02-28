@@ -180,7 +180,7 @@ module.exports = ({description, lnd, payments, received}, cbk) => {
 
           const parsedCapacity = parseHexNumber(messageDetails.capacity.value);
           const capacity = formatTokens({tokens: parsedCapacity}).display;
-          
+
           return {alias, destination, capacity};
           //ignore errors if any
         } catch (err) {
@@ -237,7 +237,12 @@ module.exports = ({description, lnd, payments, received}, cbk) => {
         ({messageDetails, parseBalancedOpen, receivedMessage}, cbk) =>
       {
         if (!!parseBalancedOpen) {
-          const message = `Received a ${escape(parseBalancedOpen.capacity)} Balanced Channel Open request from ${escape(parseBalancedOpen.alias)} \`${parseBalancedOpen.destination}\``;
+          const id = parseBalancedOpen.destination;
+          const capacity = escape(parseBalancedOpen.capacity);
+          const alias = escape(parseBalancedOpen.alias) || id.substring(0, 8);
+
+          const message = `Received a ${capacity} balanced channel open request from ${alias} \`${id}\``;
+
           return cbk(null, {
             message,
             is_balanced_open: true,

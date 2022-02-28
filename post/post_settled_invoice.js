@@ -175,7 +175,8 @@ module.exports = ({from, id, invoice, key, lnd, nodes, quiz, send}, cbk) => {
         }
 
         const emoji = icons.balanced_open;
-        const text = `${emoji} ${details.message}`;
+        const receivedOnNode = ` - ${from}`;
+        const text = `${emoji} ${details.message} ${escape(receivedOnNode)}`;
 
         await send(id, text, sendOptions);
         return true;
