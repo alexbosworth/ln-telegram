@@ -1,5 +1,9 @@
 # Versions
 
+## Version 3.18.0
+
+- `handleInfoCommand`: Add method to get node wallet info
+
 ## Version 3.17.6
 
 - `handleBlocknotifyCommand`: Add access checking on command invocation
