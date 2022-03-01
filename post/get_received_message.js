@@ -1,15 +1,13 @@
 const asyncAuto = require('async/auto');
-const {decodePaymentRequest} = require('ln-service');
 const {getIdentity} = require('ln-service');
-const {formatTokens} = require('ln-sync');
 const {getNodeAlias} = require('ln-sync');
 const {returnResult} = require('asyncjs-util');
 const {verifyBytesSignature} = require('ln-service');
 
+const {icons} = require('./../interface');
+
 const asBigUnit = tokens => (tokens / 1e8).toFixed(8);
-const balancedOpenType = '80501';
 const bufFromHex = hex => Buffer.from(hex, 'hex');
-const capacityType = '80502';
 const dash = ' - ';
 const dateType = '34349343';
 const escape = text => text.replace(/[_*[\]()~`>#+\-=|{}.!\\]/g, '\\\$&');
@@ -21,7 +19,6 @@ const maxAnswer = BigInt(80518);
 const messageType = '34349334';
 const minAnswer = BigInt(80509);
 const newLine = '\n';
-const parseHexNumber = hex => parseInt(hex, 16);
 const signatureType = '34349337';
 const sort = (a, b) => (a < b) ? -1 : ((a > b) ? 1 : 0);
 
@@ -41,6 +38,7 @@ const sort = (a, b) => (a < b) ? -1 : ((a > b) ? 1 : 0);
 
   @returns via cbk or Promise
   {
+    [icon]: <Message Icon String>
     [message]: <Embedded Message Payment Received String>
     [quiz]: [<Quiz Answer String>]
     [title]: <Sender Message String>
@@ -83,18 +81,16 @@ module.exports = ({description, lnd, payments, received}, cbk) => {
           .map(({value}) => hexAsUtf8(value));
 
         const messageRecord = messages.find(({type}) => type === messageType);
-        const balancedOpenRecord = messages.find(({type}) => type === balancedOpenType);
 
         // Exit early when there is no message type record
-        if (!messageRecord && !balancedOpenRecord) {
+        if (!messageRecord) {
           return cbk();
         }
 
         return cbk(null, {
-          capacity: messages.find(({type}) => type === capacityType),
           date: messages.find(({type}) => type === dateType),
           from: messages.find(({type}) => type === fromKeyType),
-          message: messageRecord || balancedOpenRecord,
+          message: messageRecord,
           quiz: quizAnswers,
           signature: messages.find(({type}) => type === signatureType),
         });
@@ -150,6 +146,7 @@ module.exports = ({description, lnd, payments, received}, cbk) => {
           if (!!err) {
             return cbk();
           }
+
           return cbk(null, !!res.is_valid);
         });
       }],
@@ -164,43 +161,14 @@ module.exports = ({description, lnd, payments, received}, cbk) => {
         return getNodeAlias({lnd, id: messageDetails.from.value}, cbk);
       }],
 
-      //Parse payment request
-      parseBalancedOpen: ['messageDetails', async ({messageDetails}) => {
-        // Exit early when there is no message record
-        if (!messageDetails || !messageDetails.message) {
-          return;
-        }
-
-        const request = bufFromHex(messageDetails.message.value).toString();
-
-        try {
-          const {destination} = await decodePaymentRequest({lnd, request});
-
-          const {alias} = await getNodeAlias({lnd, id: destination});
-
-          const parsedCapacity = parseHexNumber(messageDetails.capacity.value);
-          const capacity = formatTokens({tokens: parsedCapacity}).display;
-
-          return {alias, destination, capacity};
-          //ignore errors if any
-        } catch (err) {
-          return;
-        }
-      }],
-
       // Received message
       receivedMessage: [
         'getFromNode',
         'isSignatureValid',
         'messageDetails',
-        'parseBalancedOpen',
         'receiveLine',
-        ({getFromNode, isSignatureValid, messageDetails, parseBalancedOpen, receiveLine}, cbk) =>
+        ({getFromNode, isSignatureValid, messageDetails, receiveLine}, cbk) =>
       {
-        //Exit early if its a balanced open
-        if (!!parseBalancedOpen) {
-          return cbk();
-        }
         // Exit early when there is no associated message
         if (!messageDetails || !messageDetails.message) {
           return cbk(null, receiveLine);
@@ -232,32 +200,22 @@ module.exports = ({description, lnd, payments, received}, cbk) => {
       // Final received message
       message: [
         'messageDetails',
-        'parseBalancedOpen',
         'receivedMessage',
-        ({messageDetails, parseBalancedOpen, receivedMessage}, cbk) =>
+        ({messageDetails, receivedMessage}, cbk) =>
       {
-        if (!!parseBalancedOpen) {
-          const id = parseBalancedOpen.destination;
-          const capacity = escape(parseBalancedOpen.capacity);
-          const alias = escape(parseBalancedOpen.alias) || id.substring(0, 8);
-
-          const message = `Received a ${capacity} balanced channel open request from ${alias} \`${id}\``;
-
-          return cbk(null, {
-            message,
-            is_balanced_open: true,
-          });
-        }
-
         if (!receivedMessage) {
           return cbk(null, {});
         }
 
         if (!messageDetails) {
-          return cbk(null, {message: escape(receivedMessage)});
+          return cbk(null, {
+            icon: icons.receive,
+            message: escape(receivedMessage)
+          });
         }
 
         return cbk(null, {
+          icon: icons.receive,
           message: escape(receivedMessage),
           quiz: messageDetails.quiz,
           title: bufFromHex(messageDetails.message.value).toString(),

@@ -1,8 +1,10 @@
 const asyncAuto = require('async/auto');
 const asyncDetect = require('async/detect');
+const {balancedOpenRequest} = require('paid-services');
 const {returnResult} = require('asyncjs-util');
 const {subscribeToPastPayment} = require('ln-service');
 
+const getBalancedOpenMessage = require('./get_balanced_open_message');
 const getRebalanceMessage = require('./get_rebalance_message');
 const getReceivedMessage = require('./get_received_message');
 const {icons} = require('./../interface');
@@ -95,6 +97,23 @@ module.exports = ({from, id, invoice, key, lnd, nodes, quiz, send}, cbk) => {
         return cbk();
       },
 
+      // Parse balanced open request details if present
+      balancedOpen: ['validate', ({}, cbk) => {
+        // A proposal will be a push payment
+        if (!invoice.is_confirmed) {
+          return cbk();
+        }
+
+        const {proposal} = balancedOpenRequest({
+          confirmed_at: invoice.confirmed_at,
+          is_push: invoice.is_push,
+          payments: invoice.payments,
+          received_mtokens: invoice.received_mtokens,
+        });
+
+        return cbk(null, proposal);
+      }],
+
       // Find associated payment
       getPayment: ['validate', ({}, cbk) => {
         // Exit early when the invoice has yet to be confirmed
@@ -132,9 +151,10 @@ module.exports = ({from, id, invoice, key, lnd, nodes, quiz, send}, cbk) => {
 
       // Details for message
       details: [
+        'balancedOpen',
         'getPayment',
         'getTransfer',
-        ({getPayment, getTransfer}, cbk) =>
+        ({balancedOpen, getPayment, getTransfer}, cbk) =>
       {
         // Exit early when the invoice has yet to be confirmed
         if (!invoice.is_confirmed) {
@@ -144,6 +164,17 @@ module.exports = ({from, id, invoice, key, lnd, nodes, quiz, send}, cbk) => {
         // Exit early when this is a node to node transfer
         if (!!getTransfer) {
           return cbk();
+        }
+
+        // Exit early when this is a balanced open
+        if (!!balancedOpen) {
+          return getBalancedOpenMessage({
+            lnd,
+            capacity: balancedOpen.capacity,
+            from: balancedOpen.partner_public_key,
+            rate: balancedOpen.fee_rate,
+          },
+          cbk);
         }
 
         // Exit early when this is a rebalance
@@ -167,55 +198,21 @@ module.exports = ({from, id, invoice, key, lnd, nodes, quiz, send}, cbk) => {
         cbk);
       }],
 
-      //Post balanced open message
-      postBalancedOpen: ['details', async ({details}) => {
-        //Exit early if this is not a balanced open
-        if (!details || !details.is_balanced_open) {
-          return;
-        }
-
-        const emoji = icons.balanced_open;
-        const receivedOnNode = ` - ${from}`;
-        const text = `${emoji} ${details.message} ${escape(receivedOnNode)}`;
-
-        await send(id, text, sendOptions);
-        return true;
-      }],
-
       // Post invoice
-      post: [
-        'details', 
-        'getPayment', 
-        'postBalancedOpen',
-        async ({details, getPayment, postBalancedOpen}) => {
-        // Exit early when this is a balanced open
-        if (!!postBalancedOpen) {
-          return;
-        }
+      post: ['details', 'getPayment', async ({details, getPayment}) => {
         // Exit early when there is nothing to post
         if (!details) {
           return;
         }
 
-        const emoji = !getPayment ? icons.receive : icons.rebalance;
         const receivedOnNode = nodes.length > [key].length ? ` - ${from}` : '';
+        const text = `${details.icon} ${details.message}`;
 
-        const text = `${emoji} ${details.message}${escape(receivedOnNode)}`;
-
-        return await send(id, text, sendOptions);
+        return await send(id, `${text}${escape(receivedOnNode)}`, sendOptions);
       }],
 
       // Post quiz
-      quiz: [
-        'details', 
-        'post', 
-        'postBalancedOpen',
-        async ({details, post, postBalancedOpen}) => {
-        // Exit early if its a balanced open
-        if (!!postBalancedOpen) {
-          return;
-        }
-
+      quiz: ['details', 'post', async ({details, post}) => {
         // Exit early when there is no quiz
         if (!details || !details.quiz || details.quiz.length < minQuizLength) {
           return;

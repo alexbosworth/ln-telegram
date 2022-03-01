@@ -15,7 +15,7 @@
     "ln-service": "53.9.2",
     "ln-sync": "3.10.1",
     "luxon": "2.3.1",
-    "paid-services": "3.11.4",
+    "paid-services": "3.12.1",
     "table": "6.8.0"
   },
   "description": "Lightning Network Telegram bot commands",

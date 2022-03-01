@@ -4,6 +4,8 @@ const {getNodeAlias} = require('ln-sync');
 const {returnResult} = require('asyncjs-util');
 const {subscribeToPastPayment} = require('ln-service');
 
+const {icons} = require('./../interface');
+
 const asPercent = (fee, tokens) => (fee / tokens * 100).toFixed(2);
 const asPpm = (fee, tokens) => (fee / tokens * 1e6).toFixed();
 const escape = text => text.replace(/[_*[\]()~`>#+\-=|{}.!\\]/g, '\\\$&');
@@ -28,6 +30,7 @@ const tokensAsBigUnit = tokens => (tokens / 1e8).toFixed(8);
 
   @returns via cbk or Promise
   {
+    icon: <Message Icon String>
     message: <Rebalance Message String>
   }
 */
@@ -126,7 +129,10 @@ module.exports = ({fee, hops, lnd, payments, received}, cbk) => {
 
       // Final message result
       message: ['rebalanceDescription', ({rebalanceDescription}, cbk) => {
-        return cbk(null, {message: rebalanceDescription});
+        return cbk(null, {
+          icon: icons.rebalance,
+          message: rebalanceDescription,
+        });
       }],
     },
     returnResult({reject, resolve, of: 'message'}, cbk));
