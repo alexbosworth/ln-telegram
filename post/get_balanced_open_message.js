@@ -24,7 +24,7 @@ const join = arr => arr.join('\n');
     message: <Message String>
   }
 */
-module.exports = ({}, cbk) => {
+module.exports = ({capacity, from, lnd, rate}, cbk) => {
   return new Promise((resolve, reject) => {
     return asyncAuto({
       // Check arguments
@@ -58,7 +58,7 @@ module.exports = ({}, cbk) => {
         const elements = [
           escape(`Received a ${proposal} proposal from ${fromName(getAlias)}`),
           `\`${from}\``,
-          `Chain fee rate: ${rate}/vbyte`,
+          `Proposed chain fee rate: ${rate}/vbyte`,
         ];
 
         return cbk(null, {icon: icons.balanced_open, message: join(elements)});

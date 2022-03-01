@@ -1,6 +1,6 @@
 # Versions
 
-## Version 3.19.0
+## Version 3.19.1
 
 - `postSettledInvoice`: Add support for showing balanced open proposals
 
