@@ -1,5 +1,9 @@
 # Versions
 
+## Version 3.19.0
+
+- `postSettledInvoice`: Add support for showing balanced open proposals
+
 ## Version 3.18.0
 
 - `handleInfoCommand`: Add method to get node wallet info
