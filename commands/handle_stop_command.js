@@ -2,12 +2,10 @@ const asyncAuto = require('async/auto');
 const {returnResult} = require('asyncjs-util');
 
 const {checkAccess} = require('./../authentication');
-const {icons} = require('./../interface');
+const {stopBotMessage} = require('./../messages');
 
-const escape = text => text.replace(/[_*[\]()~`>#+\-=|{}.!\\]/g, '\\\$&');
 const markup = {parse_mode: 'MarkdownV2'};
 const replyMarkdownV1 = reply => n => reply(n, {parse_mode: 'Markdown'});
-const shutdownMessage = `${icons.bot} Bot shutting down...`
 
 /** Execute stop command to stop the bot
 
@@ -20,17 +18,13 @@ const shutdownMessage = `${icons.bot} Bot shutting down...`
 
   @returns via cbk or Promise
 */
-module.exports = ({from, id, quit, reply}, cbk) => {
+module.exports = ({from, id, reply}, cbk) => {
   return new Promise((resolve, reject) => {
     return asyncAuto({
       // Check arguments
       validate: cbk => {
         if (!from) {
           return cbk([400, 'ExpectedFromUserIdToExecuteStopCommand']);
-        }
-
-        if (!quit) {
-          return cbk([400, 'ExpectedQuitFunctionToExecuteStopCommand']);
         }
 
         if (!reply) {
@@ -45,14 +39,11 @@ module.exports = ({from, id, quit, reply}, cbk) => {
         return checkAccess({from, id, reply: replyMarkdownV1(reply)}, cbk);
       }],
 
-      // Notify the chat that the bot is stopping
+      // Notify the chat that the bot would stop
       notify: ['checkAccess', async ({}) => {
-        return await reply(escape(shutdownMessage), markup);
-      }],
+        const {markup, mode, text} = stopBotMessage({});
 
-      // Stop the bot
-      terminateBot: ['notify', async ({}) => {
-        return await quit();
+        return await reply(text, {parse_mode: mode, reply_markup: markup});
       }],
     },
     returnResult({reject, resolve}, cbk));

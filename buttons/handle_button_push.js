@@ -13,13 +13,16 @@ const setInvoiceDescription = require('./set_invoice_description');
 const setInvoiceNode = require('./set_invoice_node');
 const setInvoiceTokens = require('./set_invoice_tokens');
 const setTradeNode = require('./set_trade_node');
+const terminateBot = require('./terminate_bot');
 const warnUnknownButton = require('./warn_unknown_button');
 
+const {exit} = process;
 const {isArray} = Array;
 
 /** Respond to a button push on a message
 
   {
+    bot: <Telegram Bot Object>
     ctx: <Telegram Context Object>
     id: <Connected Telegram User Id Number>
     nodes: [{
@@ -31,11 +34,15 @@ const {isArray} = Array;
 
   @returns via cbk or Promise
 */
-module.exports = ({ctx, id, nodes}, cbk) => {
+module.exports = ({bot, ctx, id, nodes}, cbk) => {
   return new Promise((resolve, reject) => {
     return asyncAuto({
       // Check arguments
       validate: cbk => {
+        if (!bot) {
+          return cbk([400, 'ExpectedTelegramBotToHandleButtonPushEvent']);
+        }
+
         if (!ctx) {
           return cbk([400, 'ExpectedTelegramContextToHandleButtonPushEvent']);
         }
@@ -121,6 +128,10 @@ module.exports = ({ctx, id, nodes}, cbk) => {
         // Pressed to move a trade to a specific saved node
         case callbackCommands.setTradeNode:
           return setTradeNode({ctx, nodes}, cbk);
+
+        // Pressed to terminate the bot
+        case callbackCommands.terminateBot:
+          return terminateBot({bot, ctx, exit}, cbk);
 
         // Pressed something unknown
         default:

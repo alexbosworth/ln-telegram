@@ -1,5 +1,9 @@
 # Versions
 
+## Version 3.19.2
+
+- `handleStopCommand`: Add confirmation to avoid accidental termination
+
 ## Version 3.19.1
 
 - `postSettledInvoice`: Add support for showing balanced open proposals

@@ -9,5 +9,6 @@
   "setInvoiceTokens": "set-invoice-tokens",
   "setTradeDescription": "set-trade-description",
   "setTradeExpiresAt": "set-trade-expires-at",
-  "setTradeNode": "set-trade-node"
+  "setTradeNode": "set-trade-node",
+  "terminateBot": "terminate-bot"
 }
