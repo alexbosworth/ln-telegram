@@ -1,12 +1,12 @@
 const asyncAuto = require('async/auto');
 const {getPeerLiquidity} = require('ln-sync');
 const {returnResult} = require('asyncjs-util');
+const {formatTokens} = require('./../interface');
 
 const detailsJoiner = ' ';
 const escape = text => text.replace(/[_*[\]()~`>#+\-=|{}.!\\]/g, '\\\$&');
 const markup = {parse_mode: 'MarkdownV2'};
 const textJoiner = '\n';
-const tokensAsBigTok = tokens => (tokens / 1e8).toFixed(8);
 
 /** Post a channel closed message for Telegram
 
@@ -78,7 +78,7 @@ module.exports = (args, cbk) => {
 
       // Event prefix
       event: ['validate', async ({}, cbk) => {
-        const capacity = tokensAsBigTok(args.capacity);
+        const capacity = formatTokens(args.capacity);
 
         if (args.is_breach_close) {
           return `Breach countered on ${capacity} channel with`;
@@ -106,8 +106,8 @@ module.exports = (args, cbk) => {
       message: ['event', 'getLiquidity', ({event, getLiquidity}, cbk) => {
         const details = [
           `${event} ${getLiquidity.alias} ${args.partner_public_key}.`,
-          `Inbound liquidity now: ${tokensAsBigTok(getLiquidity.inbound)}.`,
-          `Outbound liquidity now: ${tokensAsBigTok(getLiquidity.outbound)}.`,
+          `Inbound liquidity now: ${formatTokens(getLiquidity.inbound)}.`,
+          `Outbound liquidity now: ${formatTokens(getLiquidity.outbound)}.`,
         ];
 
         const text = [`🥀 ${details.join(detailsJoiner)}`, args.from];

@@ -2,7 +2,6 @@ const asyncAuto = require('async/auto');
 const asyncMap = require('async/map');
 const asyncReflect = require('async/reflect');
 const {findKey} = require('ln-sync');
-const {formatTokens} = require('ln-sync');
 const {getNode} = require('ln-service');
 const {parsePaymentRequest} = require('ln-service');
 const {returnResult} = require('asyncjs-util');
@@ -10,6 +9,7 @@ const {returnResult} = require('asyncjs-util');
 const {checkAccess} = require('./../authentication');
 const {icons} = require('./../interface');
 const {makeRemoveButton} = require('./../buttons');
+const {formatTokens} = require('./../interface');
 
 const {isArray} = Array;
 
@@ -28,7 +28,6 @@ const sanitize = n => (n || '').replace(/_/g, '\\_').replace(/[*~`]/g, '');
 const shortKey = key => key.substring(0, 16);
 const socketHost = n => n.split(':').slice(0, -1).join(':');
 const sumOf = arr => arr.reduce((sum, n) => sum + n, 0);
-const tokensAsBigTokens = tokens => (tokens / 1e8).toFixed(8);
 const torV3Match = /[a-z2-7]{56}.onion/i;
 const uniq = arr => Array.from(new Set(arr));
 
@@ -169,7 +168,7 @@ module.exports = ({from, id, nodes, remove, reply, text, working}, cbk) => {
 
         const node = getNodeInfo.value;
 
-        const capacity = `${tokensAsBigTokens(node.capacity)} capacity `;
+        const capacity = `${formatTokens(node.capacity)} capacity `;
         const isBig = !!node.features.find(n => n.type === bigType);
         const isIpV4 = !!node.sockets.find(n => ipv4Match.test(socketHost(n)));
         const isIpV6 = !!node.sockets.find(n => ipv6Match.test(socketHost(n)));

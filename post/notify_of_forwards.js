@@ -6,9 +6,9 @@ const {getWalletInfo} = require('ln-service');
 const {returnResult} = require('asyncjs-util');
 
 const consolidateForwards = require('./consolidate_forwards');
+const {formatTokens} = require('./../interface');
 const {icons} = require('./../interface');
 
-const asBigUnit = tokens => (tokens / 1e8).toFixed(8);
 const asPercent = (fee, tokens) => (fee / tokens * 100).toFixed(2);
 const asPpm = (fee, tokens) => (fee / tokens * 1e6).toFixed();
 const consolidate = forwards => consolidateForwards({forwards}).forwards;
@@ -143,10 +143,10 @@ module.exports = ({forwards, from, id, lnd, node, nodes, send}, cbk) => {
           const toPeer = outbound.alias || outbound.id || outbound.channel;
 
           const between = `${escape(fromPeer)} *→* ${escape(toPeer)}`;
-          const feeInfo = `${asBigUnit(fee)} ${feePercent}% (${feeRate})`;
+          const feeInfo = `${formatTokens(fee)} ${feePercent}% (${feeRate})`;
 
           return join([
-            `${icons.earn} Forwarded ${escape(asBigUnit(tokens))}`,
+            `${icons.earn} Forwarded ${escape(formatTokens(tokens))}`,
             `${between}${escape('.')}`,
             escape(`Earned ${feeInfo}`),
           ]);

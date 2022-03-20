@@ -3,12 +3,12 @@ const {getNodeAlias} = require('ln-sync');
 const {returnResult} = require('asyncjs-util');
 
 const {icons} = require('./../interface');
+const {formatTokens} = require('./../interface');
 
 const escape = text => text.replace(/[_*[\]()~`>#+\-=|{}.!\\]/g, '\\\$&');
 const {isArray} = Array;
 const markup = {parse_mode: 'MarkdownV2'};
 const niceName = node => node.alias || node.id.substring(0, 8);
-const tokAsBig = tokens => (tokens / 1e8).toFixed(8);
 
 /** Post settled payment
 
@@ -72,8 +72,8 @@ module.exports = ({from, id, lnd, nodes, payment, send}, cbk) => {
       // Create the message details
       message: ['getNode', ({getNode}, cbk) => {
         const isTransfer = nodes.includes(payment.destination);
-        const routingFee = `. Paid routing fee: ${tokAsBig(payment.safe_fee)}`;
-        const sent = tokAsBig(payment.safe_tokens - payment.safe_fee);
+        const routingFee = `. Paid routing fee: ${formatTokens(payment.safe_fee)}`;
+        const sent = formatTokens(payment.safe_tokens - payment.safe_fee);
         const toNode = niceName(getNode);
 
         const action = isTransfer ? 'Transferred' : 'Sent';

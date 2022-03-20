@@ -2,12 +2,12 @@ const asyncAuto = require('async/auto');
 const {returnResult} = require('asyncjs-util');
 
 const {icons} = require('./../interface');
+const {formatTokens} = require('./../interface');
 
 const escape = text => text.replace(/[_*[\]()~`>#+\-=|{}.!\\]/g, '\\\$&');
 const {isArray} = Array;
 const joinElements = arr => arr.join(' ');
 const markup = {parse_mode: 'MarkdownV2'};
-const tokAsBig = tokens => (tokens / 1e8).toFixed(8);
 
 /** Post chain transaction
 
@@ -71,7 +71,7 @@ module.exports = ({confirmed, from, id, nodes, send, transaction}, cbk) => {
       details: ['validate', ({}, cbk) => {
         const chainFee = transaction.chain_fee;
 
-        const fee = !!chainFee ? `Paid ${tokAsBig(chainFee)} fee` : '';
+        const fee = !!chainFee ? `Paid ${formatTokens(chainFee)} fee` : '';
 
         const related = transaction.related_channels.map(related => {
           const alias = related.node || related.with || String();
@@ -108,7 +108,7 @@ module.exports = ({confirmed, from, id, nodes, send, transaction}, cbk) => {
         // Exit early when the transaction is receiving
         if (!!transaction.received) {
           const elements = [
-            `Received ${tokAsBig(transaction.received)}`,
+            `Received ${formatTokens(transaction.received)}`,
             fee,
             !!relatedChannels.length ? `Related: ${relatedChannels}` : '',
           ];
@@ -121,7 +121,7 @@ module.exports = ({confirmed, from, id, nodes, send, transaction}, cbk) => {
           const sentTo = transaction.sent_to;
 
           const elements = [
-            `Sent ${tokAsBig(transaction.sent)}`,
+            `Sent ${formatTokens(transaction.sent)}`,
             fee,
             !!sentTo ? `Sent to ${sentTo.join(', ')}` : '',
             !!relatedChannels.length ? `Related: ${relatedChannels}` : '',

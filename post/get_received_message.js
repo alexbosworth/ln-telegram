@@ -5,8 +5,8 @@ const {returnResult} = require('asyncjs-util');
 const {verifyBytesSignature} = require('ln-service');
 
 const {icons} = require('./../interface');
+const {formatTokens} = require('./../interface');
 
-const asBigUnit = tokens => (tokens / 1e8).toFixed(8);
 const bufFromHex = hex => Buffer.from(hex, 'hex');
 const dash = ' - ';
 const dateType = '34349343';
@@ -100,7 +100,7 @@ module.exports = ({description, lnd, payments, received}, cbk) => {
       receiveLine: ['validate', ({}, cbk) => {
         const quoted = !description ? '' : `for “${description}”`;
 
-        return cbk(null, `Received ${asBigUnit(received)} ${quoted}`.trim());
+        return cbk(null, `Received ${formatTokens(received)} ${quoted}`.trim());
       }],
 
       // Get the node public key for signature verification puroses

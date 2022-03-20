@@ -40,5 +40,5 @@
   "scripts": {
     "test": "tap --branches=1 --functions=1 --lines=1 --statements=1 test/commands/*.js test/messages/*.js test/post/*.js"
   },
-  "version": "3.19.2"
+  "version": "3.20.0"
 }

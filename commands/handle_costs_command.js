@@ -4,10 +4,10 @@ const {getBorderCharacters} = require('table');
 const {getChainTransactions} = require('ln-accounting')
 const {getRebalancePayments} = require('ln-sync');
 const renderTable = require('table').table;
-const {formatTokens} = require('ln-sync');
 const {returnResult} = require('asyncjs-util');
 
 const {checkAccess} = require('./../authentication');
+const {formatTokens} = require('./../interface');
 
 const border = getBorderCharacters('void');
 const dayMs = 1000 * 60 * 60 * 24;
@@ -16,9 +16,7 @@ const formatReport = (from, n) => `⚡️ Spent on ${from}\n\n\`\`\`${n}\`\`\``;
 const formatReports = reports => reports.join('\n');
 const header = ['', 'Day', 'Week'];
 const {isArray} = Array;
-const noValue = '-';
 const {now} = Date;
-const paidAmount = tokens => formatTokens({tokens, is_monochrome: true});
 const sumOf = arr => arr.reduce((sum, n) => sum + n, BigInt(Number()));
 const tokFromMtok = mtok => Number(BigInt(mtok) / BigInt(1e3));
 const weekMs = 1000 * 60 * 60 * 24 * 7;
@@ -151,13 +149,13 @@ module.exports = ({from, id, nodes, reply, request, working}, cbk) => {
           const rows = [
             [
               'Rebalances',
-              paidAmount(tokFromMtok(paid.day)).display.trim() || noValue,
-              paidAmount(tokFromMtok(paid.week)).display.trim() || noValue,
+              formatTokens(tokFromMtok(paid.day)),
+              formatTokens(tokFromMtok(paid.week)),
             ],
             [
               'Chain Fees',
-              paidAmount(node.day).display.trim() || noValue,
-              paidAmount(node.week).display.trim() || noValue,
+              formatTokens(node.day),
+              formatTokens(node.week),
             ],
           ];
 

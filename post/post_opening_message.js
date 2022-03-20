@@ -4,13 +4,13 @@ const {getNodeAlias} = require('ln-sync');
 const {returnResult} = require('asyncjs-util');
 
 const {icons} = require('./../interface');
+const {formatTokens} = require('./../interface');
 
 const elementJoiner = ' ';
 const escape = text => text.replace(/[_*[\]()~`>#+\-=|{}.!\\]/g, '\\\$&');
 const {isArray} = Array;
 const markup = {parse_mode: 'MarkdownV2'};
 const textJoiner = '\n';
-const tokensAsBigTok = tokens => (tokens / 1e8).toFixed(8);
 
 /** Send channel opening message to telegram
 
@@ -78,7 +78,7 @@ module.exports = ({from, id, lnd, opening, send}, cbk) => {
 
           const elements = [
             `${icons.opening} ${action} new`,
-            escape(tokensAsBigTok(chan.capacity)),
+            escape(formatTokens(chan.capacity)),
             `channel ${direction} ${moniker}${escape('.')}`,
           ];
 

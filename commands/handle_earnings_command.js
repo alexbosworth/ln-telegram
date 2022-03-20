@@ -7,16 +7,15 @@ const {getBorderCharacters} = require('table');
 const {getInvoices} = require('ln-service');
 const {getPayment} = require('ln-service');
 const renderTable = require('table').table;
-const {formatTokens} = require('ln-sync');
 const {getForwards} = require('ln-service');
 const {returnResult} = require('asyncjs-util');
 
 const {checkAccess} = require('./../authentication');
+const {formatTokens} = require('./../interface');
 
 const border = getBorderCharacters('void');
 const dayMs = 1000 * 60 * 60 * 24;
 const defaultInvoicesLimit = 100;
-const earnedAmount = tokens => formatTokens({tokens, is_monochrome: true});
 const earnedViaInvoices = 'Invoiced';
 const earnedViaRouting = 'Routing';
 const formatReport = (from, n) => `💰 Earned on ${from}\n\n\`\`\`${n}\`\`\``;
@@ -24,7 +23,6 @@ const formatReports = reports => reports.join('\n');
 const header = ['', 'Day', 'Week'];
 const {isArray} = Array;
 const limit = 99999;
-const noValue = '-';
 const notFound = 404;
 const {now} = Date;
 const sumOf = arr => arr.reduce((sum, n) => sum + n, BigInt(Number()));
@@ -212,13 +210,13 @@ module.exports = ({from, id, nodes, reply, working}, cbk) => {
           const rows = [
             [
               earnedViaRouting,
-              earnedAmount(tokFromMtok(node.day)).display.trim() || noValue,
-              earnedAmount(tokFromMtok(node.week)).display.trim() || noValue,
+              formatTokens(tokFromMtok(node.day)),
+              formatTokens(tokFromMtok(node.week)),
             ],
             [
               earnedViaInvoices,
-              earnedAmount(tokFromMtok(got.day)).display.trim() || noValue,
-              earnedAmount(tokFromMtok(got.week)).display.trim() || noValue,
+              formatTokens(tokFromMtok(got.day)),
+              formatTokens(tokFromMtok(got.week)),
             ],
           ];
 

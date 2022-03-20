@@ -4,13 +4,13 @@ const {getNodeAlias} = require('ln-sync');
 const {returnResult} = require('asyncjs-util');
 
 const {icons} = require('./../interface');
+const {formatTokens} = require('./../interface');
 
 const channelPoint = n => `${n.transaction_id}:${n.transaction_vout}`;
 const escape = text => text.replace(/[_*[\]()~`>#+\-=|{}.!\\]/g, '\\\$&');
 const {isArray} = Array;
 const joinLines = lines => lines.filter(n => !!n).join('\n');
 const markup = {parse_mode: 'MarkdownV2'};
-const tokensAsBigTok = tokens => (tokens / 1e8).toFixed(8);
 const uniq = arr => Array.from(new Set(arr));
 
 /** Send channel closing message to telegram
@@ -80,7 +80,7 @@ module.exports = ({closing, from, id, lnd, nodes, send}, cbk) => {
         const [, otherNode] = nodes;
 
         const details = closing.map(chan => {
-          const amount = tokensAsBigTok(chan.capacity);
+          const amount = formatTokens(chan.capacity);
           const node = getAliases.find(n => n.id === chan.partner_public_key);
 
           const peer = escape(`${node.alias} ${node.id}`.trim());

@@ -1,7 +1,8 @@
+const {formatTokens} = require('./../interface');
+
 const join = arr => arr.filter(n => !!n).join('\n');
 const markup = undefined;
 const mode = 'MarkdownV2';
-const tokensAsBigTokens = tokens => (tokens / 1e8).toFixed(8);
 const escape = text => text.replace(/[_*[\]()~`>#+\-=|{}.!\\]/g, '\\\$&');
 
 /** Settle trade message
@@ -26,7 +27,7 @@ module.exports = args => {
   const to = `${escape(args.alias)} \`${args.to}\``.trim();
 
   const text = join([
-    `😎 Sold: ${escape(tokensAsBigTokens(args.tokens))} ${memo}`,
+    `😎 Sold: ${escape(formatTokens(args.tokens))} ${memo}`,
     `to ${to}`,
     `${escape(args.from || '')}`,
   ]);

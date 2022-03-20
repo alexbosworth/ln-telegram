@@ -4,6 +4,7 @@ const {parsePaymentRequest} = require('ln-service');
 const {callbackCommands} = require('./../interface');
 const {labels} = require('./../interface');
 const {titles} = require('./../interface');
+const {formatTokens} = require('./../interface');
 
 const {cancelInvoice} = callbackCommands;
 const {invoiceMessageCancelButtonLabel} = labels;
@@ -15,7 +16,6 @@ const mode = 'Markdown';
 const {setInvoiceDescription} = callbackCommands;
 const {setInvoiceNode} = callbackCommands;
 const {setInvoiceTokens} = callbackCommands;
-const tokensAsBigTokens = tokens => (tokens / 1e8).toFixed(8);
 
 /** Create an invoice message
 
@@ -48,7 +48,7 @@ module.exports = ({from, request}) => {
   const memo = !description ? '' : `“${description}”`;
 
   const text = join([
-    `${titles.createdInvoicePrefix}${tokensAsBigTokens(tokens)} ${memo}`,
+    `${titles.createdInvoicePrefix}${formatTokens(tokens)} ${memo}`,
     `\`${request}\``,
     `${from || ''}`,
   ]);
