@@ -1,15 +1,15 @@
 const {getBorderCharacters} = require('table');
 const renderTable = require('table').table;
 
-const {icons} = require('./../interface');
 const {formatTokens} = require('./../interface');
+const {icons} = require('./../interface');
 
 const border = getBorderCharacters('void');
 const escape = text => text.replace(/[_*[\]()~`>#+\-=|{}.!\\]/g, '\\\$&');
+const formatLiquidity = tokens => formatTokens({tokens, none: '-'}).display;
 const formatReport = (from, n) => `${from}\`\`\`\n${n}\`\`\``;
 const head = `*Liquidity:*\n\n`;
 const noFrom = '';
-const noValue = '-';
 const peerTitle = (query, k) => `*Liquidity with ${query} ${k}:*\n\n`;
 const shortId = key => key.substring(0, 8);
 
@@ -59,8 +59,8 @@ module.exports = ({alias, inbound, nodes, outbound, peer}) => {
       const from = !otherNode ? noFrom : `_${icons.liquidity} ${named}_:\n`;
 
       const rows = [
-        ['Inbound', formatTokens(remote.balance) || noValue],
-        ['Outbound', formatTokens(local.balance) || noValue],
+        ['Inbound', formatLiquidity(remote.balance)],
+        ['Outbound', formatLiquidity(local.balance)],
       ];
 
       return formatReport(from, renderTable(rows, {border, singleLine: true}));

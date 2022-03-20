@@ -7,9 +7,9 @@ const {parsePaymentRequest} = require('ln-service');
 const {returnResult} = require('asyncjs-util');
 
 const {checkAccess} = require('./../authentication');
+const {formatTokens} = require('./../interface');
 const {icons} = require('./../interface');
 const {makeRemoveButton} = require('./../buttons');
-const {formatTokens} = require('./../interface');
 
 const {isArray} = Array;
 
@@ -17,6 +17,7 @@ const argsFromText = text => text.split(' ');
 const bigType = 'large_channels';
 const escape = text => text.replace(/[_*[\]()~`>#+\-=|{}.!\\]/g, '\\\$&');
 const expectedQueryErrorMessage = 'ExpectedQueryForGraphCommand';
+const formatAmount = tokens => formatTokens({tokens}).display;
 const ipv4Match = /^((25[0-5]|(2[0-4]|1\d|[1-9]|)\d)(\.(?!$)|$)){4}$/;
 const ipv6Match = /^[a-fA-F0-9:]+$/;
 const markup = {parse_mode: 'MarkdownV2'};
@@ -168,7 +169,7 @@ module.exports = ({from, id, nodes, remove, reply, text, working}, cbk) => {
 
         const node = getNodeInfo.value;
 
-        const capacity = `${formatTokens(node.capacity)} capacity `;
+        const capacity = `${formatAmount(node.capacity)} capacity `;
         const isBig = !!node.features.find(n => n.type === bigType);
         const isIpV4 = !!node.sockets.find(n => ipv4Match.test(socketHost(n)));
         const isIpV6 = !!node.sockets.find(n => ipv6Match.test(socketHost(n)));

@@ -78,7 +78,7 @@ module.exports = ({from, id, lnd, opening, send}, cbk) => {
 
           const elements = [
             `${icons.opening} ${action} new`,
-            escape(formatTokens(chan.capacity)),
+            escape(formatTokens({tokens: chan.capacity}).display),
             `channel ${direction} ${moniker}${escape('.')}`,
           ];
 

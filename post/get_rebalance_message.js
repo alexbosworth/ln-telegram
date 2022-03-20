@@ -4,8 +4,8 @@ const {getNodeAlias} = require('ln-sync');
 const {returnResult} = require('asyncjs-util');
 const {subscribeToPastPayment} = require('ln-service');
 
-const {icons} = require('./../interface');
 const {formatTokens} = require('./../interface');
+const {icons} = require('./../interface');
 
 const asPercent = (fee, tokens) => (fee / tokens * 100).toFixed(2);
 const asPpm = (fee, tokens) => (fee / tokens * 1e6).toFixed();
@@ -107,8 +107,8 @@ module.exports = ({fee, hops, lnd, payments, received}, cbk) => {
 
       // Derive a description of the rebalance
       rebalanceDescription: ['getIn', 'getOut', ({getIn, getOut}, cbk) => {
-        const amount = escape(formatTokens(received));
-        const feeAmount = escape(formatTokens(fee));
+        const amount = escape(formatTokens({tokens: received}).display);
+        const feeAmount = escape(formatTokens({tokens: fee}).display);
         const feePercent = escape(asPercent(fee, received));
         const feeRate = escape(`(${asPpm(fee, received)})`);
         const separator = escape('. Fee: ');

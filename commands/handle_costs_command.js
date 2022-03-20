@@ -17,6 +17,7 @@ const formatReports = reports => reports.join('\n');
 const header = ['', 'Day', 'Week'];
 const {isArray} = Array;
 const {now} = Date;
+const paidAmount = tokens => formatTokens({tokens, none: '-'}).display;
 const sumOf = arr => arr.reduce((sum, n) => sum + n, BigInt(Number()));
 const tokFromMtok = mtok => Number(BigInt(mtok) / BigInt(1e3));
 const weekMs = 1000 * 60 * 60 * 24 * 7;
@@ -149,13 +150,13 @@ module.exports = ({from, id, nodes, reply, request, working}, cbk) => {
           const rows = [
             [
               'Rebalances',
-              formatTokens(tokFromMtok(paid.day)),
-              formatTokens(tokFromMtok(paid.week)),
+              paidAmount(tokFromMtok(paid.day)),
+              paidAmount(tokFromMtok(paid.week)),
             ],
             [
               'Chain Fees',
-              formatTokens(node.day),
-              formatTokens(node.week),
+              paidAmount(node.day),
+              paidAmount(node.week),
             ],
           ];
 

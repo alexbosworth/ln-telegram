@@ -5,4 +5,11 @@ const icons = require('./icons');
 const labels = require('./labels');
 const titles = require('./titles');
 
-module.exports = {callbackCommands, editQuestions, formatTokens, icons, labels, titles};
+module.exports = {
+  callbackCommands,
+  editQuestions,
+  formatTokens,
+  icons,
+  labels,
+  titles,
+};

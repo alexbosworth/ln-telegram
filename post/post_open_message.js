@@ -1,9 +1,11 @@
 const asyncAuto = require('async/auto');
 const {getPeerLiquidity} = require('ln-sync');
 const {returnResult} = require('asyncjs-util');
+
 const {formatTokens} = require('./../interface');
 
 const detailsJoiner = ' ';
+const displayAmount = tokens => formatTokens({tokens}).display;
 const escape = text => text.replace(/[_*[\]()~`>#+\-=|{}.!\\]/g, '\\\$&');
 const markup = {parse_mode: 'MarkdownV2'};
 const textJoiner = '\n';
@@ -74,7 +76,7 @@ module.exports = (args, cbk) => {
       // Message text
       message: ['getLiquidity', ({getLiquidity}, cbk) => {
         const action = args.is_partner_initiated ? 'Accepted' : 'Opened';
-        const capacity = formatTokens(args.capacity);
+        const capacity = displayAmount(args.capacity);
         const channel = args.is_private ? 'private channel' : 'channel';
         const direction = !!args.is_partner_initiated ? 'from' : 'to';
         const moniker = `${getLiquidity.alias} ${args.partner_public_key}`;
@@ -83,8 +85,8 @@ module.exports = (args, cbk) => {
 
         const details = [
           `${event} ${direction} ${moniker}.`,
-          `Inbound liquidity now: ${formatTokens(getLiquidity.inbound)}.`,
-          `Outbound liquidity now: ${formatTokens(getLiquidity.outbound)}.`,
+          `Inbound liquidity now: ${displayAmount(getLiquidity.inbound)}.`,
+          `Outbound liquidity now: ${displayAmount(getLiquidity.outbound)}.`,
         ];
 
         const text = [`🌹 ${details.join(detailsJoiner)}`, args.from];

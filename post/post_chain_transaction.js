@@ -1,10 +1,11 @@
 const asyncAuto = require('async/auto');
 const {returnResult} = require('asyncjs-util');
 
-const {icons} = require('./../interface');
 const {formatTokens} = require('./../interface');
+const {icons} = require('./../interface');
 
 const escape = text => text.replace(/[_*[\]()~`>#+\-=|{}.!\\]/g, '\\\$&');
+const formatAmount = tokens => formatTokens({tokens}).display;
 const {isArray} = Array;
 const joinElements = arr => arr.join(' ');
 const markup = {parse_mode: 'MarkdownV2'};
@@ -71,7 +72,7 @@ module.exports = ({confirmed, from, id, nodes, send, transaction}, cbk) => {
       details: ['validate', ({}, cbk) => {
         const chainFee = transaction.chain_fee;
 
-        const fee = !!chainFee ? `Paid ${formatTokens(chainFee)} fee` : '';
+        const fee = !!chainFee ? `Paid ${formatAmount(chainFee)} fee` : '';
 
         const related = transaction.related_channels.map(related => {
           const alias = related.node || related.with || String();
@@ -108,7 +109,7 @@ module.exports = ({confirmed, from, id, nodes, send, transaction}, cbk) => {
         // Exit early when the transaction is receiving
         if (!!transaction.received) {
           const elements = [
-            `Received ${formatTokens(transaction.received)}`,
+            `Received ${formatAmount(transaction.received)}`,
             fee,
             !!relatedChannels.length ? `Related: ${relatedChannels}` : '',
           ];
@@ -121,7 +122,7 @@ module.exports = ({confirmed, from, id, nodes, send, transaction}, cbk) => {
           const sentTo = transaction.sent_to;
 
           const elements = [
-            `Sent ${formatTokens(transaction.sent)}`,
+            `Sent ${formatAmount(transaction.sent)}`,
             fee,
             !!sentTo ? `Sent to ${sentTo.join(', ')}` : '',
             !!relatedChannels.length ? `Related: ${relatedChannels}` : '',

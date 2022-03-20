@@ -27,7 +27,7 @@ module.exports = args => {
   const to = `${escape(args.alias)} \`${args.to}\``.trim();
 
   const text = join([
-    `😎 Sold: ${escape(formatTokens(args.tokens))} ${memo}`,
+    `😎 Sold: ${escape(formatTokens({tokens: args.tokens}).display)} ${memo}`,
     `to ${to}`,
     `${escape(args.from || '')}`,
   ]);

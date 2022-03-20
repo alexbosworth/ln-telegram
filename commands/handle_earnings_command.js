@@ -16,6 +16,7 @@ const {formatTokens} = require('./../interface');
 const border = getBorderCharacters('void');
 const dayMs = 1000 * 60 * 60 * 24;
 const defaultInvoicesLimit = 100;
+const earnedTokens = tokens => formatTokens({tokens, none: '-'}).display;
 const earnedViaInvoices = 'Invoiced';
 const earnedViaRouting = 'Routing';
 const formatReport = (from, n) => `💰 Earned on ${from}\n\n\`\`\`${n}\`\`\``;
@@ -210,13 +211,13 @@ module.exports = ({from, id, nodes, reply, working}, cbk) => {
           const rows = [
             [
               earnedViaRouting,
-              formatTokens(tokFromMtok(node.day)),
-              formatTokens(tokFromMtok(node.week)),
+              earnedTokens(tokFromMtok(node.day)),
+              earnedTokens(tokFromMtok(node.week)),
             ],
             [
               earnedViaInvoices,
-              formatTokens(tokFromMtok(got.day)),
-              formatTokens(tokFromMtok(got.week)),
+              earnedTokens(tokFromMtok(got.day)),
+              earnedTokens(tokFromMtok(got.week)),
             ],
           ];
 

@@ -1,8 +1,8 @@
 const {encodeTrade} = require('paid-services');
 const {DateTime} = require('luxon');
 
-const {titles} = require('./../interface');
 const {formatTokens} = require('./../interface');
+const {titles} = require('./../interface');
 const tradeEditButtons = require('./trade_edit_buttons');
 
 const escape = text => text.replace(/[_*[\]()~`>#+\-=|{}.!\\]/g, '\\\$&');
@@ -38,7 +38,7 @@ module.exports = args => {
   const expiry = escape(fromISO(args.expires_at).toLocaleString());
   const {markup} = tradeEditButtons({nodes: args.nodes});
   const memo = !args.description ? '' : `“${escape(args.description)}” `;
-  const price = escape(formatTokens(args.tokens));
+  const price = escape(formatTokens({tokens: args.tokens}).display);
 
   const {trade} = encodeTrade({
     connect: {

@@ -6,6 +6,7 @@ const {icons} = require('./../interface');
 const {formatTokens} = require('./../interface');
 
 const escape = text => text.replace(/[_*[\]()~`>#+\-=|{}.!\\]/g, '\\\$&');
+const formatCapacity = tokens => formatTokens({tokens}).display;
 const fromName = res => res.alias || res.id.substring(0, 8);
 const join = arr => arr.join('\n');
 
@@ -53,7 +54,7 @@ module.exports = ({capacity, from, lnd, rate}, cbk) => {
 
       // Message to post
       message: ['getAlias', ({getAlias}, cbk) => {
-        const proposal = `${formatTokens(capacity)} balanced channel open`;
+        const proposal = `${formatCapacity(capacity)} balanced channel open`;
 
         const elements = [
           escape(`Received a ${proposal} proposal from ${fromName(getAlias)}`),

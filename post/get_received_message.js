@@ -4,13 +4,14 @@ const {getNodeAlias} = require('ln-sync');
 const {returnResult} = require('asyncjs-util');
 const {verifyBytesSignature} = require('ln-service');
 
-const {icons} = require('./../interface');
 const {formatTokens} = require('./../interface');
+const {icons} = require('./../interface');
 
 const bufFromHex = hex => Buffer.from(hex, 'hex');
 const dash = ' - ';
 const dateType = '34349343';
 const escape = text => text.replace(/[_*[\]()~`>#+\-=|{}.!\\]/g, '\\\$&');
+const formatAmt = tokens => formatTokens({tokens}).display;
 const fromKeyType = '34349339';
 const hexAsUtf8 = hex => Buffer.from(hex, 'hex').toString('utf8');
 const hexFromBuf = buffer => buffer.toString('hex');
@@ -100,7 +101,7 @@ module.exports = ({description, lnd, payments, received}, cbk) => {
       receiveLine: ['validate', ({}, cbk) => {
         const quoted = !description ? '' : `for “${description}”`;
 
-        return cbk(null, `Received ${formatTokens(received)} ${quoted}`.trim());
+        return cbk(null, `Received ${formatAmt(received)} ${quoted}`.trim());
       }],
 
       // Get the node public key for signature verification puroses

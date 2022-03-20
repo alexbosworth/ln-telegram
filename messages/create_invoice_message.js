@@ -2,9 +2,9 @@ const {InlineKeyboard} = require('grammy');
 const {parsePaymentRequest} = require('ln-service');
 
 const {callbackCommands} = require('./../interface');
+const {formatTokens} = require('./../interface');
 const {labels} = require('./../interface');
 const {titles} = require('./../interface');
-const {formatTokens} = require('./../interface');
 
 const {cancelInvoice} = callbackCommands;
 const {invoiceMessageCancelButtonLabel} = labels;
@@ -48,7 +48,7 @@ module.exports = ({from, request}) => {
   const memo = !description ? '' : `“${description}”`;
 
   const text = join([
-    `${titles.createdInvoicePrefix}${formatTokens(tokens)} ${memo}`,
+    `${titles.createdInvoicePrefix}${formatTokens({tokens}).display} ${memo}`,
     `\`${request}\``,
     `${from || ''}`,
   ]);

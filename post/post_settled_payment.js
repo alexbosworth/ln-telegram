@@ -5,6 +5,7 @@ const {returnResult} = require('asyncjs-util');
 const {icons} = require('./../interface');
 const {formatTokens} = require('./../interface');
 
+const display = tokens => formatTokens({tokens}).display;
 const escape = text => text.replace(/[_*[\]()~`>#+\-=|{}.!\\]/g, '\\\$&');
 const {isArray} = Array;
 const markup = {parse_mode: 'MarkdownV2'};
@@ -72,8 +73,8 @@ module.exports = ({from, id, lnd, nodes, payment, send}, cbk) => {
       // Create the message details
       message: ['getNode', ({getNode}, cbk) => {
         const isTransfer = nodes.includes(payment.destination);
-        const routingFee = `. Paid routing fee: ${formatTokens(payment.safe_fee)}`;
-        const sent = formatTokens(payment.safe_tokens - payment.safe_fee);
+        const routingFee = `. Paid routing fee: ${display(payment.safe_fee)}`;
+        const sent = display(payment.safe_tokens - payment.safe_fee);
         const toNode = niceName(getNode);
 
         const action = isTransfer ? 'Transferred' : 'Sent';

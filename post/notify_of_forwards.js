@@ -13,6 +13,7 @@ const asPercent = (fee, tokens) => (fee / tokens * 100).toFixed(2);
 const asPpm = (fee, tokens) => (fee / tokens * 1e6).toFixed();
 const consolidate = forwards => consolidateForwards({forwards}).forwards;
 const escape = text => text.replace(/[_*[\]()~`>#+\-=|{}.!\\]/g, '\\\$&');
+const formatValue = tokens => formatTokens({tokens}).display;
 const {isArray} = Array;
 const join = n => n.filter(n => !!n).join(' ');
 const joinAsLines = n => n.join('\n');
@@ -143,10 +144,10 @@ module.exports = ({forwards, from, id, lnd, node, nodes, send}, cbk) => {
           const toPeer = outbound.alias || outbound.id || outbound.channel;
 
           const between = `${escape(fromPeer)} *→* ${escape(toPeer)}`;
-          const feeInfo = `${formatTokens(fee)} ${feePercent}% (${feeRate})`;
+          const feeInfo = `${formatValue(fee)} ${feePercent}% (${feeRate})`;
 
           return join([
-            `${icons.earn} Forwarded ${escape(formatTokens(tokens))}`,
+            `${icons.earn} Forwarded ${escape(formatValue(tokens))}`,
             `${between}${escape('.')}`,
             escape(`Earned ${feeInfo}`),
           ]);

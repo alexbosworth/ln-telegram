@@ -1,9 +1,11 @@
 const asyncAuto = require('async/auto');
 const {getPeerLiquidity} = require('ln-sync');
 const {returnResult} = require('asyncjs-util');
+
 const {formatTokens} = require('./../interface');
 
 const detailsJoiner = ' ';
+const displayTokens = tokens => formatTokens({tokens}).display;
 const escape = text => text.replace(/[_*[\]()~`>#+\-=|{}.!\\]/g, '\\\$&');
 const markup = {parse_mode: 'MarkdownV2'};
 const textJoiner = '\n';
@@ -78,7 +80,7 @@ module.exports = (args, cbk) => {
 
       // Event prefix
       event: ['validate', async ({}, cbk) => {
-        const capacity = formatTokens(args.capacity);
+        const capacity = displayTokens(args.capacity);
 
         if (args.is_breach_close) {
           return `Breach countered on ${capacity} channel with`;
@@ -106,8 +108,8 @@ module.exports = (args, cbk) => {
       message: ['event', 'getLiquidity', ({event, getLiquidity}, cbk) => {
         const details = [
           `${event} ${getLiquidity.alias} ${args.partner_public_key}.`,
-          `Inbound liquidity now: ${formatTokens(getLiquidity.inbound)}.`,
-          `Outbound liquidity now: ${formatTokens(getLiquidity.outbound)}.`,
+          `Inbound liquidity now: ${displayTokens(getLiquidity.inbound)}.`,
+          `Outbound liquidity now: ${displayTokens(getLiquidity.outbound)}.`,
         ];
 
         const text = [`🥀 ${details.join(detailsJoiner)}`, args.from];

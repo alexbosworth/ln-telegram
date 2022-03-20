@@ -3,8 +3,8 @@ const asyncMap = require('async/map');
 const {getNodeAlias} = require('ln-sync');
 const {returnResult} = require('asyncjs-util');
 
-const {icons} = require('./../interface');
 const {formatTokens} = require('./../interface');
+const {icons} = require('./../interface');
 
 const channelPoint = n => `${n.transaction_id}:${n.transaction_vout}`;
 const escape = text => text.replace(/[_*[\]()~`>#+\-=|{}.!\\]/g, '\\\$&');
@@ -80,7 +80,7 @@ module.exports = ({closing, from, id, lnd, nodes, send}, cbk) => {
         const [, otherNode] = nodes;
 
         const details = closing.map(chan => {
-          const amount = formatTokens(chan.capacity);
+          const amount = formatTokens({tokens: chan.capacity}).display;
           const node = getAliases.find(n => n.id === chan.partner_public_key);
 
           const peer = escape(`${node.alias} ${node.id}`.trim());
