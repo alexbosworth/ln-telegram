@@ -1,5 +1,9 @@
 # Versions
 
+## Version 3.20.0
+
+- Add support for `PREFERRED_TOKENS_TYPE=full` to adjust amount formatting
+
 ## Version 3.19.2
 
 - `handleStopCommand`: Add confirmation to avoid accidental termination
