@@ -1,14 +1,15 @@
 const keyForPair = n => `${n.incoming_channel}:${n.outgoing_channel}`;
 const {keys} = Object;
+const mtokensAsTokens = n => Number(n) / 1e3;
 
 /** Consolidate a set of forwards to combine similar forwards together
 
   {
     forwards: [{
-      fee: <Forward Fee Tokens Earned Number>
+      fee_mtokens: <Forward Fee Millitokens Earned String>
       incoming_channel: <Standard Format Incoming Channel Id String>
+      mtokens: <Forwarded Millitokens String>
       outgoing_channel: <Standard Format Outgoing Channel Id String>
-      tokens: <Forwarded Tokens Number>
     }]
   }
 
@@ -24,14 +25,16 @@ const {keys} = Object;
 */
 module.exports = ({forwards}) => {
   const unique = forwards.reduce((sum, forward) => {
+    const fee = mtokensAsTokens(forward.fee_mtokens);
+    const tokens = mtokensAsTokens(forward.mtokens);
     const pair = keyForPair(forward);
 
     sum[pair] = sum[pair] || {};
 
-    sum[pair].fee = (sum[pair].fee || Number()) + Number(forward.fee_mtokens) / 1e3;
+    sum[pair].fee = (sum[pair].fee || Number()) + fee;
     sum[pair].incoming_channel = forward.incoming_channel;
     sum[pair].outgoing_channel = forward.outgoing_channel;
-    sum[pair].tokens = (sum[pair].tokens || Number()) + Number(forward.mtokens) / 1e3;
+    sum[pair].tokens = (sum[pair].tokens || Number()) + tokens;
 
     return sum;
   },

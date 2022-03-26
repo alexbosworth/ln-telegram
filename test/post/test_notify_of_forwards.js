@@ -70,10 +70,10 @@ const tests = [
   {
     args: makeArgs({
       forwards: [{
-        fee: 1,
+        fee_mtokens: '1000',
         incoming_channel: '0x0x1',
+        mtokens: '1000',
         outgoing_channel: '1x1x1',
-        tokens: 1,
       }],
       lnd: {
         default: {
@@ -92,10 +92,10 @@ const tests = [
   {
     args: makeArgs({
       forwards: [{
-        fee: 1,
+        fee_mtokens: '1000',
         incoming_channel: '0x0x1',
+        mtokens: '1000',
         outgoing_channel: '1x1x1',
-        tokens: 1,
       }],
       lnd: {
         default: {
@@ -115,10 +115,10 @@ const tests = [
   {
     args: makeArgs({
       forwards: [{
-        fee: 1,
+        fee_mtokens: '1000',
         incoming_channel: '0x0x1',
+        mtokens: '1000',
         outgoing_channel: '1x1x1',
-        tokens: 1,
       }],
       lnd: {
         default: {
