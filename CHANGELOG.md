@@ -1,5 +1,9 @@
 # Versions
 
+## Version 3.21.0
+
+- Add support for showing complete amounts in forwarding messages
+
 ## Version 3.20.0
 
 - Add support for `PREFERRED_TOKENS_TYPE=full` to adjust amount formatting
