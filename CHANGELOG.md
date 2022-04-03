@@ -1,6 +1,6 @@
 # Versions
 
-## Version 3.21.0
+## Version 3.21.1
 
 - Add support for showing complete amounts in forwarding messages
 
