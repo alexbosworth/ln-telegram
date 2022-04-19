@@ -57,7 +57,7 @@ module.exports = ({from, id, named, reply, request, version}, cbk) => {
       }],
 
       // Get version from NPM
-      getVersion: ['validate', ({}, cbk) => {
+      getVersion: ['checkAccess', ({}, cbk) => {
         reply(currentVersion(version));
 
         return request({json: true, url: url(named)}, (err, r, pkg) => {
