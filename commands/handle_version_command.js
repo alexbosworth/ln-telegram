@@ -1,8 +1,8 @@
 const asyncAuto = require('async/auto');
 const {returnResult} = require('asyncjs-util');
 
-const {checkAccess} = require('./../authentication');
 const {bot} = require('./../interaction');
+const {checkAccess} = require('./../authentication');
 
 const failedToGetVersion = `${bot} Failed to get version information from NPM`;
 const currentVersion = n => `${bot} Running version: ${n}`;
