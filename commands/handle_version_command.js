@@ -1,6 +1,7 @@
 const asyncAuto = require('async/auto');
 const {returnResult} = require('asyncjs-util');
 
+const {checkAccess} = require('./../authentication');
 const {bot} = require('./../interaction');
 
 const failedToGetVersion = `${bot} Failed to get version information from NPM`;
@@ -12,6 +13,8 @@ const url = n => `https://registry.npmjs.org/${n}/latest`;
 /** Handle the mempool command
 
   {
+    from: <Command From User Id Number>
+    id: <Connected User Id Number>
     named: <Name To Look Up String>
     reply: <Reply Function>
     request: <Request Function>
@@ -20,11 +23,15 @@ const url = n => `https://registry.npmjs.org/${n}/latest`;
 
   @returns via cbk or Promise
 */
-module.exports = ({named, reply, request, version}, cbk) => {
+module.exports = ({from, id, named, reply, request, version}, cbk) => {
   return new Promise((resolve, reject) => {
     return asyncAuto({
       // Check arguments
       validate: cbk => {
+        if (!from) {
+          return cbk([400, 'ExpectedFromUserIdNumberForVersionCommand']);
+        }
+
         if (!named) {
           return cbk([400, 'ExpectedPackageNameStringToHandleVersionCommand']);
         }
@@ -43,6 +50,11 @@ module.exports = ({named, reply, request, version}, cbk) => {
 
         return cbk();
       },
+
+      // Authenticate the command caller is authorized to this command
+      checkAccess: ['validate', ({}, cbk) => {
+        return checkAccess({from, id, reply}, cbk);
+      }],
 
       // Get version from NPM
       getVersion: ['validate', ({}, cbk) => {
