@@ -1,5 +1,9 @@
 # Versions
 
+## Version 3.21.2
+
+- Disallow non-connected users from accessing /version and /mempool commands
+
 ## Version 3.21.1
 
 - Add support for showing complete amounts in forwarding messages
