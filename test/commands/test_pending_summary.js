@@ -1,0 +1,72 @@
+const {test} = require('@alexbosworth/tap');
+
+const pendingSummary = require('./../../commands/pending_summary');
+
+const makeArgs = overrides => {
+  const args = {
+    htlcs: [{
+      forwarding: [{
+        fee: 1,
+        in_peer: Buffer.alloc(33, 2).toString('hex'),
+        out_peer: Buffer.alloc(33, 3).toString('hex'),
+        tokens: 2,
+      }],
+      from: 'from',
+      nodes: [
+        {alias: 'alias', id: Buffer.alloc(33, 2).toString('hex')},
+        {alias: 'alias2', id: Buffer.alloc(33, 3).toString('hex')},
+      ],
+      sending: [{out_peer: Buffer.alloc(33, 3).toString('hex')}],
+    }],
+    pending: [{
+      closing: [{
+        partner_public_key: Buffer.alloc(33, 3).toString('hex'),
+        pending_balance: 1,
+        timelock_expiration: 2,
+      }],
+      from: 'from',
+      height: 1,
+      nodes: [
+        {alias: 'alias', id: Buffer.alloc(33, 2).toString('hex')},
+        {alias: 'alias2', id: Buffer.alloc(33, 3).toString('hex')},
+      ],
+      opening: [{
+        is_partner_initiated: true,
+        local_balance: 1,
+        partner_public_key: Buffer.alloc(33, 3).toString('hex'),
+        remote_balance: 2,
+        transaction_fee: 3,
+        transaction_id: Buffer.alloc(32).toString('hex'),
+      }],
+    }],
+  };
+
+  Object.keys(overrides).forEach(k => args[k] = overrides[k]);
+
+  return args;
+};
+
+const tests = [
+  {
+    args: makeArgs({}),
+    description: 'Pending summary is derived',
+    expected: [
+      "⏳ Waiting for inbound 0\\.00000006 channel with alias2 03030303 to confirm: `0000000000000000000000000000000000000000000000000000000000000000`",
+      "⏳ Waiting to recover 0\\.00000001 in 9 minutes from closing channel with alias2 03030303",
+      "💸 Forwarding 0\\.00000002 for 0\\.00000001 fee from alias 02020202 to alias2 03030303",
+      "👽 Probing out alias2 03030303",
+    ],
+  },
+];
+
+tests.forEach(({args, description, error, expected}) => {
+  return test(description, async ({end, strictSame, throws}) => {
+    if (!!error) {
+      throws(() => pendingSummary(args), error, 'Got expected error');
+    } else {
+      strictSame(pendingSummary(args), expected, 'Got expected result');
+    }
+
+    return end();
+  });
+});

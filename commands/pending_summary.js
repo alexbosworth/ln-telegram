@@ -1,8 +1,10 @@
 const {DateTime} = require('luxon');
 
-const {bot} = require('./../interaction');
+const {formatTokens} = require('./../interface');
+const {icons} = require('./../interface');
 
 const blocksAsEpoch = blocks => Date.now() + blocks * 1000 * 60 * 10;
+const escape = text => text.replace(/[_*[\]()~`>#+\-=|{}.!\\]/g, '\\\$&');
 const flatten = arr => [].concat(...arr);
 const fromNow = ms => !ms ? undefined : DateTime.fromMillis(ms).toRelative();
 const nodeAlias = (alias, id) => `${alias} ${id.substring(0, 8)}`.trim();
@@ -49,10 +51,12 @@ const uniq = arr => Array.from(new Set(arr));
         transaction_id: <Funding Transaction Id Hex String>
       }]
     }]
-    reply: <Reply to Bot Function>
   }
+
+  @returns
+  <Pending Item String>
 */
-module.exports = ({htlcs, pending, reply}) => {
+module.exports = ({htlcs, pending}) => {
   // Pending closing and opening channels
   const channels = pending.map(node => {
     // Opening channels, waiting for confirmation
@@ -62,14 +66,17 @@ module.exports = ({htlcs, pending, reply}) => {
         const funds = [opening.local_balance, opening.remote_balance];
         const peerId = opening.partner_public_key;
         const tx = opening.transaction_id;
+        const waiting = `${icons.opening} Waiting`;
 
         const capacity = sumOf(funds.concat(opening.transaction_fee));
         const peer = node.nodes.find(n => n.id === peerId);
 
-        const action = `${direction}bound ${capacity} channel`;
-        const alias = nodeAlias(peer.alias, peer.id);
+        const alias = escape(nodeAlias(peer.alias, peer.id));
+        const channel = `${formatTokens({tokens: capacity}).display} channel`;
 
-        return `Waiting for ${action} with ${alias} to confirm: ${tx}`;
+        const action = `${direction}bound ${escape(channel)}`;
+
+        return `${waiting} for ${action} with ${alias} to confirm: \`${tx}\``;
       });
 
     // Closing channels, waiting for coins to return
@@ -77,17 +84,18 @@ module.exports = ({htlcs, pending, reply}) => {
       .filter(n => !!n.timelock_expiration && !!n.pending_balance)
       .filter(n => n.timelock_expiration > node.height)
       .map(closing => {
-        const funds = closing.pending_balance;
+        const funds = formatTokens({tokens: closing.pending_balance}).display;
         const peerId = closing.partner_public_key;
         const waitBlocks = closing.timelock_expiration - node.height;
+        const waiting = `${icons.closing} Waiting`;
 
         const peer = node.nodes.find(n => n.id === peerId);
-        const time = fromNow(blocksAsEpoch(waitBlocks));
+        const time = escape(fromNow(blocksAsEpoch(waitBlocks)));
 
-        const action = `recover ${funds} ${time} from closing channel`;
+        const action = `recover ${escape(funds)} ${time} from closing channel`;
         const alias = nodeAlias(peer.alias, peer.id);
 
-        return `Waiting to ${action} with ${alias}`;
+        return `${waiting} to ${action} with ${escape(alias)}`;
       });
 
     return {
@@ -100,51 +108,56 @@ module.exports = ({htlcs, pending, reply}) => {
   const payments = htlcs.map(node => {
     // Forwarding an HTLC in one peer and out another
     const forwarding = node.forwarding.map(forward => {
-      const fee = forward.fee;
+      const fee = escape(formatTokens({tokens: forward.fee}).display);
       const from = node.nodes.find(n => n.id === forward.in_peer);
       const to = node.nodes.find(n => n.id === forward.out_peer);
-      const tokens = forward.tokens;
+      const tokens = escape(formatTokens({tokens: forward.tokens}).display);
 
       const action = `${tokens} for ${fee} fee`;
-      const inPeer = nodeAlias(from.alias, from.id);
-      const outPeer = nodeAlias(to.alias, to.id);
+      const forwarding = `${icons.forwarding} Forwarding`;
+      const inPeer = escape(nodeAlias(from.alias, from.id));
+      const outPeer = escape(nodeAlias(to.alias, to.id));
 
-      return `Forwarding ${action} from ${inPeer} to ${outPeer}`;
+      return `${forwarding} ${action} from ${inPeer} to ${outPeer}`;
     });
 
     // Probing out peers
     const probes = uniq(node.sending.map(n => n.out_peer)).map(key => {
       const out = node.nodes.find(n => n.id === key);
 
-      return nodeAlias(out.alias, out.id);
+      return escape(nodeAlias(out.alias, out.id));
     });
 
     const probing = !probes.length ?
-      [] : [`Probing out ${probes.join(', ')}`];
+      [] : [`${icons.probe} Probing out ${probes.join(', ')}`];
 
     return {from: node.from, payments: [].concat(forwarding).concat(probing)};
   });
 
-  // Notify of pending channels
-  channels.forEach(node => {
-    if (!node.channels.length) {
-      return reply(`${bot} ${node.from}: No pending channels.`);
-    }
+  const nodes = [];
 
-    const summary = [].concat(`⏳ ${node.from}:`).concat(node.channels);
-    const joinedSummary = summary.join('\n');
-
-    return reply(joinedSummary);
+  // Pending channels for a node
+  channels.filter(node => !!node.channels.length).forEach(node => {
+    return node.channels.forEach(item => nodes.push({item, from: node.from}));
   });
 
-  // Notify of pending payments
-  payments
-    .filter(n => !!n.payments.length)
-    .forEach(node => {
-      const summary = [].concat(`💸 ${node.from}:`).concat(node.payments);
+  // Pending payments for a node
+  payments.filter(n => !!n.payments.length).forEach(node => {
+    return node.payments.forEach(item => nodes.push({item, from: node.from}));
+  });
 
-      return reply(summary.join('\n'));
-    });
+  // Exit early when there is nothing pending for any nodes
+  if (!nodes.length) {
+    return [`${icons.bot} No pending payments or channels`];
+  }
 
-  return;
+  const sections = uniq(nodes.map(n => n.from));
+
+  return flatten(sections.map(from => {
+    const [, otherSection] = sections;
+
+    const title = !otherSection ? [] : [`\n*${escape(from)}*`];
+
+    return title.concat(nodes.filter(n => n.from === from).map(n => n.item));
+  }));
 };

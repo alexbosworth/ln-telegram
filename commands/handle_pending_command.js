@@ -7,12 +7,14 @@ const {getPendingChannels} = require('ln-service');
 const {returnResult} = require('asyncjs-util');
 
 const {checkAccess} = require('./../authentication');
-const notifyOfPending = require('./notify_of_pending');
 const pendingPayments = require('./pending_payments');
+const pendingSummary = require('./pending_summary');
 
 const blocksAsEpoch = blocks => Date.now() + blocks * 1000 * 60 * 10;
 const flatten = arr => [].concat(...arr);
 const {isArray} = Array;
+const join = lines => lines.join('\n').trim();
+const markup = {parse_mode: 'MarkdownV2'};
 const sumOf = arr => arr.reduce((sum, n) => sum + n, Number());
 const uniq = arr => Array.from(new Set(arr));
 
@@ -154,13 +156,11 @@ module.exports = ({from, id, nodes, reply, working}, cbk) => {
         cbk);
       }],
 
-      // Notify of pending
-      notify: ['getHtlcs', 'getPending', ({getHtlcs, getPending}, cbk) => {
-        working();
+      // Notify of pending forwards and channels
+      notify: ['getHtlcs', 'getPending', async ({getHtlcs, getPending}) => {
+        const summary = pendingSummary({htlcs: getHtlcs, pending: getPending});
 
-        notifyOfPending({reply, htlcs: getHtlcs, pending: getPending});
-
-        return cbk();
+        return await reply(join(summary), markup);
       }],
     },
     returnResult({reject, resolve}, cbk));

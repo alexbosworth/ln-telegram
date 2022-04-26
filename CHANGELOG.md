@@ -1,6 +1,6 @@
 # Versions
 
-## Version 3.21.2
+## Version 3.21.3
 
 - Disallow non-connected users from accessing /version and /mempool commands
 
