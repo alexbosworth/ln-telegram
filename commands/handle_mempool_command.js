@@ -84,7 +84,10 @@ module.exports = ({from, id, reply, request}, cbk) => {
             ];
           });
 
-        const chart = renderTable([header].concat(blocks), {border});
+        const chart = renderTable([header].concat(blocks), {
+          border,
+          singleLine: true,
+        });
 
         return cbk(null, formatReport(chart));
       }],

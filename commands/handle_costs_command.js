@@ -160,7 +160,10 @@ module.exports = ({from, id, nodes, reply, request, working}, cbk) => {
             ],
           ];
 
-          const chart = renderTable([header].concat(rows), {border});
+          const chart = renderTable([header].concat(rows), {
+            border,
+            singleLine: true,
+          });
 
           return formatReport(from, chart);
         });
