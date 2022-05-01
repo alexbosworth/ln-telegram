@@ -1,5 +1,9 @@
 # Versions
 
+## Version 3.21.4
+
+- `handleGraphCommand`: Add latest channels summary to node info
+
 ## Version 3.21.3
 
 - Disallow non-connected users from accessing /version and /mempool commands

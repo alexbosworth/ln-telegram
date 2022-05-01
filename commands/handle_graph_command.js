@@ -1,9 +1,15 @@
 const asyncAuto = require('async/auto');
 const asyncMap = require('async/map');
 const asyncReflect = require('async/reflect');
+const {DateTime} = require('luxon');
+const {decodeChanId} = require('bolt07');
 const {findKey} = require('ln-sync');
+const {getBorderCharacters} = require('table');
+const {getHeight} = require('ln-service');
 const {getNode} = require('ln-service');
+const {getNodeAlias} = require('ln-sync');
 const {parsePaymentRequest} = require('ln-service');
+const renderTable = require('table').table;
 const {returnResult} = require('asyncjs-util');
 
 const {checkAccess} = require('./../authentication');
@@ -15,13 +21,24 @@ const {isArray} = Array;
 
 const argsFromText = text => text.split(' ');
 const bigType = 'large_channels';
+const blockTime = (now, start) => Date.now() - 1000 * 60 * 10 * (now - start);
+const border = getBorderCharacters('void');
+const displayFee = (n, rate) => !n.length ? '' : `${(rate / 1e4).toFixed(2)}%`;
 const escape = text => text.replace(/[_*[\]()~`>#+\-=|{}.!\\]/g, '\\\$&');
 const expectedQueryErrorMessage = 'ExpectedQueryForGraphCommand';
 const formatAmount = tokens => formatTokens({tokens}).display;
+const fromNow = ms => !ms ? undefined : DateTime.fromMillis(ms).toRelative();
+const header = [' ', ' ', 'In %', 'Capacity', 'Out %'];
 const ipv4Match = /^((25[0-5]|(2[0-4]|1\d|[1-9]|)\d)(\.(?!$)|$)){4}$/;
 const ipv6Match = /^[a-fA-F0-9:]+$/;
+const isEmoji = /[^\p{L}\p{N}\p{P}\p{Z}{\^\$}]/gu;
+const limitPeers = peers => peers.slice(0, 6);
 const markup = {parse_mode: 'MarkdownV2'};
+const {max} = Math;
+const niceAlias = (alias, id) => (alias.trim() || id).substring(0, 16);
+const noEmoji = str => str.replace(isEmoji, String()).trim();
 const noQueryMsg = 'Missing graph query, try `/graph (public key/peer alias)`';
+const none = ' ';
 const notFoundCode = 404;
 const notFoundMsg = query => `\`${query}\` not found\\\. Wrong public key?`;
 const replyMarkdownV1 = reply => n => reply(n, {parse_mode: 'Markdown'});
@@ -85,7 +102,14 @@ module.exports = ({from, id, nodes, remove, reply, text, working}, cbk) => {
       }],
 
       // Remove the query
-      remove: ['checkAccess', async ({}) => await remove()],
+      remove: ['checkAccess', async ({}) => {
+        try {
+          return await remove();
+        } catch (err) {
+          // Ignore errors
+          return;
+        }
+      }],
 
       // Derive the public key query if present
       query: ['checkAccess', ({}, cbk) => {
@@ -125,6 +149,18 @@ module.exports = ({from, id, nodes, remove, reply, text, working}, cbk) => {
         cbk);
       })],
 
+      // Get the current block height for looking at peer age
+      getHeight: ['getKey', ({getKey}, cbk) => {
+        const [node] = (getKey.value || []).filter(n => !!n.id);
+
+        // Exit early when there is no key
+        if (!node) {
+          return cbk();
+        }
+
+        return getHeight({lnd: node.lnd}, cbk);
+      }],
+
       // Get node info, exit early if one saved node returns data
       getNodeInfo: ['query', 'getKey', asyncReflect(({query, getKey}, cbk) => {
         // Exit early when there is no get key result
@@ -152,16 +188,88 @@ module.exports = ({from, id, nodes, remove, reply, text, working}, cbk) => {
           return cbk(null, {
             alias: res.alias,
             capacity: !isMissingCapacity ? res.capacity : undefined,
+            channels: res.channels,
             features: res.features,
             id: node.id,
-            peer_count: uniq(keys).length,
+            lnd: node.lnd,
+            peers: uniq(keys),
             sockets: res.sockets.map(n => n.socket),
           });
         });
       })],
 
+      // Put together a summary of recent peers
+      peers: ['getHeight', 'getNodeInfo', ({getHeight, getNodeInfo}, cbk) => {
+        // Exit early when there is no node info
+        if (!getNodeInfo.value) {
+          return cbk();
+        }
+
+        const nodeInfo = getNodeInfo.value;
+
+        const peers = nodeInfo.peers.map(peerKey => {
+          const capacity = nodeInfo.channels
+            .filter(n => !!n.policies.find(n => n.public_key === peerKey))
+            .reduce((sum, {capacity}) => sum + capacity, Number());
+
+          const height = max(...nodeInfo.channels
+            .filter(n => !!n.policies.find(n => n.public_key === peerKey))
+            .map(({id}) => decodeChanId({channel: id}).block_height));
+
+          const inPolicies = nodeInfo.channels
+            .map(n => n.policies.find(n => n.public_key === peerKey))
+            .filter(n => !!n && n.fee_rate !== undefined);
+
+          const outPolicies = nodeInfo.channels
+            .filter(n => !!n.policies.find(n => n.public_key === peerKey))
+            .map(n => n.policies.find(n => n.public_key !== peerKey))
+            .filter(n => n.fee_rate !== undefined);
+
+          const inboundFeeRate = max(...inPolicies.map(n => n.fee_rate));
+          const outFeeRate = max(...outPolicies.map(n => n.fee_rate));
+
+          const row = [
+            peerKey,
+            fromNow(blockTime(getHeight.current_block_height, height)),
+            displayFee(inPolicies, inboundFeeRate),
+            formatTokens({none, tokens: capacity}).display,
+            displayFee(outPolicies, outFeeRate),
+          ];
+
+          return {height, row};
+        });
+
+        peers.sort((a, b) => b.height - a.height);
+
+        const rows = limitPeers(peers.map(n => n.row));
+
+        return asyncMap(rows, ([id], cbk) => {
+          return getNodeAlias({id, lnd: nodeInfo.lnd}, cbk);
+        },
+        (err, nodes) => {
+          if (!!err) {
+            return cbk(err);
+          }
+
+          const withAliases = rows.map(row => {
+            const [id, ...cols] = row;
+
+            const node = nodes.find(n => n.id === id);
+
+            return [niceAlias(noEmoji(node.alias), node.id)].concat(cols);
+          });
+
+          const chart = renderTable([header].concat(withAliases), {
+            border,
+            singleLine: true,
+          });
+
+          return cbk(null, `\`${escape(chart)}\``);
+        });
+      }],
+
       // Put together the fetched node info into a concise summary of the node
-      summary: ['getNodeInfo', ({getNodeInfo}, cbk) => {
+      summary: ['getNodeInfo', 'peers', ({getNodeInfo, peers}, cbk) => {
         // Exit early when there is no node info
         if (!getNodeInfo.value) {
           return cbk();
@@ -188,7 +296,7 @@ module.exports = ({from, id, nodes, remove, reply, text, working}, cbk) => {
 
         const summary = [
           `A ${!!node.capacity ? escape(capacity) : ''}node`,
-          ` with ${node.peer_count} peer${node.peer_count > 1 ? 's' : ''}`,
+          ` with ${node.peers.length} peer${node.peers.length > 1 ? 's' : ''}`,
           isBig ? ' that accepts large channels' : '',
           escape('.'),
           !!connection ? ` ${escape(connection)}` : '',
@@ -197,6 +305,7 @@ module.exports = ({from, id, nodes, remove, reply, text, working}, cbk) => {
         const report = [
           `Node: *${escape(node.alias) || shortKey(node.id)}* \`${node.id}\``,
           summary.filter(n => !!n).join(''),
+          peers,
         ];
 
         return cbk(null, report.join('\n'));
