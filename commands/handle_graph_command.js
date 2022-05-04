@@ -199,59 +199,73 @@ module.exports = ({from, id, nodes, remove, reply, text, working}, cbk) => {
       })],
 
       // Put together a summary of recent peers
-      peers: ['getHeight', 'getNodeInfo', ({getHeight, getNodeInfo}, cbk) => {
+      latest: ['getHeight', 'getNodeInfo', ({getHeight, getNodeInfo}, cbk) => {
         // Exit early when there is no node info
         if (!getNodeInfo.value) {
           return cbk();
         }
 
-        const nodeInfo = getNodeInfo.value;
+        try {
+          const nodeInfo = getNodeInfo.value;
 
-        const peers = nodeInfo.peers.map(peerKey => {
-          const capacity = nodeInfo.channels
-            .filter(n => !!n.policies.find(n => n.public_key === peerKey))
-            .reduce((sum, {capacity}) => sum + capacity, Number());
+          const peers = nodeInfo.peers.map(peerKey => {
+            const capacity = nodeInfo.channels
+              .filter(n => !!n.policies.find(n => n.public_key === peerKey))
+              .reduce((sum, {capacity}) => sum + capacity, Number());
 
-          const height = max(...nodeInfo.channels
-            .filter(n => !!n.policies.find(n => n.public_key === peerKey))
-            .map(({id}) => decodeChanId({channel: id}).block_height));
+            const height = max(...nodeInfo.channels
+              .filter(n => !!n.policies.find(n => n.public_key === peerKey))
+              .map(({id}) => decodeChanId({channel: id}).block_height));
 
-          const inPolicies = nodeInfo.channels
-            .map(n => n.policies.find(n => n.public_key === peerKey))
-            .filter(n => !!n && n.fee_rate !== undefined);
+            const inPolicies = nodeInfo.channels
+              .map(n => n.policies.find(n => n.public_key === peerKey))
+              .filter(n => !!n && n.fee_rate !== undefined);
 
-          const outPolicies = nodeInfo.channels
-            .filter(n => !!n.policies.find(n => n.public_key === peerKey))
-            .map(n => n.policies.find(n => n.public_key !== peerKey))
-            .filter(n => n.fee_rate !== undefined);
+            const outPolicies = nodeInfo.channels
+              .filter(n => !!n.policies.find(n => n.public_key === peerKey))
+              .map(n => n.policies.find(n => n.public_key !== peerKey))
+              .filter(n => n.fee_rate !== undefined);
 
-          const inboundFeeRate = max(...inPolicies.map(n => n.fee_rate));
-          const outFeeRate = max(...outPolicies.map(n => n.fee_rate));
+            const inboundFeeRate = max(...inPolicies.map(n => n.fee_rate));
+            const outFeeRate = max(...outPolicies.map(n => n.fee_rate));
 
-          const row = [
-            peerKey,
-            fromNow(blockTime(getHeight.current_block_height, height)),
-            displayFee(inPolicies, inboundFeeRate),
-            formatTokens({none, tokens: capacity}).display,
-            displayFee(outPolicies, outFeeRate),
-          ];
+            const row = [
+              peerKey,
+              fromNow(blockTime(getHeight.current_block_height, height)),
+              displayFee(inPolicies, inboundFeeRate),
+              formatTokens({none, tokens: capacity}).display,
+              displayFee(outPolicies, outFeeRate),
+            ];
 
-          return {height, row};
-        });
+            return {height, row};
+          });
 
-        peers.sort((a, b) => b.height - a.height);
+          peers.sort((a, b) => b.height - a.height);
 
-        const rows = limitPeers(peers.map(n => n.row));
+          return cbk(null, {
+            lnd: nodeInfo.lnd,
+            rows: limitPeers(peers.map(n => n.row)),
+          });
+        } catch (err) {
+          return cbk([503, 'UnexpectedErrorAssemblingPeers', {err}]);
+        }
+      }],
 
-        return asyncMap(rows, ([id], cbk) => {
-          return getNodeAlias({id, lnd: nodeInfo.lnd}, cbk);
+      // Get peer rows but substitute in aliases
+      peers: ['latest', ({latest}, cbk) => {
+        if (!latest) {
+          return cbk();
+        }
+
+        return asyncMap(latest.rows, ([id], cbk) => {
+          return getNodeAlias({id, lnd: latest.lnd}, cbk);
         },
         (err, nodes) => {
           if (!!err) {
             return cbk(err);
           }
 
-          const withAliases = rows.map(row => {
+          const withAliases = latest.rows.map(row => {
             const [id, ...cols] = row;
 
             const node = nodes.find(n => n.id === id);
@@ -259,12 +273,16 @@ module.exports = ({from, id, nodes, remove, reply, text, working}, cbk) => {
             return [niceAlias(noEmoji(node.alias), node.id)].concat(cols);
           });
 
-          const chart = renderTable([header].concat(withAliases), {
-            border,
-            singleLine: true,
-          });
+          try {
+            const chart = renderTable([header].concat(withAliases), {
+              border,
+              singleLine: true,
+            });
 
-          return cbk(null, `\`${escape(chart)}\``);
+            return cbk(null, `\`${escape(chart)}\``);
+          } catch (err) {
+            return cbk(null, '');
+          }
         });
       }],
 

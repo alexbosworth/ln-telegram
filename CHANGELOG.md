@@ -1,5 +1,9 @@
 # Versions
 
+## Version 3.21.5
+
+- `handleGraphCommand`: Increase error catching guards on channels summary
+
 ## Version 3.21.4
 
 - `handleGraphCommand`: Add latest channels summary to node info
