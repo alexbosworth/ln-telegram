@@ -1,6 +1,6 @@
 # Versions
 
-## Version 3.21.5
+## Version 3.21.6
 
 - `handleGraphCommand`: Increase error catching guards on channels summary
 

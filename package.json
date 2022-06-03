@@ -9,13 +9,13 @@
   "dependencies": {
     "async": "3.2.3",
     "asyncjs-util": "1.2.9",
-    "bolt07": "1.8.1",
-    "goldengate": "11.2.1",
-    "grammy": "1.8.2",
-    "ln-accounting": "5.0.6",
-    "ln-service": "53.15.0",
-    "ln-sync": "3.12.0",
-    "luxon": "2.3.2",
+    "bolt07": "1.8.2",
+    "goldengate": "11.2.2",
+    "grammy": "1.8.3",
+    "ln-accounting": "5.0.7",
+    "ln-service": "53.17.2",
+    "ln-sync": "3.12.1",
+    "luxon": "2.4.0",
     "paid-services": "3.16.0",
     "table": "6.8.0"
   },
@@ -41,5 +41,5 @@
   "scripts": {
     "test": "tap --branches=1 --functions=1 --lines=1 --statements=1 test/commands/*.js test/messages/*.js test/post/*.js"
   },
-  "version": "3.21.5"
+  "version": "3.21.6"
 }
