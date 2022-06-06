@@ -6,6 +6,7 @@ const {icons} = require('./../interface');
 
 const border = getBorderCharacters('void');
 const escape = text => text.replace(/[_*[\]()~`>#+\-=|{}.!\\]/g, '\\\$&');
+const formatFee = n => n === undefined ? '' : `${(n/1e4).toFixed(2)}% (${n})`;
 const formatLiquidity = tokens => formatTokens({tokens, none: '-'}).display;
 const formatReport = (from, n) => `${from}\`\`\`\n${n}\`\`\``;
 const head = `*Liquidity:*\n\n`;
@@ -19,6 +20,7 @@ const shortId = key => key.substring(0, 8);
     [alias]: <Alias String>
     inbound: [{
       balance: <Balance Tokens Number>
+      [fee_rate]: Fee Rate Number>
       public_key: <Public Key Hex String>
     }]
     nodes: [{
@@ -28,6 +30,7 @@ const shortId = key => key.substring(0, 8);
     }]
     outbound: [{
       balance: <Balance Tokens Number>
+      [fee_rate]: Fee Rate Number>
       public_key: <Public Key Hex String>
     }]
     [peer]: <Peer Public Key Hex String>
@@ -59,8 +62,16 @@ module.exports = ({alias, inbound, nodes, outbound, peer}) => {
       const from = !otherNode ? noFrom : `_${icons.liquidity} ${named}_:\n`;
 
       const rows = [
-        ['Inbound', formatLiquidity(remote.balance)],
-        ['Outbound', formatLiquidity(local.balance)],
+        [
+          'Inbound',
+          formatLiquidity(remote.balance),
+          formatFee(remote.fee_rate),
+        ],
+        [
+          'Outbound',
+          formatLiquidity(local.balance),
+          formatFee(local.fee_rate),
+        ],
       ];
 
       return formatReport(from, renderTable(rows, {border, singleLine: true}));
