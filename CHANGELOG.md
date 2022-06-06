@@ -1,5 +1,9 @@
 # Versions
 
+## Version 3.22.1
+
+- `handleLiquidityCommand`: Add support for showing fee rates
+
 ## Version 3.21.6
 
 - `handleGraphCommand`: Increase error catching guards on channels summary
