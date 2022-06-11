@@ -14,6 +14,7 @@ const uniq = arr => Array.from(new Set(arr));
 /** Notify of pending channels and HTLCs
 
   {
+    count: <Nodes Count Number>
     htlcs: [{
       forwarding: [{
         fee: <Routing Fee Tokens Number>
@@ -56,7 +57,7 @@ const uniq = arr => Array.from(new Set(arr));
   @returns
   <Pending Item String>
 */
-module.exports = ({htlcs, pending}) => {
+module.exports = ({count, htlcs, pending}) => {
   // Pending closing and opening channels
   const channels = pending.map(node => {
     // Opening channels, waiting for confirmation
@@ -154,9 +155,7 @@ module.exports = ({htlcs, pending}) => {
   const sections = uniq(nodes.map(n => n.from));
 
   return flatten(sections.map(from => {
-    const [, otherSection] = sections;
-
-    const title = !otherSection ? [] : [`\n*${escape(from)}*`];
+    const title = (count <= [from].length) ? [] : [`\n*${escape(from)}*`];
 
     return title.concat(nodes.filter(n => n.from === from).map(n => n.item));
   }));

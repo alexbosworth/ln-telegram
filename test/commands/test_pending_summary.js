@@ -4,6 +4,7 @@ const pendingSummary = require('./../../commands/pending_summary');
 
 const makeArgs = overrides => {
   const args = {
+    count: 2,
     htlcs: [{
       forwarding: [{
         fee: 1,
@@ -51,6 +52,7 @@ const tests = [
     args: makeArgs({}),
     description: 'Pending summary is derived',
     expected: [
+      '\n*from*',
       "⏳ Waiting for inbound 0\\.00000006 channel with alias2 03030303 to confirm: `0000000000000000000000000000000000000000000000000000000000000000`",
       "⏳ Waiting to recover 0\\.00000001 in 9 minutes from closing channel with alias2 03030303",
       "💸 Forwarding 0\\.00000002 for 0\\.00000001 fee from alias 02020202 to alias2 03030303",

@@ -1,6 +1,6 @@
 # Versions
 
-## Version 3.22.1
+## Version 3.22.2
 
 - `handleLiquidityCommand`: Add support for showing fee rates
 

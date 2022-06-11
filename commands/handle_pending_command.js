@@ -158,7 +158,11 @@ module.exports = ({from, id, nodes, reply, working}, cbk) => {
 
       // Notify of pending forwards and channels
       notify: ['getHtlcs', 'getPending', async ({getHtlcs, getPending}) => {
-        const summary = pendingSummary({htlcs: getHtlcs, pending: getPending});
+        const summary = pendingSummary({
+          count: nodes.length,
+          htlcs: getHtlcs,
+          pending: getPending,
+        });
 
         return await reply(join(summary), markup);
       }],
