@@ -25,7 +25,7 @@ const makeInvoice = overrides => {
       tokens: 1,
       total_mtokens: '1000',
     }],
-    received: 1,
+    received_mtokens: 1000,
   };
 
   Object.keys(overrides).forEach(k => invoice[k] = overrides[k]);

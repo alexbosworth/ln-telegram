@@ -181,10 +181,10 @@ module.exports = ({from, id, invoice, key, lnd, nodes, quiz, send}, cbk) => {
         if (!!getPayment) {
           return getRebalanceMessage({
             lnd,
-            fee: getPayment.payment.fee,
+            fee_mtokens: getPayment.payment.fee_mtokens,
             hops: getPayment.payment.hops,
             payments: invoice.payments,
-            received: invoice.received,
+            received_mtokens: invoice.received_mtokens,
           },
           cbk);
         }

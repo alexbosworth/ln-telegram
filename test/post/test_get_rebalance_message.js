@@ -6,7 +6,7 @@ const getRebalanceMessage = require('./../../post/get_rebalance_message');
 
 const makeArgs = overrides => {
   const args = {
-    fee: 1,
+    fee_mtokens: 1000,
     hops: [{public_key: Buffer.alloc(33).toString('hex')}],
     lnd: {
       default: {
@@ -15,7 +15,7 @@ const makeArgs = overrides => {
       },
     },
     payments: [{in_channel: '0x0x1'}],
-    received: 1,
+    received_mtokens: 1000,
   };
 
   Object.keys(overrides).forEach(k => args[k] = overrides[k]);
@@ -25,7 +25,7 @@ const makeArgs = overrides => {
 
 const tests = [
   {
-    args: makeArgs({fee: undefined}),
+    args: makeArgs({fee_mtokens: undefined}),
     description: 'A rebalance fee tokens amount is expected',
     error: [400, 'ExpectedPaidFeeToGetRebalanceMessage'],
   },
@@ -45,7 +45,7 @@ const tests = [
     error: [400, 'ExpectedPaymentsToGetRebalanceMessage'],
   },
   {
-    args: makeArgs({received: undefined}),
+    args: makeArgs({received_mtokens: undefined}),
     description: 'A received amount is expected',
     error: [400, 'ExpectedReceivedAmountToGetRebalanceMessage'],
   },

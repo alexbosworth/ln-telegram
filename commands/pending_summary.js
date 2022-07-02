@@ -6,7 +6,7 @@ const {icons} = require('./../interface');
 const blocksAsEpoch = blocks => Date.now() + blocks * 1000 * 60 * 10;
 const escape = text => text.replace(/[_*[\]()~`>#+\-=|{}.!\\]/g, '\\\$&');
 const flatten = arr => [].concat(...arr);
-const fromNow = ms => !ms ? undefined : DateTime.fromMillis(ms).toRelative();
+const fromNow = ms => !ms ? undefined : DateTime.fromMillis(ms).toRelative({locale: "en"});
 const nodeAlias = (alias, id) => `${alias} ${id.substring(0, 8)}`.trim();
 const sumOf = arr => arr.reduce((sum, n) => sum + n, Number());
 const uniq = arr => Array.from(new Set(arr));

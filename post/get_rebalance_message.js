@@ -11,13 +11,14 @@ const asPercent = (fee, tokens) => (fee / tokens * 100).toFixed(2);
 const asPpm = (fee, tokens) => (fee / tokens * 1e6).toFixed();
 const escape = text => text.replace(/[_*[\]()~`>#+\-=|{}.!\\]/g, '\\\$&');
 const {isArray} = Array;
+const mtokensAsTokens = n => Number(n) / 1e3;
 const niceName = node => node.alias || (node.id || '').substring(0, 8);
 const sanitize = n => (n || '').replace(/_/g, '\\_').replace(/[*~`]/g, '');
 
 /** Get a rebalance message
 
   {
-    fee: <Payment Fee Tokens Number>
+    fee_mtokens: <Payment Fee Tokens Number>
     hops: [{
       public_key: <Forwarding Node Public Key Hex String>
     }]
@@ -25,7 +26,7 @@ const sanitize = n => (n || '').replace(/_/g, '\\_').replace(/[*~`]/g, '');
     payments: [{
       in_channel: <Incoming Payment Through Channel Id String>
     }]
-    received: <Received Tokens Number>
+    received_mtokens: <Received Tokens Number>
   }
 
   @returns via cbk or Promise
@@ -34,12 +35,12 @@ const sanitize = n => (n || '').replace(/_/g, '\\_').replace(/[*~`]/g, '');
     message: <Rebalance Message String>
   }
 */
-module.exports = ({fee, hops, lnd, payments, received}, cbk) => {
+module.exports = ({fee_mtokens, hops, lnd, payments, received_mtokens}, cbk) => {
   return new Promise((resolve, reject) => {
     return asyncAuto({
       // Check arguments
       validate: cbk => {
-        if (fee === undefined) {
+        if (fee_mtokens === undefined) {
           return cbk([400, 'ExpectedPaidFeeToGetRebalanceMessage']);
         }
 
@@ -55,7 +56,7 @@ module.exports = ({fee, hops, lnd, payments, received}, cbk) => {
           return cbk([400, 'ExpectedPaymentsToGetRebalanceMessage']);
         }
 
-        if (received === undefined) {
+        if (received_mtokens === undefined) {
           return cbk([400, 'ExpectedReceivedAmountToGetRebalanceMessage']);
         }
 
@@ -107,10 +108,12 @@ module.exports = ({fee, hops, lnd, payments, received}, cbk) => {
 
       // Derive a description of the rebalance
       rebalanceDescription: ['getIn', 'getOut', ({getIn, getOut}, cbk) => {
+        const received = mtokensAsTokens(received_mtokens);
+        const fee = mtokensAsTokens(fee_mtokens);
         const amount = escape(formatTokens({tokens: received}).display);
         const feeAmount = escape(formatTokens({tokens: fee}).display);
-        const feePercent = escape(asPercent(fee, received));
-        const feeRate = escape(`(${asPpm(fee, received)})`);
+        const feePercent = escape(asPercent(fee_mtokens, received_mtokens));
+        const feeRate = escape(`(${asPpm(fee_mtokens, received_mtokens)})`);
         const separator = escape('. Fee: ');
         const withNode = `${escape(niceName(getOut))}`;
 
