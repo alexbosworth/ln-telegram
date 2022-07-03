@@ -35,28 +35,28 @@ const sanitize = n => (n || '').replace(/_/g, '\\_').replace(/[*~`]/g, '');
     message: <Rebalance Message String>
   }
 */
-module.exports = ({fee_mtokens, hops, lnd, payments, received_mtokens}, cbk) => {
+module.exports = (args, cbk) => {
   return new Promise((resolve, reject) => {
     return asyncAuto({
       // Check arguments
       validate: cbk => {
-        if (fee_mtokens === undefined) {
+        if (args.fee_mtokens === undefined) {
           return cbk([400, 'ExpectedPaidFeeToGetRebalanceMessage']);
         }
 
-        if (!isArray(hops)) {
+        if (!isArray(args.hops)) {
           return cbk([400, 'ExpectedArrayOfHopsToGetRebalanceMessage']);
         }
 
-        if (!lnd) {
+        if (!args.lnd) {
           return cbk([400, 'ExpectedLndToGetRebalanceMessage']);
         }
 
-        if (!isArray(payments)) {
+        if (!isArray(args.payments)) {
           return cbk([400, 'ExpectedPaymentsToGetRebalanceMessage']);
         }
 
-        if (received_mtokens === undefined) {
+        if (args.received_mtokens === undefined) {
           return cbk([400, 'ExpectedReceivedAmountToGetRebalanceMessage']);
         }
 
@@ -65,29 +65,29 @@ module.exports = ({fee_mtokens, hops, lnd, payments, received_mtokens}, cbk) => 
 
       // Get channels to figure out who the inbound peer is
       getChannels: ['validate', ({}, cbk) => {
-        const [inPayment] = payments;
+        const [inPayment] = args.payments;
 
         if (!inPayment) {
           return cbk();
         }
 
-        return getChannels({lnd}, cbk);
+        return getChannels({lnd: args.lnd}, cbk);
       }],
 
       // Get outbound peer alias
       getOut: ['validate', ({}, cbk) => {
-        const [firstHop] = hops;
+        const [firstHop] = args.hops;
 
         if (!firstHop) {
           return cbk(null, {});
         }
 
-        return getNodeAlias({lnd, id: firstHop.public_key}, cbk);
+        return getNodeAlias({id: firstHop.public_key, lnd: args.lnd}, cbk);
       }],
 
       // Get inbound peer alias
       getIn: ['getChannels', ({getChannels}, cbk) => {
-        const [inPayment] = payments;
+        const [inPayment] = args.payments;
 
         if (!inPayment) {
           return cbk();
@@ -103,21 +103,26 @@ module.exports = ({fee_mtokens, hops, lnd, payments, received_mtokens}, cbk) => 
           return cbk();
         }
 
-        return getNodeAlias({lnd, id: inChannel.partner_public_key}, cbk);
+        return getNodeAlias({
+          id: inChannel.partner_public_key,
+          lnd: args.lnd,
+        },
+        cbk);
       }],
 
       // Derive a description of the rebalance
       rebalanceDescription: ['getIn', 'getOut', ({getIn, getOut}, cbk) => {
-        const received = mtokensAsTokens(received_mtokens);
-        const fee = mtokensAsTokens(fee_mtokens);
-        const amount = escape(formatTokens({tokens: received}).display);
-        const feeAmount = escape(formatTokens({tokens: fee}).display);
-        const feePercent = escape(asPercent(fee_mtokens, received_mtokens));
-        const feeRate = escape(`(${asPpm(fee_mtokens, received_mtokens)})`);
+        const received = mtokensAsTokens(args.received_mtokens);
+        const fee = mtokensAsTokens(args.fee_mtokens);
+        const feePercent = asPercent(args.fee_mtokens, args.received_mtokens);
+        const feeRate = `(${asPpm(args.fee_mtokens, args.received_mtokens)})`;
         const separator = escape('. Fee: ');
         const withNode = `${escape(niceName(getOut))}`;
 
-        const feeInfo = `${feeAmount} ${feePercent}% ${feeRate}`;
+        const amount = escape(formatTokens({tokens: received}).display);
+        const niceFee = escape(formatTokens({tokens: fee}).display);
+
+        const feeInfo = `${niceFee} ${escape(feePercent)}% ${escape(feeRate)}`;
         const increase = `Rebalanced ${amount} out ${withNode}`;
 
         // Exit early when there is no inbound peer info

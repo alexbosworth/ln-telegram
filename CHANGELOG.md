@@ -1,5 +1,9 @@
 # Versions
 
+## Version 3.22.3
+
+- `postSettledInvoice`: Use mtokens precision in rebalance messages
+
 ## Version 3.22.2
 
 - `handleLiquidityCommand`: Add support for showing fee rates
