@@ -52,14 +52,7 @@ module.exports = ({from, id, nodes, reply, send}, cbk) => {
       },
 
       // Check access
-      checkAccess: ['validate', ({}, cbk) => {
-        return checkAccess({
-          from,
-          id,
-          reply: replyMarkdownV1(() => reply),
-        },
-        cbk);
-      }],
+      checkAccess: ['validate', ({}, cbk) => checkAccess({from, id}, cbk)],
 
       // Get backups and send them as documents
       getBackups: ['checkAccess', ({}, cbk) => {

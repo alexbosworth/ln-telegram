@@ -8,12 +8,11 @@ const interaction = require('./../interaction');
   {
     from: <Source User Id Number>
     id: <Connected User Id Number>
-    reply: <Reply Function>
   }
 
   @returns via cbk or Promise
 */
-module.exports = ({from, id, reply}, cbk) => {
+module.exports = ({from, id}, cbk) => {
   return new Promise((resolve, reject) => {
     return asyncAuto({
       // Check arguments
@@ -22,18 +21,12 @@ module.exports = ({from, id, reply}, cbk) => {
           return cbk([400, 'ExpectedFromUserIdToCheckAccess']);
         }
 
-        if (!reply) {
-          return cbk([400, 'ExpectedReplyFunctionToCheckAccess']);
-        }
-
         return cbk();
       },
 
       // Check access
       checkAccess: ['validate', ({}, cbk) => {
         if (!id || from !== id) {
-          reply(interaction.ask_for_connect_code);
-
           return cbk([401, 'CommandRequiresConnectCode']);
         }
 

@@ -97,9 +97,7 @@ module.exports = ({from, id, nodes, remove, reply, text, working}, cbk) => {
       },
 
       // Authenticate that the caller is authorized to call this command
-      checkAccess: ['validate', ({}, cbk) => {
-        return checkAccess({from, id, reply: replyMarkdownV1(reply)}, cbk);
-      }],
+      checkAccess: ['validate', ({}, cbk) => checkAccess({from, id}, cbk)],
 
       // Remove the query
       remove: ['checkAccess', async ({}) => {

@@ -52,9 +52,7 @@ module.exports = ({from, id, named, reply, request, version}, cbk) => {
       },
 
       // Authenticate the command caller is authorized to this command
-      checkAccess: ['validate', ({}, cbk) => {
-        return checkAccess({from, id, reply}, cbk);
-      }],
+      checkAccess: ['validate', ({}, cbk) => checkAccess({from, id}, cbk)],
 
       // Get version from NPM
       getVersion: ['checkAccess', ({}, cbk) => {

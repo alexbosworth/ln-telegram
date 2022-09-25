@@ -35,9 +35,7 @@ module.exports = ({from, id, reply}, cbk) => {
       },
 
       // Confirm the connected user issued the command
-      checkAccess: ['validate', ({}, cbk) => {
-        return checkAccess({from, id, reply: replyMarkdownV1(reply)}, cbk);
-      }],
+      checkAccess: ['validate', ({}, cbk) => checkAccess({from, id}, cbk)],
 
       // Notify the chat that the bot would stop
       notify: ['checkAccess', async ({}) => {

@@ -48,7 +48,6 @@ module.exports = ({ctx, id, nodes}, cbk) => {
         return checkAccess({
           id,
           from: ctx.message.from.id,
-          reply: replyMarkdownV1(() => ctx.reply),
         },
         cbk);
       }],

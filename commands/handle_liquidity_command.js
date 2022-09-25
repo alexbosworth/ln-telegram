@@ -72,12 +72,7 @@ module.exports = (args, cbk) => {
 
       // Authenticate the command caller is authorized to this command
       checkAccess: ['validate', ({}, cbk) => {
-        return checkAccess({
-          from: args.from,
-          id: args.id,
-          reply: args.reply,
-        },
-        cbk);
+        return checkAccess({from: args.from, id: args.id}, cbk);
       }],
 
       // Derive the query if present

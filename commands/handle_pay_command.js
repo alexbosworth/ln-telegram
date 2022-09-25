@@ -68,9 +68,7 @@ module.exports = ({budget, from, id, nodes, reply, text}, cbk) => {
       },
 
       // Check access
-      checkAccess: ['validate', ({}, cbk) => {
-        return checkAccess({from, id, reply}, cbk);
-      }],
+      checkAccess: ['validate', ({}, cbk) => checkAccess({from, id}, cbk)],
 
       // Decode the command
       decodeCommand: ['validate', ({}, cbk) => {

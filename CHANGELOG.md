@@ -1,6 +1,6 @@
 # Versions
 
-## Version 3.22.3
+## Version 3.22.4
 
 - `postSettledInvoice`: Use mtokens precision in rebalance messages
 

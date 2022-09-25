@@ -45,9 +45,7 @@ module.exports = ({from, id, reply, request}, cbk) => {
       },
 
       // Confirm the connected user issued the command
-      checkAccess: ['validate', ({}, cbk) => {
-        return checkAccess({from, id, reply}, cbk);
-      }],
+      checkAccess: ['validate', ({}, cbk) => checkAccess({from, id}, cbk)],
 
       // Wait for block
       wait: ['checkAccess', ({}, cbk) => {

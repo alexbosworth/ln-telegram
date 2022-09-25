@@ -59,9 +59,7 @@ module.exports = ({from, id, nodes, reply, working}, cbk) => {
       },
 
       // Authenticate the command caller is authorized to this command
-      checkAccess: ['validate', ({}, cbk) => {
-        return checkAccess({from, id, reply}, cbk);
-      }],
+      checkAccess: ['validate', ({}, cbk) => checkAccess({from, id}, cbk)],
 
       // Get HTLCs in channels
       getHtlcs: ['checkAccess', ({}, cbk) => {

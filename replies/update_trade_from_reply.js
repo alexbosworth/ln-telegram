@@ -64,12 +64,7 @@ module.exports = ({api, ctx, id, nodes}, cbk) => {
 
       // Confirm access authorization
       checkAccess: ['validate', ({}, cbk) => {
-        return checkAccess({
-          id,
-          from: ctx.message.from.id,
-          reply: ctx.reply,
-        },
-        cbk);
+        return checkAccess({id, from: ctx.message.from.id}, cbk);
       }],
 
       // Get the referenced trade

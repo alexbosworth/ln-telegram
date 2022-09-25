@@ -3,7 +3,7 @@ const {test} = require('@alexbosworth/tap');
 const {checkAccess} = require('./../../authentication');
 
 const makeArgs = overrides => {
-  const args = {from: 1, id: 1, reply: () => {}};
+  const args = {from: 1, id: 1};
 
   Object.keys(overrides).forEach(k => args[k] = overrides[k]);
 
@@ -20,11 +20,6 @@ const tests = [
     args: makeArgs({id: undefined}),
     description: 'Checking access requires an allowed user id',
     error: [401, 'CommandRequiresConnectCode'],
-  },
-  {
-    args: makeArgs({reply: undefined}),
-    description: 'Checking access requires a reply function',
-    error: [400, 'ExpectedReplyFunctionToCheckAccess'],
   },
   {
     args: makeArgs({from: 2}),

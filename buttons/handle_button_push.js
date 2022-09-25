@@ -60,12 +60,7 @@ module.exports = ({bot, ctx, id, nodes}, cbk) => {
 
       // Confirm access authorization
       checkAccess: ['validate', ({}, cbk) => {
-        return checkAccess({
-          id,
-          from: ctx.update.callback_query.from.id,
-          reply: ctx.reply,
-        },
-        cbk);
+        return checkAccess({id, from: ctx.update.callback_query.from.id}, cbk);
       }],
 
       // Find button command type

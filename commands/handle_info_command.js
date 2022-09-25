@@ -55,9 +55,7 @@ module.exports = ({from, id, nodes, remove, reply}, cbk) => {
       },
 
       // Authenticate the command caller is authorized to this command
-      checkAccess: ['validate', ({}, cbk) => {
-        return checkAccess({from, id, reply: replyMarkdownV1(reply)}, cbk);
-      }],
+      checkAccess: ['validate', ({}, cbk) => checkAccess({from, id}, cbk)],
 
       // Remove the invocation command
       remove: ['validate', async ({}) => await remove()],
