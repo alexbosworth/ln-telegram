@@ -80,7 +80,14 @@ module.exports = ({ctx, id, nodes}, cbk) => {
       }],
 
       // Remove the command message
-      removeMessage: ['checkAccess', async ({}) => await ctx.deleteMessage()],
+      removeMessage: ['checkAccess', async ({}) => {
+        try {
+          return await ctx.deleteMessage();
+        } catch (err) {
+          // Do nothing on delete message errors
+          return;
+        }
+      }],
 
       // Try to create the invoice
       create: ['decodeCommand', ({decodeCommand}, cbk) => {
