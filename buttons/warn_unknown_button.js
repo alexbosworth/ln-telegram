@@ -3,6 +3,8 @@ const {returnResult} = require('asyncjs-util');
 
 const message = '🤖 Unexpected button pushed. This button may no longer be supported?';
 
+const {failureMessage} = require('./../messages');
+
 /** User pressed an unknown button
 
   {

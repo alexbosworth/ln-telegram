@@ -1,5 +1,13 @@
 # Versions
 
+## Version 4.0.0
+
+- `handleButtonPush`: Fix crash when an unknown button push event is received
+
+### Breaking Changes
+
+- End support for node.js 12, versions 14 or higher are now required
+
 ## Version 3.22.5
 
 - `postSettledInvoice`: Use mtokens precision in rebalance messages
