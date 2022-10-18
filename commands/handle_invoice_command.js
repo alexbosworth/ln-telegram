@@ -1,7 +1,9 @@
 const asyncAuto = require('async/auto');
+const fiat = require('@alexbosworth/fiat');
 const {returnResult} = require('asyncjs-util');
 
 const {checkAccess} = require('./../authentication');
+const decodeTokens = require('./decode_tokens');
 const {failureMessage} = require('./../messages');
 const {postCreatedInvoice} = require('./../post');
 
@@ -23,11 +25,12 @@ const splitArguments = n => n.split(' ');
       from: <Node Name String>
       lnd: <Authenticated LND gRPC API Object>
     }]
+    request: <NodeJs Request Function>
   }
 
   @returns via cbk or Promise
 */
-module.exports = ({ctx, id, nodes}, cbk) => {
+module.exports = ({ctx, id, nodes, request}, cbk) => {
   return new Promise((resolve, reject) => {
     return asyncAuto({
       // Check arguments
@@ -40,8 +43,23 @@ module.exports = ({ctx, id, nodes}, cbk) => {
           return cbk([400, 'ExpectedArrayOfNodesToCreateInvoice']);
         }
 
+        if (!request) {
+          return cbk([400, 'ExpectedRequestFunctionToCreateInvoice']);
+        }
+
         return cbk();
       },
+
+      // Parse tokens
+      decodeTokens: ['validate', ({}, cbk) => {
+        const [amount, ...description] = splitArguments(ctx.match.trim());
+
+        return decodeTokens({
+          request,
+          tokens: amount,
+        },
+        cbk);
+      }],
 
       // Confirm access authorization
       checkAccess: ['validate', ({}, cbk) => {
@@ -53,30 +71,29 @@ module.exports = ({ctx, id, nodes}, cbk) => {
       }],
 
       // Decode passed command arguments
-      decodeCommand: ['checkAccess', async ({}) => {
+      decodeCommand: ['checkAccess', 'decodeTokens', async ({decodeTokens}) => {
         // Exit early when there are no arguments
-        if (!ctx.match) {
-          return {description: defaultDescription, tokens: defaultTokens};
-        }
-
-        // The command can be called as /invoice <amount> <memo>
-        const [amount, ...description] = splitArguments(ctx.match.trim());
-
-        // Exit early when the amount cannot be parsed as tokens
-        if (!isNumber(amount)) {
+        if (!!decodeTokens.error) {
           const failure = failureMessage({is_invalid_amount: true});
 
           return await ctx.reply(failure.message, failure.actions) && null;
         }
 
-        // Exit early when the amount is fractional
-        if (!isInteger(Number(amount))) {
+         // Exit early when the amount is fractional
+        if (decodeTokens.is_fraction_error) {
           const failure = failureMessage({is_fractional_amount: true});
 
           return await ctx.reply(failure.message, failure.actions) && null;
         }
 
-        return {description: join(description), tokens: Number(amount)};
+        if (!ctx.match) {
+          return {description: defaultDescription, tokens: decodeTokens.tokens};
+        }
+
+        // The command can be called as /invoice <amount> <memo>
+        const [amount, ...description] = splitArguments(ctx.match.trim());
+
+        return {description: join(description), tokens: decodeTokens.tokens};
       }],
 
       // Remove the command message
@@ -90,7 +107,7 @@ module.exports = ({ctx, id, nodes}, cbk) => {
       }],
 
       // Try to create the invoice
-      create: ['decodeCommand', ({decodeCommand}, cbk) => {
+      create: ['decodeCommand', 'decodeTokens', ({decodeCommand, decodeTokens}, cbk) => {
         // Exit early when there is no decoded command
         if (!decodeCommand) {
           return cbk();
@@ -103,6 +120,7 @@ module.exports = ({ctx, id, nodes}, cbk) => {
           nodes,
           description: decodeCommand.description,
           destination: node.public_key,
+          rate: decodeTokens.rate || undefined,
           tokens: decodeCommand.tokens,
         },
         cbk);

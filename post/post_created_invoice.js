@@ -23,25 +23,26 @@ const removeMessageKeyboard = kb => kb.text('OK', 'remove-message');
       lnd: <Authenticated LND API Object>
       public_key: <Node Identity Public Key Hex String>
     }]
+    [rate]: <Exchange Rate String>
     [tokens]: <Invoice Tokens Number>
   }
 
   @returns via cbk or Promise
 */
-module.exports = ({ctx, description, destination, nodes, tokens}, cbk) => {
+module.exports = (args, cbk) => {
   return new Promise((resolve, reject) => {
     return asyncAuto({
       // Check arguments
       validate: cbk => {
-        if (!ctx) {
+        if (!args.ctx) {
           return cbk([400, 'ExpectedTelegramContextToPostCreatedInvoice']);
         }
 
-        if (!destination) {
+        if (!args.destination) {
           return cbk([400, 'ExpectedInvoiceDestinationToPostCreatedInvoice']);
         }
 
-        if (!isArray(nodes)) {
+        if (!isArray(args.nodes)) {
           return cbk([400, 'ExpectedArrayOfNodesToPostCreatedInvoice']);
         }
 
@@ -51,11 +52,11 @@ module.exports = ({ctx, description, destination, nodes, tokens}, cbk) => {
       // Create the new invoice
       create: ['validate', asyncReflect(({}, cbk) => {
         return createInvoice({
-          description,
-          tokens,
+          description: args.description,
           expires_at: expiry(),
           is_including_private_channels: true,
-          lnd: nodes.find(n => n.public_key === destination).lnd,
+          lnd: args.nodes.find(n => n.public_key === args.destination).lnd,
+          tokens: args.tokens,
         },
         cbk);
       })],
@@ -69,7 +70,7 @@ module.exports = ({ctx, description, destination, nodes, tokens}, cbk) => {
 
         const [, message] = create.error;
 
-        return await ctx.reply(createFailedMessage(message), {
+        return await args.ctx.reply(createFailedMessage(message), {
           parse_mode: parseMode,
           reply_markup: removeMessageKeyboard(makeKeyboard()),
         });
@@ -82,18 +83,19 @@ module.exports = ({ctx, description, destination, nodes, tokens}, cbk) => {
           return;
         }
 
-        const node = nodes.find(n => n.public_key === destination);
+        const node = args.nodes.find(n => n.public_key === args.destination);
 
-        const [, other] = nodes;
+        const [, other] = args.nodes;
 
         // Make the invoice message text
         const message = createInvoiceMessage({
           from: !!other ? node.from : undefined,
+          rate: args.rate,
           request: create.value.request,
         });
 
         // Post the new invoice as a message
-        return await ctx.reply(message.text, {
+        return await args.ctx.reply(message.text, {
           parse_mode: message.mode,
           reply_markup: message.markup,
         });

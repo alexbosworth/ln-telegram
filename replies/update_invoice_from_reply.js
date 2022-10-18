@@ -1,5 +1,6 @@
 const asyncAuto = require('async/auto');
 const {createInvoice} = require('ln-service');
+const decodeTokens = require('../commands/decode_tokens');
 const {parsePaymentRequest} = require('ln-service');
 const {returnResult} = require('asyncjs-util');
 
@@ -25,11 +26,12 @@ const split = n => n.split('\n');
       lnd: <Authenticated LND API Object>
       public_key: <Node Identity Public Key Hex String>
     }]
+    request: <NodeJs Request Function>
   }
 
   @returns via cbk or Promise
 */
-module.exports = ({api, ctx, id, nodes}, cbk) => {
+module.exports = ({api, ctx, id, nodes, request}, cbk) => {
   return new Promise((resolve, reject) => {
     return asyncAuto({
       // Check arguments
@@ -48,6 +50,10 @@ module.exports = ({api, ctx, id, nodes}, cbk) => {
 
         if (!isArray(nodes)) {
           return cbk([400, 'ExpectedArrayOfNodesToUpdateInvoice']);
+        }
+
+        if (!request) {
+          return cbk([400, 'ExpectedRequestFunctionToUpdateInvoice']);
         }
 
         return cbk();
@@ -95,7 +101,7 @@ module.exports = ({api, ctx, id, nodes}, cbk) => {
       }],
 
       // Details for the updated new invoice
-      updated: ['details', 'type', ({details, type}, cbk) => {
+      updated: ['details', 'type', async ({details, type}) => {
         // Exit early when the type of update is not known
         if (!type) {
           return cbk();
@@ -107,27 +113,20 @@ module.exports = ({api, ctx, id, nodes}, cbk) => {
 
         switch (type) {
         case callbackCommands.setInvoiceDescription:
-          return cbk(null, {tokens, description: text});
+          return {tokens, description: text};
 
         case callbackCommands.setInvoiceTokens:
-        // Exit early when the amount is an invalid number
-          if (!isNumber(text)) {
-            return cbk(null, {description, tokens, is_invalid_amount: true});
-          }
-
-          // Exit early when the amount is not an integer
-          if (!isInteger(Number(text))) {
-            return cbk(null, {
-              description,
-              tokens,
-              is_fractional_amount: true,
-            });
-          }
-
-          return cbk(null, {description, tokens: Number(text)});
+          const result = await decodeTokens({request, tokens: text});
+          return {
+            description, 
+            error: result.error, 
+            is_fraction_error: result.is_fraction_error, 
+            rate: result.rate,
+            tokens: result.tokens
+          };
 
         default:
-          return cbk();
+          return;
         }
       }],
 
@@ -137,19 +136,18 @@ module.exports = ({api, ctx, id, nodes}, cbk) => {
         if (!updated) {
           return;
         }
-
         // Exit early when the amount cannot be parsed as tokens
-        if (!!updated.is_invalid_amount) {
+        if (!!updated.error) {
           const failure = failureMessage({is_invalid_amount: true});
 
           return await ctx.reply(failure.message, failure.actions);
         }
 
         // Exit early when the amount is fractional
-        if (!!updated.is_fractional_amount) {
+        if (updated.is_fraction_error) {
           const failure = failureMessage({is_fractional_amount: true});
 
-          return await ctx.reply(failure.message, failure.actions);
+          return await ctx.reply(failure.message, failure.actions) && null;
         }
 
         return;
@@ -167,6 +165,7 @@ module.exports = ({api, ctx, id, nodes}, cbk) => {
           nodes,
           description: updated.description,
           destination: details.destination,
+          rate: updated.rate || undefined,
           tokens: updated.tokens,
         },
         cbk);

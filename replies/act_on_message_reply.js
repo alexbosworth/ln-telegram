@@ -22,7 +22,7 @@ const {isArray} = Array;
 
   @returns via cbk or Promise
 */
-module.exports = ({api, ctx, id, nodes}, cbk) => {
+module.exports = ({api, ctx, id, nodes, request}, cbk) => {
   return new Promise((resolve, reject) => {
     return asyncAuto({
       // Check arguments
@@ -41,6 +41,10 @@ module.exports = ({api, ctx, id, nodes}, cbk) => {
 
         if (!isArray(nodes)) {
           return cbk([400, 'ExpectedArrayOfNodesToActOnMessageReply']);
+        }
+
+        if (!request) {
+          return cbk([400, 'ExpectedRequestFunctionToActOnMessageReply']);
         }
 
         return cbk();
@@ -76,7 +80,7 @@ module.exports = ({api, ctx, id, nodes}, cbk) => {
         switch (type) {
         case callbackCommands.setInvoiceDescription:
         case callbackCommands.setInvoiceTokens:
-          return updateInvoiceFromReply({api, ctx, id, nodes}, cbk);
+          return updateInvoiceFromReply({api, ctx, id, nodes, request}, cbk);
 
         case callbackCommands.setTradeDescription:
         case callbackCommands.setTradeExpiresAt:

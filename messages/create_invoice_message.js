@@ -22,6 +22,7 @@ const {setInvoiceTokens} = callbackCommands;
   {
     [from]: <Invoice From Node String>
     request: <BOLT 11 Payment Request String>
+    [rate]: <Exchange Rate String>
   }
 
   @returns
@@ -31,7 +32,7 @@ const {setInvoiceTokens} = callbackCommands;
     text: <Message Text String>
   }
 */
-module.exports = ({from, request}) => {
+module.exports = ({from, rate, request}) => {
   const markup = new InlineKeyboard();
 
   const {description, tokens} = parsePaymentRequest({request});
@@ -47,9 +48,12 @@ module.exports = ({from, request}) => {
 
   const memo = !description ? '' : `“${description}”`;
 
+  const exchangeRate = !!rate ? `\nExchange rate: $${rate}\n` : '';
+
   const text = join([
     `${titles.createdInvoicePrefix}${formatTokens({tokens}).display} ${memo}`,
     `\`${request}\``,
+    `${exchangeRate}`,
     `${from || ''}`,
   ]);
 
