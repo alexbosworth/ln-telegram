@@ -25,7 +25,7 @@ const splitArguments = n => n.split(' ');
       from: <Node Name String>
       lnd: <Authenticated LND gRPC API Object>
     }]
-    request: <NodeJs Request Function>
+    request: <Request Function>
   }
 
   @returns via cbk or Promise

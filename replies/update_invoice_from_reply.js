@@ -26,7 +26,7 @@ const split = n => n.split('\n');
       lnd: <Authenticated LND API Object>
       public_key: <Node Identity Public Key Hex String>
     }]
-    request: <NodeJs Request Function>
+    request: <Request Function>
   }
 
   @returns via cbk or Promise

@@ -15,7 +15,7 @@ const tokensAsBigTokens = n => Math.round(n * 1e8);
 /** Parse tokens
 
   {
-    request: <NodeJs Request Function>
+    request: <Request Function>
     [tokens]: <Amount Tokens String>
   }
 
@@ -60,6 +60,7 @@ module.exports = ({request, tokens}, cbk) => {
           return cbk(null, {tokens: defaultTokens});
         }
 
+        // Exit early when using a fiat denominated invoice
         if (!!getFiatPrice) {
           const fiat = getFiatPrice.tickers.find(n => n.ticker.toUpperCase() === 'USD');
 
