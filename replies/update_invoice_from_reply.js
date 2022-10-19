@@ -147,7 +147,7 @@ module.exports = ({api, ctx, id, nodes, request}, cbk) => {
         if (updated.is_fraction_error) {
           const failure = failureMessage({is_fractional_amount: true});
 
-          return await ctx.reply(failure.message, failure.actions) && null;
+          return await ctx.reply(failure.message, failure.actions);
         }
 
         return;
