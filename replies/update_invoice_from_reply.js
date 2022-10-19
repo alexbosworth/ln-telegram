@@ -104,7 +104,7 @@ module.exports = ({api, ctx, id, nodes, request}, cbk) => {
       updated: ['details', 'type', async ({details, type}) => {
         // Exit early when the type of update is not known
         if (!type) {
-          return cbk();
+          return;
         }
 
         const {description} = details;
