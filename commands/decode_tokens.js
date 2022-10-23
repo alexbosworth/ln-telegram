@@ -2,14 +2,13 @@ const asyncAuto = require('async/auto');
 const fiat = require('@alexbosworth/fiat');
 const {returnResult} = require('asyncjs-util');
 
+const parseAmount = require('./parse_amount');
 const defaultFiatRateProvider = 'coingecko';
 const defaultTokens = '';
-const fiatTokens = n =>  Number(n.split('*')[0]);
 const fiatRate = n => Math.round(n/100).toFixed(2);
-const hasFiat = n => /(usd)/gim.test(n);
+const hasFiat = n => /(eur|usd)/gim.test(n);
 const {isInteger} = Number;
-const isNumber = n => !isNaN(n);
-const symbols = ['USD'];
+const symbols = ['EUR', 'USD'];
 const tokensAsBigTokens = n => Math.round(n * 1e8);
 
 /** Parse tokens
@@ -59,31 +58,36 @@ module.exports = ({request, tokens}, cbk) => {
         if (!tokens) {
           return cbk(null, {tokens: defaultTokens});
         }
-
-        // Exit early when using a fiat denominated invoice
-        if (!!getFiatPrice) {
-          const fiat = getFiatPrice.tickers.find(n => n.ticker.toUpperCase() === 'USD');
-
-          const amount = fiatTokens(tokens) / Number(fiatRate(fiat.rate));
-
-          if (!amount ||  !isNumber(amount)) {
-            return cbk(null, {error: true});
-          }
+        
+        try {
+          const parsedTokens = parseAmount({amount: tokens});
           
-          return cbk(null, {rate: fiatRate(fiat.rate), tokens: tokensAsBigTokens(amount)});
-        }
+          // Exit early when using a fiat denominated invoice
+          if (!!getFiatPrice) {
+            const fiat = getFiatPrice.tickers.find(n => {
+              if (tokens.toUpperCase().includes('EUR')) {
+                return n.ticker.toUpperCase() === 'EUR';
+              }
+  
+              if (tokens.toUpperCase().includes('USD')) {
+                return n.ticker.toUpperCase() === 'USD';
+              }
+            });
 
-        // Exit early when the amount cannot be parsed as tokens
-        if (!isNumber(tokens)) {
-          return cbk(null, {error: true});
-        }
+            const amount = Number(parsedTokens.tokens) / Number(fiatRate(fiat.rate));
+  
+            return cbk(null, {rate: fiatRate(fiat.rate), tokens: tokensAsBigTokens(amount)});
+          }
 
-        // Exit early when the amount is fractional
-        if (!isInteger(Number(tokens))) {
-          return cbk(null, {is_fraction_error: true});
-        }
+          // Exit early when the amount is fractional
+          if (!isInteger(parsedTokens.tokens)) {
+            return cbk(null, {is_fraction_error: true});
+          }
 
-        return cbk(null, {tokens: Number(tokens)});
+          return cbk(null, {tokens: parsedTokens.tokens});
+        } catch (err) {
+          return cbk(null, {error: true});            
+        }
       }]
 
     },
