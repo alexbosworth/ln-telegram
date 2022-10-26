@@ -1,5 +1,10 @@
 # Versions
 
+## Version 4.1.0
+
+- `actOnMessageReply`, `handleInvoiceCommand`: Add support for specifying
+    amount as a formula, including fiat amounts
+
 ## Version 4.0.0
 
 - `handleButtonPush`: Fix crash when an unknown button push event is received
