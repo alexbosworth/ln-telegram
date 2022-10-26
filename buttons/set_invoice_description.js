@@ -7,12 +7,13 @@ const {editQuestions} = require('./../interface');
 const {failureMessage} = require('./../messages');
 
 const code = n => `\`${n}\``;
+const escape = text => text.replace(/[_*[\]()~`>#+\-=|{}.!\\]/g, '\\\$&');
 const inputFieldPlaceholder = 'Enter description...';
 const {isArray} = Array;
 const italic = n => `_${n}_`;
 const join = n => n.join('\n');
 const parseFailure = msg => `⚠️ Unexpected error \`${msg}\`. Try again?`;
-const parseMode = 'Markdown';
+const parseMode = 'MarkdownV2';
 const spacer = '';
 const split = n => n.split('\n');
 
@@ -94,10 +95,10 @@ module.exports = ({ctx, nodes}, cbk) => {
         // Post the edit invoice description message
         await ctx.reply(
           join([
-            invoice.value.title,
-            code(invoice.value.request),
+            escape(invoice.value.title),
+            code(escape(invoice.value.request)),
             spacer,
-            italic(editQuestions.editInvoiceDescription),
+            italic(escape(editQuestions.editInvoiceDescription)),
           ]),
           {
             parse_mode: parseMode,

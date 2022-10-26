@@ -1,19 +1,16 @@
 const asyncAuto = require('async/auto');
-const fiat = require('@alexbosworth/fiat');
+const asyncReflect = require('async/reflect');
 const {returnResult} = require('asyncjs-util');
 
 const {checkAccess} = require('./../authentication');
-const decodeTokens = require('./decode_tokens');
 const {failureMessage} = require('./../messages');
+const {getAmountAsTokens} = require('./../interface');
 const {postCreatedInvoice} = require('./../post');
 
+const defaultAmount = '';
 const defaultDescription = '';
-const defaultTokens = '';
 const {isArray} = Array;
-const {isInteger} = Number;
-const isNumber = n => !isNaN(n);
 const join = n => n.join(' ');
-const replyMarkdownV1 = reply => n => reply(n, {parse_mode: 'Markdown'});
 const splitArguments = n => n.split(' ');
 
 /** Create invoice
@@ -50,50 +47,35 @@ module.exports = ({ctx, id, nodes, request}, cbk) => {
         return cbk();
       },
 
-      // Parse tokens
-      decodeTokens: ['validate', ({}, cbk) => {
-        const [amount, ...description] = splitArguments(ctx.match.trim());
-
-        return decodeTokens({
-          request,
-          tokens: amount,
-        },
-        cbk);
-      }],
-
       // Confirm access authorization
       checkAccess: ['validate', ({}, cbk) => {
-        return checkAccess({
-          id,
-          from: ctx.message.from.id,
-        },
-        cbk);
+        return checkAccess({id, from: ctx.message.from.id}, cbk);
       }],
 
       // Decode passed command arguments
-      decodeCommand: ['checkAccess', 'decodeTokens', async ({decodeTokens}) => {
+      decodeCommand: ['checkAccess', ({}, cbk) => {
+        // Use the first node as the default
+        const [node] = nodes;
+
         // Exit early when there are no arguments
-        if (!!decodeTokens.error) {
-          const failure = failureMessage({is_invalid_amount: true});
-
-          return await ctx.reply(failure.message, failure.actions) && null;
-        }
-
-         // Exit early when the amount is fractional
-        if (decodeTokens.is_fraction_error) {
-          const failure = failureMessage({is_fractional_amount: true});
-
-          return await ctx.reply(failure.message, failure.actions) && null;
-        }
-
         if (!ctx.match) {
-          return {description: defaultDescription, tokens: decodeTokens.tokens};
+          return cbk(null, {
+            amount: defaultAmount,
+            description: defaultDescription,
+            destination: node.public_key,
+            lnd: node.lnd,
+          });
         }
 
         // The command can be called as /invoice <amount> <memo>
         const [amount, ...description] = splitArguments(ctx.match.trim());
 
-        return {description: join(description), tokens: decodeTokens.tokens};
+        return cbk(null, {
+          amount,
+          description: join(description),
+          destination: node.public_key,
+          lnd: node.lnd,
+        });
       }],
 
       // Remove the command message
@@ -106,24 +88,53 @@ module.exports = ({ctx, id, nodes, request}, cbk) => {
         }
       }],
 
-      // Try to create the invoice
-      create: ['decodeCommand', 'decodeTokens', ({decodeCommand, decodeTokens}, cbk) => {
-        // Exit early when there is no decoded command
-        if (!decodeCommand) {
-          return cbk();
-        }
+      // Get the amount as tokens for the invoice
+      getTokens: ['decodeCommand', asyncReflect(({decodeCommand}, cbk) => {
+        return getAmountAsTokens({
+          request,
+          amount: decodeCommand.amount,
+          lnd: decodeCommand.lnd,
+        },
+        cbk);
+      })],
 
-        const [node] = nodes;
+      // Try to create the invoice
+      create: [
+        'decodeCommand',
+        'getTokens',
+        asyncReflect(({decodeCommand, getTokens}, cbk) =>
+      {
+        // Exit early when there was a problem getting the tokens value
+        if (!!getTokens.error) {
+          return cbk(getTokens.error);
+        }
 
         return postCreatedInvoice({
           ctx,
           nodes,
           description: decodeCommand.description,
-          destination: node.public_key,
-          rate: decodeTokens.rate || undefined,
-          tokens: decodeCommand.tokens,
+          destination: decodeCommand.destination,
+          tokens: getTokens.value.tokens,
         },
         cbk);
+      })],
+
+      // Post a failure message when something went wrong
+      postFailureMessage: ['create', async ({create}) => {
+        // Exit early when there is no failure
+        if (!create.error) {
+          return;
+        }
+
+        const [, message] = create.error;
+
+        const failure = failureMessage({});
+
+        try {
+          await ctx.reply(message, failure.actions);
+        } catch (err) {
+          // Ignore errors
+        }
       }],
     },
     returnResult({reject, resolve}, cbk));

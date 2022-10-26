@@ -23,40 +23,46 @@ const removeMessageKeyboard = kb => kb.text('OK', 'remove-message');
       lnd: <Authenticated LND API Object>
       public_key: <Node Identity Public Key Hex String>
     }]
-    [rate]: <Exchange Rate String>
     [tokens]: <Invoice Tokens Number>
   }
 
   @returns via cbk or Promise
 */
-module.exports = (args, cbk) => {
+module.exports = ({ctx, description, destination, nodes, tokens}, cbk) => {
   return new Promise((resolve, reject) => {
     return asyncAuto({
       // Check arguments
       validate: cbk => {
-        if (!args.ctx) {
+        if (!ctx) {
           return cbk([400, 'ExpectedTelegramContextToPostCreatedInvoice']);
         }
 
-        if (!args.destination) {
+        if (!destination) {
           return cbk([400, 'ExpectedInvoiceDestinationToPostCreatedInvoice']);
         }
 
-        if (!isArray(args.nodes)) {
+        if (!isArray(nodes)) {
           return cbk([400, 'ExpectedArrayOfNodesToPostCreatedInvoice']);
         }
 
         return cbk();
       },
 
+      // Find the node associated with creating this invoice
+      node: ['validate', ({}, cbk) => {
+        const node = nodes.find(n => n.public_key === destination);
+
+        return cbk(null, node);
+      }],
+
       // Create the new invoice
-      create: ['validate', asyncReflect(({}, cbk) => {
+      create: ['node', asyncReflect(({node}, cbk) => {
         return createInvoice({
-          description: args.description,
+          description,
+          tokens,
           expires_at: expiry(),
           is_including_private_channels: true,
-          lnd: args.nodes.find(n => n.public_key === args.destination).lnd,
-          tokens: args.tokens,
+          lnd: node.lnd,
         },
         cbk);
       })],
@@ -70,32 +76,34 @@ module.exports = (args, cbk) => {
 
         const [, message] = create.error;
 
-        return await args.ctx.reply(createFailedMessage(message), {
-          parse_mode: parseMode,
-          reply_markup: removeMessageKeyboard(makeKeyboard()),
-        });
+        try {
+          return await ctx.reply(createFailedMessage(message), {
+            parse_mode: parseMode,
+            reply_markup: removeMessageKeyboard(makeKeyboard()),
+          });
+        } catch (err) {
+          // Ignore errors
+          return;
+        }
       }],
 
       // Post the invoice as a reply
-      post: ['create', async ({create}) => {
+      post: ['create', 'node', async ({create, node}) => {
         // Exit early when there is no created invoice
         if (!create.value) {
           return;
         }
 
-        const node = args.nodes.find(n => n.public_key === args.destination);
-
-        const [, other] = args.nodes;
+        const [, other] = nodes;
 
         // Make the invoice message text
         const message = createInvoiceMessage({
           from: !!other ? node.from : undefined,
-          rate: args.rate,
           request: create.value.request,
         });
 
         // Post the new invoice as a message
-        return await args.ctx.reply(message.text, {
+        return await ctx.reply(message.text, {
           parse_mode: message.mode,
           reply_markup: message.markup,
         });

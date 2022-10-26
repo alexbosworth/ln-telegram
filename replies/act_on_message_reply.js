@@ -18,6 +18,7 @@ const {isArray} = Array;
       lnd: <Authenticated LND API Object>
       public_key: <Node Identity Public Key Hex String>
     }]
+    request: <Request Function>
   }
 
   @returns via cbk or Promise

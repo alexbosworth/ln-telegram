@@ -7,12 +7,13 @@ const {labels} = require('./../interface');
 const {titles} = require('./../interface');
 
 const {cancelInvoice} = callbackCommands;
+const escape = text => text.replace(/[_*[\]()~`>#+\-=|{}.!\\]/g, '\\\$&');
 const {invoiceMessageCancelButtonLabel} = labels;
 const {invoiceMessageDescriptionButtonLabel} = labels;
 const {invoiceMessageNodeButtonLabel} = labels;
 const {invoiceMessageSetTokensButtonLabel} = labels;
 const join = arr => arr.filter(n => !!n).join('\n');
-const mode = 'Markdown';
+const mode = 'MarkdownV2';
 const {setInvoiceDescription} = callbackCommands;
 const {setInvoiceNode} = callbackCommands;
 const {setInvoiceTokens} = callbackCommands;
@@ -22,7 +23,6 @@ const {setInvoiceTokens} = callbackCommands;
   {
     [from]: <Invoice From Node String>
     request: <BOLT 11 Payment Request String>
-    [rate]: <Exchange Rate String>
   }
 
   @returns
@@ -32,7 +32,7 @@ const {setInvoiceTokens} = callbackCommands;
     text: <Message Text String>
   }
 */
-module.exports = ({from, rate, request}) => {
+module.exports = ({from, request}) => {
   const markup = new InlineKeyboard();
 
   const {description, tokens} = parsePaymentRequest({request});
@@ -48,13 +48,13 @@ module.exports = ({from, rate, request}) => {
 
   const memo = !description ? '' : `“${description}”`;
 
-  const exchangeRate = !!rate ? `\nExchange rate: $${rate}\n` : '';
+  const title = escape(titles.createdInvoicePrefix);
+  const amount = escape(formatTokens({tokens}).display);
 
   const text = join([
-    `${titles.createdInvoicePrefix}${formatTokens({tokens}).display} ${memo}`,
-    `\`${request}\``,
-    `${exchangeRate}`,
-    `${from || ''}`,
+    `${title}${amount} ${escape(memo)}`,
+    `\`${escape(request)}\``,
+    `${escape(from || '')}`,
   ]);
 
   return {markup, mode, text};

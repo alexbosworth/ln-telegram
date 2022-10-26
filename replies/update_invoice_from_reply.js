@@ -1,6 +1,6 @@
 const asyncAuto = require('async/auto');
+const asyncReflect = require('async/reflect');
 const {createInvoice} = require('ln-service');
-const decodeTokens = require('../commands/decode_tokens');
 const {parsePaymentRequest} = require('ln-service');
 const {returnResult} = require('asyncjs-util');
 
@@ -9,6 +9,7 @@ const {checkAccess} = require('./../authentication');
 const {createInvoiceMessage} = require('./../messages');
 const {editQuestions} = require('./../interface');
 const {failureMessage} = require('./../messages');
+const {getAmountAsTokens} = require('./../interface');
 const invoiceActionType = require('./invoice_action_type');
 const {postCreatedInvoice} = require('./../post');
 
@@ -22,6 +23,7 @@ const split = n => n.split('\n');
   {
     api: <Bot API Object>
     ctx: <Telegram Context Object>
+    id: <Connected User Id Number>
     nodes: [{
       lnd: <Authenticated LND API Object>
       public_key: <Node Identity Public Key Hex String>
@@ -85,7 +87,12 @@ module.exports = ({api, ctx, id, nodes, request}, cbk) => {
 
       // Delete the answer message the user just entered
       deleteAnswer: ['type', async ({type}) => {
-        return !!type ? await ctx.deleteMessage() : null;
+        try {
+          return !!type ? await ctx.deleteMessage() : null;
+        } catch (err) {
+          // Ignore errors when deleting
+          return;
+        }
       }],
 
       // Delete the edit message that had the question
@@ -94,17 +101,50 @@ module.exports = ({api, ctx, id, nodes, request}, cbk) => {
           return;
         }
 
-        return await api.deleteMessage(
-          ctx.update.message.reply_to_message.chat.id,
-          ctx.update.message.reply_to_message.message_id,
-        );
+        try {
+          await api.deleteMessage(
+            ctx.update.message.reply_to_message.chat.id,
+            ctx.update.message.reply_to_message.message_id,
+          );
+        } catch (err) {
+          // Ignore errors when deleting
+          return;
+        }
       }],
 
+      // Get the amount as tokens for the invoice
+      getTokens: ['details', 'type', asyncReflect(({details, type}, cbk) => {
+        // Exit early when not updating the invoice amount
+        if (type !== callbackCommands.setInvoiceTokens) {
+          return cbk();
+        }
+
+        // Find the node that this invoice belongs to
+        const node = nodes.find(n => n.public_key === details.destination);
+
+        // Exit early when the invoicing node is unknown
+        if (!node) {
+          return cbk([400, 'InvoicingNodeNotFound']);
+        }
+
+        return getAmountAsTokens({
+          request,
+          amount: ctx.update.message.text,
+          lnd: node.lnd,
+        },
+        cbk);
+      })],
+
       // Details for the updated new invoice
-      updated: ['details', 'type', async ({details, type}) => {
+      updated: [
+        'details',
+        'getTokens',
+        'type',
+        ({details, getTokens, type}, cbk) =>
+      {
         // Exit early when the type of update is not known
         if (!type) {
-          return;
+          return cbk();
         }
 
         const {description} = details;
@@ -112,63 +152,57 @@ module.exports = ({api, ctx, id, nodes, request}, cbk) => {
         const {tokens} = details;
 
         switch (type) {
+        // Updating the invoice description
         case callbackCommands.setInvoiceDescription:
-          return {tokens, description: text};
+          return cbk(null, {tokens, description: text});
 
+        // Updating the invoice amount
         case callbackCommands.setInvoiceTokens:
-          const result = await decodeTokens({request, tokens: text});
-          return {
-            description, 
-            error: result.error, 
-            is_fraction_error: result.is_fraction_error, 
-            rate: result.rate,
-            tokens: result.tokens
-          };
+          // Revert back to the last good tokens when there is a parse fail
+          return cbk(null, {
+            description,
+            tokens: !!getTokens.value ? getTokens.value.tokens : tokens,
+          });
 
         default:
-          return;
+          return cbk();
         }
-      }],
-
-      // Post the failure
-      postFailure: ['updated', async ({updated}) => {
-        // Exit early when there is no update
-        if (!updated) {
-          return;
-        }
-        // Exit early when the amount cannot be parsed as tokens
-        if (!!updated.error) {
-          const failure = failureMessage({is_invalid_amount: true});
-
-          return await ctx.reply(failure.message, failure.actions);
-        }
-
-        // Exit early when the amount is fractional
-        if (updated.is_fraction_error) {
-          const failure = failureMessage({is_fractional_amount: true});
-
-          return await ctx.reply(failure.message, failure.actions);
-        }
-
-        return;
       }],
 
       // Post the invoice
       postInvoice: ['details', 'updated', ({details, updated}, cbk) => {
         // Exit early when there is no update
         if (!updated) {
-          return;
+          return cbk();
         }
 
+        // Recreate the invoice with the updated details
         return postCreatedInvoice({
           ctx,
           nodes,
           description: updated.description,
           destination: details.destination,
-          rate: updated.rate || undefined,
           tokens: updated.tokens,
         },
         cbk);
+      }],
+
+      // Post a failure message if necessary
+      postFailure: ['getTokens', async ({getTokens}) => {
+        // Exit early when there is no failure
+        if (!getTokens.error) {
+          return;
+        }
+
+        const [, message] = getTokens.error;
+
+        const failure = failureMessage({});
+
+        try {
+          await ctx.reply(message, failure.actions);
+        } catch (err) {
+          // Ignore errors
+        }
       }],
     },
     returnResult({reject, resolve}, cbk));
