@@ -77,9 +77,9 @@ module.exports = (args, cbk) => {
 
       // Derive the query if present
       query: ['checkAccess', ({}, cbk) => {
-        const [, query] = args.text.split(' ');
+        const [, ...query] = args.text.split(' ');
 
-        return cbk(null, query);
+        return cbk(null, query.join(' '));
       }],
 
       // Get public key filter

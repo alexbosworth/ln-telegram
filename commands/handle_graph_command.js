@@ -111,18 +111,20 @@ module.exports = ({from, id, nodes, remove, reply, text, working}, cbk) => {
 
       // Derive the public key query if present
       query: ['checkAccess', ({}, cbk) => {
-        const [, query] = argsFromText(text);
+        const [, ...query] = argsFromText(text);
+
+        const request = query.join(' ');
 
         // Check if a payment request was entered
         try {
-          const {destination} = parsePaymentRequest({request: query});
+          const {destination} = parsePaymentRequest({request});
 
           return cbk(null, destination);
         } catch (err) {
           // Ignore errors
         }
 
-        return cbk(null, query);
+        return cbk(null, request);
       }],
 
       // Send indication that the graph command has started working

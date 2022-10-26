@@ -1,5 +1,10 @@
 # Versions
 
+## Version 4.2.0
+
+- `handleGraphCommand`: Support multiple words in node queries
+- `handleInvoiceCommand`: Support multiple words in peer queries
+
 ## Version 4.1.0
 
 - `actOnMessageReply`, `handleInvoiceCommand`: Add support for specifying
