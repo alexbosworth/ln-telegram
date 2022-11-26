@@ -281,7 +281,7 @@ const tests = [
           version: makeLndVersion({}),
         },
       },
-      `💵 Received 0\\.00000001 for “description” via 0000000000000000 \\- Sender message: “message”`,
+      `💵 Received 0\\.00000001 for “description” via 00000000000000000000000000000000 \\- Sender message: “message”`,
     ),
     description: 'A settled invoice is posted which is not a rebalance',
   },
