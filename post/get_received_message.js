@@ -20,7 +20,7 @@ const maxAnswer = BigInt(80518);
 const messageType = '34349334';
 const minAnswer = BigInt(80509);
 const newLine = '\n';
-const short = n => n.slice(0, 16);
+const short = n => n.slice(0, 32);
 const signatureType = '34349337';
 const sort = (a, b) => (a < b) ? -1 : ((a > b) ? 1 : 0);
 

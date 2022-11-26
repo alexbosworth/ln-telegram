@@ -44,5 +44,5 @@
     "integration-tests": "tap --branches=1 --functions=1 --lines=1 --statements=1 -t 120 test/integration/*.js",
     "test": "tap --branches=1 --functions=1 --lines=1 --statements=1 test/commands/*.js test/messages/*.js test/post/*.js"
   },
-  "version": "4.3.0"
+  "version": "4.3.1"
 }
