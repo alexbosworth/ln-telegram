@@ -25,6 +25,7 @@ const makeInvoice = overrides => {
       tokens: 1,
       total_mtokens: '1000',
     }],
+    received: 1,
     received_mtokens: 1000,
   };
 
@@ -43,6 +44,33 @@ const makeLndVersion = ({}) => {
 
 const makeLndDefault = ({}) => {
   return {
+    getChanInfo: ({}, cbk) => {
+      return cbk(null, {
+        capacity: '1',
+        chan_point: `${Buffer.alloc(32).toString('hex')}:0`,
+        channel_id: '000000000',
+        node1_policy: {
+          disabled: true,
+          fee_base_msat: '1',
+          fee_rate_milli_msat: '1',
+          last_update: 1,
+          max_htlc_msat: '1',
+          min_htlc: '1',
+          time_lock_delta: 1,
+        },
+        node1_pub: Buffer.alloc(33).toString('hex'),
+        node2_policy: {
+          disabled: false,
+          fee_base_msat: '2',
+          fee_rate_milli_msat: '2',
+          last_update: 1,
+          max_htlc_msat: '2',
+          min_htlc: '2',
+          time_lock_delta: 2,
+        },
+        node2_pub: Buffer.alloc(33, 1).toString('hex'),
+      });
+    },
     getNodeInfo: ({}, cbk) => cbk('err'),
     listChannels: ({}, cbk) => cbk(null, {
       channels: [{
@@ -95,7 +123,7 @@ const makeLndDefault = ({}) => {
   };
 };
 
-const makeArgs = overrides => {
+const makeArgs = (overrides, expected) => {
   const args = {
     from: 'from',
     id: 1,
@@ -160,7 +188,13 @@ const makeArgs = overrides => {
     },
     nodes: [],
     quiz: () => {},
-    send: () => new Promise(resolve => resolve()),
+    send: (_, message, mode) => new Promise((resolve, reject) => {
+      if (message !== expected) {
+        return reject(JSON.stringify({expected, got: message}));
+      }
+
+      return resolve();
+    }),
   };
 
   Object.keys(overrides).forEach(k => args[k] = overrides[k]);
@@ -200,7 +234,10 @@ const tests = [
     error: [400, 'ExpectedSendFunctionToPostSettledInvoice'],
   },
   {
-    args: makeArgs({}),
+    args: makeArgs(
+      {},
+      `☯️ Rebalanced 0\\.00000001 out 00000000 *→* 00000000\\. Fee: 0\\.00000001 100\\.00% \\(1000000\\)`,
+    ),
     description: 'A settled invoice is posted',
   },
   {
@@ -228,21 +265,24 @@ const tests = [
     description: 'A settled invoice is posted that has no payment',
   },
   {
-    args: makeArgs({
-      lnd: {
-        default: makeLndDefault({}),
-        router: {
-          trackPaymentV2: ({}) => {
-            const emitter = new EventEmitter();
+    args: makeArgs(
+      {
+        lnd: {
+          default: makeLndDefault({}),
+          router: {
+            trackPaymentV2: ({}) => {
+              const emitter = new EventEmitter();
 
-            process.nextTick(() => emitter.emit('error', 'err'));
+              process.nextTick(() => emitter.emit('error', 'err'));
 
-            return emitter;
+              return emitter;
+            },
           },
+          version: makeLndVersion({}),
         },
-        version: makeLndVersion({}),
       },
-    }),
+      `💵 Received 0\\.00000001 for “description” via 0000000000000000 \\- Sender message: “message”`,
+    ),
     description: 'A settled invoice is posted which is not a rebalance',
   },
 ];

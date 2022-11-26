@@ -20,6 +20,7 @@ const maxAnswer = BigInt(80518);
 const messageType = '34349334';
 const minAnswer = BigInt(80509);
 const newLine = '\n';
+const short = n => n.slice(0, 16);
 const signatureType = '34349337';
 const sort = (a, b) => (a < b) ? -1 : ((a > b) ? 1 : 0);
 
@@ -35,6 +36,10 @@ const sort = (a, b) => (a < b) ? -1 : ((a > b) ? 1 : 0);
       }]
     }]
     received: <Received Tokens Number>
+    via: {
+      alias: <Alias String>
+      id: <Identity String>
+    }
   }
 
   @returns via cbk or Promise
@@ -45,7 +50,7 @@ const sort = (a, b) => (a < b) ? -1 : ((a > b) ? 1 : 0);
     [title]: <Sender Message String>
   }
 */
-module.exports = ({description, lnd, payments, received}, cbk) => {
+module.exports = ({description, lnd, payments, received, via}, cbk) => {
   return new Promise((resolve, reject) => {
     return asyncAuto({
       // Check arguments
@@ -60,6 +65,10 @@ module.exports = ({description, lnd, payments, received}, cbk) => {
 
         if (!isArray(payments)) {
           return cbk([400, 'ExpectedArrayOfReceivePaymentsForReceiveMessage']);
+        }
+
+        if (!isArray(via)) {
+          return cbk([400, 'ExpectedArrayOfViaNodesForReceiveMessage']);
         }
 
         return cbk();
@@ -99,9 +108,12 @@ module.exports = ({description, lnd, payments, received}, cbk) => {
 
       // Description of the received amount
       receiveLine: ['validate', ({}, cbk) => {
+        const relays = `${via.map(n => short(n.alias || n.id)).join(', ')}`;
         const quoted = !description ? '' : `for “${description}”`;
 
-        return cbk(null, `Received ${formatAmt(received)} ${quoted}`.trim());
+        const got = `Received ${formatAmt(received)} ${quoted}`.trim();
+
+        return cbk(null, `${got} via ${relays}`);
       }],
 
       // Get the node public key for signature verification puroses

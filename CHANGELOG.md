@@ -1,5 +1,9 @@
 # Versions
 
+## Version 4.3.0
+
+- `postSettledInvoice`: Show forwarding alias for received payments
+
 ## Version 4.2.0
 
 - `handleGraphCommand`: Support multiple words in node queries

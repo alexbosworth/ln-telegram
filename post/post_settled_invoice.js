@@ -1,6 +1,9 @@
 const asyncAuto = require('async/auto');
 const asyncDetect = require('async/detect');
+const asyncMap = require('async/map');
 const {balancedOpenRequest} = require('paid-services');
+const {getChannel} = require('ln-service');
+const {getNodeAlias} = require('ln-sync');
 const {returnResult} = require('asyncjs-util');
 const {subscribeToPastPayment} = require('ln-service');
 
@@ -15,6 +18,7 @@ const minQuizLength = 2;
 const maxQuizLength = 10;
 const randomIndex = n => Math.floor(Math.random() * n);
 const sendOptions = {parse_mode: 'MarkdownV2'};
+const uniq = arr => Array.from(new Set(arr));
 
 /** Post settled invoices
 
@@ -114,6 +118,24 @@ module.exports = ({from, id, invoice, key, lnd, nodes, quiz, send}, cbk) => {
         return cbk(null, proposal);
       }],
 
+      // Get the node aliases that forwarded this
+      getNodes: ['validate', ({}, cbk) => {
+        const inChannels = uniq(invoice.payments.map(n => n.in_channel));
+
+        return asyncMap(inChannels, (id, cbk) => {
+          return getChannel({id, lnd}, (err, res) => {
+            if (!!err) {
+              return cbk(null, {id, alias: id});
+            }
+
+            const peer = res.policies.find(n => n.public_key !== key);
+
+            return getNodeAlias({lnd, id: peer.public_key}, cbk);
+          });
+        },
+        cbk);
+      }],
+
       // Find associated payment
       getPayment: ['validate', ({}, cbk) => {
         // Exit early when the invoice has yet to be confirmed
@@ -152,9 +174,10 @@ module.exports = ({from, id, invoice, key, lnd, nodes, quiz, send}, cbk) => {
       // Details for message
       details: [
         'balancedOpen',
+        'getNodes',
         'getPayment',
         'getTransfer',
-        ({balancedOpen, getPayment, getTransfer}, cbk) =>
+        ({balancedOpen, getNodes, getPayment, getTransfer}, cbk) =>
       {
         // Exit early when the invoice has yet to be confirmed
         if (!invoice.is_confirmed) {
@@ -194,6 +217,7 @@ module.exports = ({from, id, invoice, key, lnd, nodes, quiz, send}, cbk) => {
           description: invoice.description,
           payments: invoice.payments,
           received: invoice.received,
+          via: getNodes,
         },
         cbk);
       }],
