@@ -1,5 +1,6 @@
 const {actOnMessageReply} = require('./replies');
 const {handleBackupCommand} = require('./commands');
+const {handleBalanceCommand} = require('./commands');
 const {handleBlocknotifyCommand} = require('./commands');
 const {handleButtonPush} = require('./buttons');
 const {handleConnectCommand} = require('./commands');
@@ -37,6 +38,7 @@ const {updateTradeFromReply} = require('./replies');
 module.exports = {
   actOnMessageReply,
   handleBackupCommand,
+  handleBalanceCommand,
   handleBlocknotifyCommand,
   handleButtonPush,
   handleConnectCommand,

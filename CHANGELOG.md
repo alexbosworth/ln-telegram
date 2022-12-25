@@ -1,5 +1,9 @@
 # Versions
 
+## Version 4.4.0
+
+- `handleBalanceCommand`: Show balance of funds on the node
+
 ## Version 4.3.1
 
 - `postSettledInvoice`: Show forwarding alias for received payments

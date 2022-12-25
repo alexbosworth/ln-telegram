@@ -1,4 +1,5 @@
 const handleBackupCommand = require('./handle_backup_command');
+const handleBalanceCommand = require('./handle_balance_command');
 const handleBlocknotifyCommand = require('./handle_blocknotify_command');
 const handleConnectCommand = require('./handle_connect_command');
 const handleCostsCommand = require('./handle_costs_command');
@@ -17,6 +18,7 @@ const handleVersionCommand = require('./handle_version_command');
 
 module.exports = {
   handleBackupCommand,
+  handleBalanceCommand,
   handleBlocknotifyCommand,
   handleConnectCommand,
   handleCostsCommand,
