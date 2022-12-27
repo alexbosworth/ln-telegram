@@ -16,7 +16,6 @@ const escape = text => text.replace(/[_*[\]()~`>#+\-=|{}.!\\]/g, '\\\$&');
 const {isArray} = Array;
 const minQuizLength = 2;
 const maxQuizLength = 10;
-const mtokensAsTokens = n => Math.floor(n / 1000);
 const randomIndex = n => Math.floor(Math.random() * n);
 const sendOptions = {parse_mode: 'MarkdownV2'};
 const uniq = arr => Array.from(new Set(arr));
@@ -204,7 +203,7 @@ module.exports = (args, cbk) => {
 
         // Exit early when this is a rebalance
         if (!!getPayment) {
-          if (mtokensAsTokens(Number(args.invoice.received_mtokens)) < args.min_rebalance_tokens) {
+          if (args.invoice.received < args.min_rebalance_tokens) {
             return cbk();
           }
 
