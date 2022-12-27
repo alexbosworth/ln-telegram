@@ -16,6 +16,7 @@ const escape = text => text.replace(/[_*[\]()~`>#+\-=|{}.!\\]/g, '\\\$&');
 const {isArray} = Array;
 const minQuizLength = 2;
 const maxQuizLength = 10;
+const mtokensAsTokens = n => Math.floor(n / 1000);
 const randomIndex = n => Math.floor(Math.random() * n);
 const sendOptions = {parse_mode: 'MarkdownV2'};
 const uniq = arr => Array.from(new Set(arr));
@@ -29,6 +30,7 @@ const uniq = arr => Array.from(new Set(arr));
       description: <Invoice Description String>
       id: <Invoice Preimage Hash Hex String>
       is_confirmed: <Invoice is Settled Bool>
+      [min_rebalance_tokens]: <Minimum Rebalance Tokens To Notify Number>
       payments: [{
         [confirmed_at]: <Payment Settled At ISO 8601 Date String>
         created_at: <Payment Held Since ISO 860 Date String>
@@ -61,40 +63,40 @@ const uniq = arr => Array.from(new Set(arr));
 
   @returns via cbk or Promise
 */
-module.exports = ({from, id, invoice, key, lnd, nodes, quiz, send}, cbk) => {
+module.exports = (args, cbk) => {
   return new Promise((resolve, reject) => {
     return asyncAuto({
       // Check arguments
       validate: cbk => {
-        if (!from) {
+        if (!args.from) {
           return cbk([400, 'ExpectedFromNameToPostSettledInvoice']);
         }
 
-        if (!id) {
+        if (!args.id) {
           return cbk([400, 'ExpectedUserIdNumberToPostSettledInvoice']);
         }
 
-        if (!invoice) {
+        if (!args.invoice) {
           return cbk([400, 'ExpectedInvoiceToPostSettledInvoice']);
         }
 
-        if (!key) {
+        if (!args.key) {
           return cbk([400, 'ExpectedNodeIdentityKeyToPostSettledInvoice']);
         }
 
-        if (!lnd) {
+        if (!args.lnd) {
           return cbk([400, 'ExpectedLndObjectToPostSettledInvoice']);
         }
 
-        if (!isArray(nodes)) {
+        if (!isArray(args.nodes)) {
           return cbk([400, 'ExpectedArrayOfNodesToPostSettledInvoice']);
         }
 
-        if (!quiz) {
+        if (!args.quiz) {
           return cbk([400, 'ExpectedSendQuizFunctionToPostSettledInvoice']);
         }
 
-        if (!send) {
+        if (!args.send) {
           return cbk([400, 'ExpectedSendFunctionToPostSettledInvoice']);
         }
 
@@ -104,15 +106,15 @@ module.exports = ({from, id, invoice, key, lnd, nodes, quiz, send}, cbk) => {
       // Parse balanced open request details if present
       balancedOpen: ['validate', ({}, cbk) => {
         // A proposal will be a push payment
-        if (!invoice.is_confirmed) {
+        if (!args.invoice.is_confirmed) {
           return cbk();
         }
 
         const {proposal} = balancedOpenRequest({
-          confirmed_at: invoice.confirmed_at,
-          is_push: invoice.is_push,
-          payments: invoice.payments,
-          received_mtokens: invoice.received_mtokens,
+          confirmed_at: args.invoice.confirmed_at,
+          is_push: args.invoice.is_push,
+          payments: args.invoice.payments,
+          received_mtokens: args.invoice.received_mtokens,
         });
 
         return cbk(null, proposal);
@@ -120,17 +122,17 @@ module.exports = ({from, id, invoice, key, lnd, nodes, quiz, send}, cbk) => {
 
       // Get the node aliases that forwarded this
       getNodes: ['validate', ({}, cbk) => {
-        const inChannels = uniq(invoice.payments.map(n => n.in_channel));
+        const inChannels = uniq(args.invoice.payments.map(n => n.in_channel));
 
         return asyncMap(inChannels, (id, cbk) => {
-          return getChannel({id, lnd}, (err, res) => {
+          return getChannel({id, lnd: args.lnd}, (err, res) => {
             if (!!err) {
               return cbk(null, {id, alias: id});
             }
 
-            const peer = res.policies.find(n => n.public_key !== key);
+            const peer = res.policies.find(n => n.public_key !== args.key);
 
-            return getNodeAlias({lnd, id: peer.public_key}, cbk);
+            return getNodeAlias({id: peer.public_key, lnd: args.lnd}, cbk);
           });
         },
         cbk);
@@ -139,11 +141,11 @@ module.exports = ({from, id, invoice, key, lnd, nodes, quiz, send}, cbk) => {
       // Find associated payment
       getPayment: ['validate', ({}, cbk) => {
         // Exit early when the invoice has yet to be confirmed
-        if (!invoice.is_confirmed) {
+        if (!args.invoice.is_confirmed) {
           return cbk();
         }
 
-        const sub = subscribeToPastPayment({lnd, id: invoice.id});
+        const sub = subscribeToPastPayment({id: args.invoice.id, lnd: args.lnd});
 
         sub.once('confirmed', payment => cbk(null, {payment}));
         sub.once('error', () => cbk());
@@ -155,14 +157,14 @@ module.exports = ({from, id, invoice, key, lnd, nodes, quiz, send}, cbk) => {
       // Find associated transfer
       getTransfer: ['validate', ({}, cbk) => {
         // Exit early when the invoice has yet to be confirmed
-        if (!invoice.is_confirmed) {
+        if (!args.invoice.is_confirmed) {
           return cbk();
         }
 
-        const otherNodes = nodes.filter(n => n.public_key !== key);
+        const otherNodes = args.nodes.filter(n => n.public_key !== args.key);
 
         return asyncDetect(otherNodes, ({lnd}, cbk) => {
-          const sub = subscribeToPastPayment({lnd, id: invoice.id});
+          const sub = subscribeToPastPayment({lnd, id: args.invoice.id});
 
           sub.once('confirmed', payment => cbk(null, true));
           sub.once('error', () => cbk(null, false));
@@ -180,7 +182,7 @@ module.exports = ({from, id, invoice, key, lnd, nodes, quiz, send}, cbk) => {
         ({balancedOpen, getNodes, getPayment, getTransfer}, cbk) =>
       {
         // Exit early when the invoice has yet to be confirmed
-        if (!invoice.is_confirmed) {
+        if (!args.invoice.is_confirmed) {
           return cbk();
         }
 
@@ -192,9 +194,9 @@ module.exports = ({from, id, invoice, key, lnd, nodes, quiz, send}, cbk) => {
         // Exit early when this is a balanced open
         if (!!balancedOpen) {
           return getBalancedOpenMessage({
-            lnd,
             capacity: balancedOpen.capacity,
             from: balancedOpen.partner_public_key,
+            lnd: args.lnd,
             rate: balancedOpen.fee_rate,
           },
           cbk);
@@ -202,21 +204,25 @@ module.exports = ({from, id, invoice, key, lnd, nodes, quiz, send}, cbk) => {
 
         // Exit early when this is a rebalance
         if (!!getPayment) {
+          if (mtokensAsTokens(Number(args.invoice.received_mtokens)) < args.min_rebalance_tokens) {
+            return cbk();
+          }
+
           return getRebalanceMessage({
-            lnd,
             fee_mtokens: getPayment.payment.fee_mtokens,
             hops: getPayment.payment.hops,
-            payments: invoice.payments,
-            received_mtokens: invoice.received_mtokens,
+            lnd: args.lnd,
+            payments: args.invoice.payments,
+            received_mtokens: args.invoice.received_mtokens,
           },
           cbk);
         }
 
         return getReceivedMessage({
-          lnd,
-          description: invoice.description,
-          payments: invoice.payments,
-          received: invoice.received,
+          description: args.invoice.description,
+          lnd: args.lnd,
+          payments: args.invoice.payments,
+          received: args.invoice.received,
           via: getNodes,
         },
         cbk);
@@ -229,10 +235,10 @@ module.exports = ({from, id, invoice, key, lnd, nodes, quiz, send}, cbk) => {
           return;
         }
 
-        const receivedOnNode = nodes.length > [key].length ? ` - ${from}` : '';
+        const receivedOnNode = args.nodes.length > [args.key].length ? ` - ${args.from}` : '';
         const text = `${details.icon} ${details.message}`;
 
-        return await send(id, `${text}${escape(receivedOnNode)}`, sendOptions);
+        return await args.send(args.id, `${text}${escape(receivedOnNode)}`, sendOptions);
       }],
 
       // Post quiz
@@ -265,7 +271,7 @@ module.exports = ({from, id, invoice, key, lnd, nodes, quiz, send}, cbk) => {
           return n;
         });
 
-        return await quiz({answers, correct, question: details.title});
+        return await args.quiz({answers, correct, question: details.title});
       }],
     },
     returnResult({reject, resolve}, cbk));
