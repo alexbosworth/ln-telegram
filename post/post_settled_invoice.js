@@ -29,7 +29,6 @@ const uniq = arr => Array.from(new Set(arr));
       description: <Invoice Description String>
       id: <Invoice Preimage Hash Hex String>
       is_confirmed: <Invoice is Settled Bool>
-      [min_rebalance_tokens]: <Minimum Rebalance Tokens To Notify Number>
       payments: [{
         [confirmed_at]: <Payment Settled At ISO 8601 Date String>
         created_at: <Payment Held Since ISO 860 Date String>
@@ -51,6 +50,7 @@ const uniq = arr => Array.from(new Set(arr));
     }
     key: <Node Public Key Id Hex String>
     lnd: <Authenticated LND API Object>
+    [min_rebalance_tokens]: <Minimum Rebalance Tokens To Notify Number>
     nodes: [{
       from: <From Node String>
       lnd: <Authenticated LND API Object>
@@ -144,7 +144,10 @@ module.exports = (args, cbk) => {
           return cbk();
         }
 
-        const sub = subscribeToPastPayment({id: args.invoice.id, lnd: args.lnd});
+        const sub = subscribeToPastPayment({
+          id: args.invoice.id,
+          lnd: args.lnd,
+        });
 
         sub.once('confirmed', payment => cbk(null, {payment}));
         sub.once('error', () => cbk());
@@ -201,12 +204,15 @@ module.exports = (args, cbk) => {
           cbk);
         }
 
-        // Exit early when this is a rebalance
-        if (!!getPayment) {
-          if (args.invoice.received < args.min_rebalance_tokens) {
-            return cbk();
-          }
+        const isRebalance = !!getPayment;
 
+        // Exit early with no message when the rebalance amount is too small
+        if (isRebalance && args.invoice.received < args.min_rebalance_tokens) {
+          return cbk();
+        }
+
+        // Exit early when the received invoice is for a rebalance (self-pay)
+        if (!!isRebalance) {
           return getRebalanceMessage({
             fee_mtokens: getPayment.payment.fee_mtokens,
             hops: getPayment.payment.hops,
@@ -234,10 +240,14 @@ module.exports = (args, cbk) => {
           return;
         }
 
-        const receivedOnNode = args.nodes.length > [args.key].length ? ` - ${args.from}` : '';
-        const text = `${details.icon} ${details.message}`;
+        // Determine if node qualifier is necessary
+        const isMultiNode = args.nodes.length > [args.key].length;
 
-        return await args.send(args.id, `${text}${escape(receivedOnNode)}`, sendOptions);
+        const receivedOnNode = isMultiNode ? escape(` - ${args.from}`) : '';
+
+        const message = `${details.icon} ${details.message}${receivedOnNode}`;
+
+        return await args.send(args.id, message, sendOptions);
       }],
 
       // Post quiz
