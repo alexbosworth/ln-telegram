@@ -1,5 +1,9 @@
 # Versions
 
+## Version 4.5.0
+
+- `postSettledInvoice`: Add argument `min_rebalance_tokens` to constrain posts
+
 ## Version 4.4.0
 
 - `handleBalanceCommand`: Show balance of funds on the node
