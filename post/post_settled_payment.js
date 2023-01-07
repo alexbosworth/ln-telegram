@@ -1,4 +1,5 @@
 const asyncAuto = require('async/auto');
+const asyncMap = require('async/map');
 const {getNodeAlias} = require('ln-sync');
 const {returnResult} = require('asyncjs-util');
 
@@ -8,6 +9,7 @@ const {formatTokens} = require('./../interface');
 const display = tokens => formatTokens({tokens}).display;
 const escape = text => text.replace(/[_*[\]()~`>#+\-=|{}.!\\]/g, '\\\$&');
 const {isArray} = Array;
+const join = arr => arr.join(', ');
 const markup = {parse_mode: 'MarkdownV2'};
 const niceName = node => node.alias || node.id.substring(0, 8);
 
@@ -21,6 +23,11 @@ const niceName = node => node.alias || node.id.substring(0, 8);
     payment: {
       destination: <Payment Destination Public Key Hex String>
       id: <Payment Hash Hex String>
+      [paths]: [{
+        hops: [{
+          public_key: <Public Key Hex String>
+        }]
+      }]
       [request]: <Payment BOLT11 Request String>
       safe_fee: <Safe Paid Fee Tokens Number>
       safe_tokens: <Safe Paid Tokens Number>
@@ -70,17 +77,32 @@ module.exports = ({from, id, lnd, nodes, payment, send}, cbk) => {
         return getNodeAlias({lnd, id: payment.destination}, cbk);
       }],
 
+      // Get the aliases for relays
+      getRelays: ['validate', ({}, cbk) => {
+        return asyncMap(payment.paths || [], (path, cbk) => {
+          const [hop] = path.hops;
+
+          if (!hop) {
+            return cbk();
+          }
+
+          return getNodeAlias({lnd, id: hop.public_key}, cbk);
+        },
+        cbk);
+      }],
+
       // Create the message details
-      message: ['getNode', ({getNode}, cbk) => {
+      message: ['getNode', 'getRelays', ({getNode, getRelays}, cbk) => {
         const isTransfer = nodes.includes(payment.destination);
         const routingFee = `. Paid routing fee: ${display(payment.safe_fee)}`;
         const sent = display(payment.safe_tokens - payment.safe_fee);
         const toNode = niceName(getNode);
+        const via = ` out ${join(getRelays.filter(n => !!n).map(niceName))}`;
 
         const action = isTransfer ? 'Transferred' : 'Sent';
         const fee = !payment.safe_fee ? '' : routingFee;
 
-        const details = escape(`${action} ${sent} to ${toNode}${fee} -`);
+        const details = escape(`${action} ${sent} to ${toNode}${via}${fee} -`);
 
         return cbk(null, `${icons.spent} ${details} _${escape(from)}_`);
       }],

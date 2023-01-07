@@ -1,6 +1,10 @@
 # Versions
 
-## Version 4.5.0
+## Version 4.6.0
+
+- `postSettledPayment`: Show outgoing hop forwarding alias for sent payments
+
+## Version 4.5.1
 
 - `postSettledInvoice`: Add argument `min_rebalance_tokens` to constrain posts
 

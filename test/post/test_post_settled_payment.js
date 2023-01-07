@@ -12,6 +12,7 @@ const makeArgs = overrides => {
     payment: {
       destination: Buffer.alloc(33, 3).toString('hex'),
       id: Buffer.alloc(32).toString('hex'),
+      paths: [{hops: [{public_key: Buffer.alloc(33, 2).toString('hex')}]}],
       safe_fee: 1,
       safe_tokens: 2,
     },
@@ -59,7 +60,7 @@ const tests = [
   {
     args: makeArgs({}),
     description: 'A payment notification is posted',
-    expected: '⚡️ Sent 0\\.00000001 to alias\\. Paid routing fee: 0\\.00000001 \\- _from_',
+    expected: '⚡️ Sent 0\\.00000001 to alias out alias\\. Paid routing fee: 0\\.00000001 \\- _from_',
   },
   {
     args: makeArgs({
@@ -68,12 +69,13 @@ const tests = [
       payment: {
         destination: Buffer.alloc(33, 3).toString('hex'),
         id: Buffer.alloc(32).toString('hex'),
+        paths: [{hops: [{public_key: Buffer.alloc(33, 2).toString('hex')}]}],
         safe_fee: 0,
         safe_tokens: 2,
       },
     }),
     description: 'A transfer notification is posted',
-    expected: '⚡️ Transferred 0\\.00000002 to 03030303 \\- _from_',
+    expected: '⚡️ Transferred 0\\.00000002 to 03030303 out 02020202 \\- _from_',
   },
 ];
 
