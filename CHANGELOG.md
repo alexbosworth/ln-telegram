@@ -1,6 +1,6 @@
 # Versions
 
-## Version 4.6.0
+## Version 4.6.1
 
 - `postSettledPayment`: Show outgoing hop forwarding alias for sent payments
 
