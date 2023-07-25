@@ -1,4 +1,6 @@
-const {test} = require('@alexbosworth/tap');
+const {deepEqual} = require('node:assert').strict;
+const test = require('node:test');
+const {throws} = require('node:assert').strict;
 
 const pendingSummary = require('./../../commands/pending_summary');
 
@@ -62,11 +64,11 @@ const tests = [
 ];
 
 tests.forEach(({args, description, error, expected}) => {
-  return test(description, async ({end, strictSame, throws}) => {
+  return test(description, (t, end) => {
     if (!!error) {
       throws(() => pendingSummary(args), error, 'Got expected error');
     } else {
-      strictSame(pendingSummary(args), expected, 'Got expected result');
+      deepEqual(pendingSummary(args), expected, 'Got expected result');
     }
 
     return end();

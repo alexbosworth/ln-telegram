@@ -1,5 +1,11 @@
 # Versions
 
+## Version 5.0.0
+
+### Breaking Changes
+
+- Node 16 or higher is now required
+
 ## Version 4.6.1
 
 - `postSettledPayment`: Show outgoing hop forwarding alias for sent payments

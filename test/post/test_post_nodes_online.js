@@ -1,4 +1,6 @@
-const {test} = require('@alexbosworth/tap');
+const {equal} = require('node:assert').strict;
+const {rejects} = require('node:assert').strict;
+const test = require('node:test');
 
 const {postNodesOnline} = require('./../../');
 
@@ -53,7 +55,7 @@ const tests = [
 ];
 
 tests.forEach(({args, description, error, expected}) => {
-  return test(description, async ({end, equal, rejects}) => {
+  return test(description, async () => {
     if (!!error) {
       await rejects(postNodesOnline(args), error, 'Got expected error');
     } else {
@@ -62,6 +64,6 @@ tests.forEach(({args, description, error, expected}) => {
       equal(res, expected, 'Got expected result');
     }
 
-    return end();
+    return;
   });
 });

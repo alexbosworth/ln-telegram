@@ -1,4 +1,5 @@
-const {test} = require('@alexbosworth/tap');
+const {rejects} = require('node:assert').strict;
+const test = require('node:test');
 
 const {handleEarningsCommand} = require('./../../');
 
@@ -52,13 +53,13 @@ const tests = [
 ];
 
 tests.forEach(({args, description, error, expected}) => {
-  return test(description, async ({end, equal, rejects}) => {
+  return test(description, async () => {
     if (!!error) {
       await rejects(handleEarningsCommand(args), error, 'Got expected error');
     } else {
       await handleEarningsCommand(args);
     }
 
-    return end();
+    return;
   });
 });

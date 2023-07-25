@@ -1,4 +1,5 @@
-const {test} = require('@alexbosworth/tap');
+const {deepEqual} = require('node:assert').strict;
+const test = require('node:test');
 
 const {liquiditySummary} = require('./../../messages');
 
@@ -116,10 +117,10 @@ const tests = [
 ];
 
 tests.forEach(({args, description, error, expected}) => {
-  return test(description, async ({end, rejects, strictSame}) => {
+  return test(description, (t, end) => {
     const {message} = liquiditySummary(args);
 
-    strictSame(message.split('\n'), expected, 'Got expected result');
+    deepEqual(message.split('\n'), expected, 'Got expected result');
 
     return end();
   });

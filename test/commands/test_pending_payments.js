@@ -1,4 +1,6 @@
-const {test} = require('@alexbosworth/tap');
+const {deepEqual} = require('node:assert').strict;
+const test = require('node:test');
+const {throws} = require('node:assert').strict;
 
 const pendingPayments = require('./../../commands/pending_payments');
 
@@ -60,11 +62,11 @@ const tests = [
 ];
 
 tests.forEach(({args, description, error, expected}) => {
-  return test(description, async ({end, strictSame, throws}) => {
+  return test(description, (t, end) => {
     if (!!error) {
       throws(() => pendingPayments(args), error, 'Got expected error');
     } else {
-      strictSame(pendingPayments(args), expected, 'Got expected result');
+      deepEqual(pendingPayments(args), expected, 'Got expected result');
     }
 
     return end();

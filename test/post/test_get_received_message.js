@@ -1,4 +1,6 @@
-const {test} = require('@alexbosworth/tap');
+const {equal} = require('node:assert').strict;
+const {rejects} = require('node:assert').strict;
+const test = require('node:test');
 
 const {listChannelsResponse} = require('./../fixtures');
 const {getInfoResponse} = require('./../fixtures');
@@ -195,7 +197,7 @@ const tests = [
 ];
 
 tests.forEach(({args, description, error, expected}) => {
-  return test(description, async ({end, equal, rejects}) => {
+  return test(description, async () => {
     if (!!error) {
       await rejects(getReceivedMessage(args), error, 'Got expected error');
     } else {
@@ -204,6 +206,6 @@ tests.forEach(({args, description, error, expected}) => {
       equal(message, expected.message, 'Got expected message');
     }
 
-    return end();
+    return;
   });
 });

@@ -1,4 +1,5 @@
-const {test} = require('@alexbosworth/tap');
+const {rejects} = require('node:assert').strict;
+const test = require('node:test');
 
 const sendMessage = require('./../../post/send_message');
 
@@ -102,13 +103,13 @@ const tests = [
 ];
 
 tests.forEach(({args, description, error, expected}) => {
-  return test(description, async ({end, equal, rejects}) => {
+  return test(description, async () => {
     if (!!error) {
-      rejects(sendMessage(args), error, 'Got expected error');
+      await rejects(sendMessage(args), error, 'Got expected error');
     } else {
       await sendMessage(args);
     }
 
-    return end();
+    return;
   });
 });

@@ -1,6 +1,6 @@
-const EventEmitter = require('events');
-
-const {test} = require('@alexbosworth/tap');
+const EventEmitter = require('node:events');
+const {rejects} = require('node:assert').strict;
+const test = require('node:test');
 
 const {postSettledInvoice} = require('./../../');
 
@@ -288,7 +288,7 @@ const tests = [
 ];
 
 tests.forEach(({args, description, error, expected}) => {
-  return test(description, async ({end, equal, rejects}) => {
+  return test(description, async () => {
     if (!!error) {
       await rejects(postSettledInvoice(args), error, 'Got expected error');
     } else {
@@ -297,6 +297,6 @@ tests.forEach(({args, description, error, expected}) => {
       });
     }
 
-    return end();
+    return;
   });
 });

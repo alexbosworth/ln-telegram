@@ -1,14 +1,16 @@
+const {deepEqual} = require('node:assert').strict;
+const test = require('node:test');
+
 const {getNode} = require('lightning');
 const {setupChannel} = require('ln-docker-daemons');
 const {spawnLightningCluster} = require('ln-docker-daemons');
-const {test} = require('@alexbosworth/tap');
 
 const {handleBalanceCommand} = require('./../../');
 
 const size = 2;
 
 // Issuing a balance command should return a balance response
-test(`Handle balance command`, async ({end, strictSame}) => {
+test(`Handle balance command`, async () => {
   const {kill, nodes} = await spawnLightningCluster({size});
   const replies = [];
 
@@ -28,12 +30,12 @@ test(`Handle balance command`, async ({end, strictSame}) => {
       working: () => {},
     });
 
-    strictSame(replies, [[
-      '*Funds:* 349\\.99834590',
+    deepEqual(replies, [[
+      '*Funds:* 349\\.99834920',
       '',
-      '_🪙 control_: 349\\.99833590',
+      '_🪙 control_: 349\\.99833920',
       '```',
-      ' Channel Balance  0.00998340   ',
+      ' Channel Balance  0.00998670   ',
       ' Chain Confirmed  349.98835250 ',
       '',
       '```_🪙 target_: 0\\.00001000',
@@ -44,10 +46,10 @@ test(`Handle balance command`, async ({end, strictSame}) => {
     ]],
     'Balance summary is posted');
   } catch (err) {
-    strictSame(err, null, 'Expected no error');
+    deepEqual(err, null, 'Expected no error');
   }
 
   await kill({});
 
-  return end();
+  return;
 });

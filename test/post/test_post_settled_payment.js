@@ -1,4 +1,6 @@
-const {test} = require('@alexbosworth/tap');
+const {deepEqual} = require('node:assert').strict;
+const {rejects} = require('node:assert').strict;
+const test = require('node:test');
 
 const {nodeInfoResult} = require('./../fixtures');
 const {postSettledPayment} = require('./../../');
@@ -80,15 +82,15 @@ const tests = [
 ];
 
 tests.forEach(({args, description, error, expected}) => {
-  return test(description, async ({end, equal, rejects, strictSame}) => {
+  return test(description, async () => {
     if (!!error) {
       await rejects(postSettledPayment(args), error, 'Got expected error');
     } else {
       const res = await postSettledPayment(args);
 
-      strictSame(res, expected, 'Got expected result');
+      deepEqual(res, expected, 'Got expected result');
     }
 
-    return end();
+    return;
   });
 });

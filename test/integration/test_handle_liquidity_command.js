@@ -1,8 +1,10 @@
+const {deepEqual} = require('node:assert').strict;
+const test = require('node:test');
+
 const asyncRetry = require('async/retry');
 const {getNode} = require('lightning');
 const {setupChannel} = require('ln-docker-daemons');
 const {spawnLightningCluster} = require('ln-docker-daemons');
-const {test} = require('@alexbosworth/tap');
 
 const {handleLiquidityCommand} = require('./../../');
 
@@ -11,7 +13,7 @@ const size = 2;
 const times = 10000;
 
 // Issuing a liquidity command should return a liquidity response
-test(`Handle liquidity command`, async ({end, strictSame}) => {
+test(`Handle liquidity command`, async () => {
   const {kill, nodes} = await spawnLightningCluster({size});
   const replies = [];
 
@@ -36,7 +38,7 @@ test(`Handle liquidity command`, async ({end, strictSame}) => {
       working: () => {},
     });
 
-    strictSame(replies, [[
+    deepEqual(replies, [[
       `🌊 *Liquidity with ${target.id.substring(0, 20)} ${target.id.substring(0, 8)}:*`,
       '',
       '```',
@@ -47,10 +49,10 @@ test(`Handle liquidity command`, async ({end, strictSame}) => {
     ]],
     'Liquidity summary is posted');
   } catch (err) {
-    strictSame(err, null, 'Expected no error');
+    deepEqual(err, null, 'Expected no error');
   }
 
   await kill({});
 
-  return end();
+  return;
 });

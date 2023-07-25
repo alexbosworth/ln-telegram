@@ -1,4 +1,6 @@
-const {test} = require('@alexbosworth/tap');
+const {equal} = require('node:assert').strict;
+const {rejects} = require('node:assert').strict;
+const test = require('node:test');
 
 const {postChainTransaction} = require('./../../');
 
@@ -158,7 +160,7 @@ const tests = [
 ];
 
 tests.forEach(({args, description, error, expected}) => {
-  return test(description, async ({end, equal, rejects}) => {
+  return test(description, async () => {
     if (!!error) {
       await rejects(postChainTransaction(args), error, 'Got expected error');
     } else {
@@ -167,6 +169,6 @@ tests.forEach(({args, description, error, expected}) => {
       equal(message, expected, 'Got expected message');
     }
 
-    return end();
+    return;
   });
 });

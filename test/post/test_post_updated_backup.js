@@ -1,4 +1,5 @@
-const {test} = require('@alexbosworth/tap');
+const {rejects} = require('node:assert').strict;
+const test = require('node:test');
 
 const {postUpdatedBackup} = require('./../../post');
 
@@ -46,13 +47,13 @@ const tests = [
 ];
 
 tests.forEach(({args, description, error, expected}) => {
-  return test(description, async ({end, equal, rejects}) => {
+  return test(description, async () => {
     if (!!error) {
       await rejects(postUpdatedBackup(args), error, 'Got expected error');
     } else {
       await postUpdatedBackup(args);
     }
 
-    return end();
+    return;
   });
 });
