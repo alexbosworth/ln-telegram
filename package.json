@@ -7,25 +7,25 @@
     "url": "https://github.com/alexbosworth/ln-telegram/issues"
   },
   "dependencies": {
-    "@alexbosworth/fiat": "1.0.4",
+    "@alexbosworth/fiat": "2.0.0",
     "async": "3.2.4",
     "asyncjs-util": "1.2.12",
     "bolt07": "1.8.4",
     "goldengate": "13.0.2",
-    "grammy": "1.17.2",
+    "grammy": "1.19.2",
     "ln-accounting": "7.0.2",
-    "ln-service": "56.9.0",
+    "ln-service": "57.1.0",
     "ln-sync": "5.2.3",
-    "luxon": "3.3.0",
-    "paid-services": "5.0.4",
+    "luxon": "3.4.3",
+    "paid-services": "5.0.5",
     "table": "6.8.1"
   },
   "description": "Lightning Network Telegram bot commands",
   "devDependencies": {
-    "ln-docker-daemons": "5.1.1"
+    "ln-docker-daemons": "6.0.3"
   },
   "engines": {
-    "node": ">=16"
+    "node": ">=18"
   },
   "keywords": [
     "lightning",
@@ -43,5 +43,5 @@
     "integration-tests": "node test/integration",
     "test": "npx nyc@15.1.0 node --experimental-test-coverage --test test/commands/*.js test/messages/*.js test/post/*.js"
   },
-  "version": "5.0.0"
+  "version": "6.0.0"
 }

@@ -1,5 +1,13 @@
 # Versions
 
+## Version 6.0.0
+
+- Add support for `PREFERRED_TOKENS_TYPE=rounded` to adjust amount formatting
+
+### Breaking Changes
+
+- Node 18 or higher is now required
+
 ## Version 5.0.0
 
 ### Breaking Changes
