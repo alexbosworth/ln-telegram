@@ -1,4 +1,5 @@
 const fullTokensType = 'full';
+const roundedTokensType = 'rounded';
 const isString = n => typeof n === 'string';
 const tokensAsBigUnit = tokens => (tokens / 1e8).toFixed(8);
 
@@ -22,6 +23,8 @@ module.exports = ({none, tokens}) => {
   // Exit early for tokens environment displays the value with no leading zero
   if (process.env.PREFERRED_TOKENS_TYPE === fullTokensType) {
     return {display: tokens.toLocaleString()};
+  } else if (process.env.PREFERRED_TOKENS_TYPE === roundedTokensType) {
+    return {display: Math.round(tokens).toLocaleString()};
   }
 
   return {display: tokensAsBigUnit(tokens)};
