@@ -1,5 +1,6 @@
 const asyncAuto = require('async/auto');
 const asyncMap = require('async/map');
+const {getPendingChannels} = require('ln-service');
 const {getNodeAlias} = require('ln-sync');
 const {returnResult} = require('asyncjs-util');
 
@@ -67,18 +68,27 @@ module.exports = ({from, id, lnd, opening, send}, cbk) => {
         cbk);
       }],
 
+      // Check if channel is private
+      getPendingChannels: ['validate', ({}, cbk) => {
+        return getPendingChannels({lnd}, cbk);
+      }],
+
       // Put together the message to summarize the channels opening
-      message: ['getAliases', ({getAliases}, cbk) => {
+      message: ['getAliases', 'getPendingChannels' ({getAliases, getPendingChannels}, cbk) => {
         const lines = opening.map(chan => {
           const node = getAliases.find(n => n.id === chan.partner_public_key);
+          const isPrivateChannel = getPendingChannels.pending_channels.find(n => n.partner_public_key === chan.partner_public_key).is_private;
 
           const action = chan.is_partner_initiated ? 'Accepting' : 'Opening';
           const direction = !!chan.is_partner_initiated ? 'from' : 'to';
           const moniker = `${escape(node.alias)} \`${node.id}\``.trim();
+          const isPrivate = !!isPrivateChannel ? `Private 🌚` : `Public ☀️`
+          
 
           const elements = [
             `${icons.opening} ${action} new`,
             escape(formatTokens({tokens: chan.capacity}).display),
+            `${isPrivate} `,
             `channel ${direction} ${moniker}${escape('.')}`,
           ];
 
