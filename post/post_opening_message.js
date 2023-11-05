@@ -74,21 +74,23 @@ module.exports = ({from, id, lnd, opening, send}, cbk) => {
       }],
 
       // Put together the message to summarize the channels opening
-      message: ['getAliases', 'getPendingChannels' ({getAliases, getPendingChannels}, cbk) => {
+      message: ['getAliases', 'getPendingChannels', ({getAliases, getPendingChannels}, cbk) => {
         const lines = opening.map(chan => {
           const node = getAliases.find(n => n.id === chan.partner_public_key);
-          const isPrivateChannel = getPendingChannels.pending_channels.find(n => n.partner_public_key === chan.partner_public_key).is_private;
+
+          const isPrivateChannel = getPendingChannels.pending_channels.
+                                  find(n => n.partner_public_key === chan.partner_public_key)
+                                  .is_private;
 
           const action = chan.is_partner_initiated ? 'Accepting' : 'Opening';
           const direction = !!chan.is_partner_initiated ? 'from' : 'to';
           const moniker = `${escape(node.alias)} \`${node.id}\``.trim();
-          const isPrivate = !!isPrivateChannel ? `Private 🌚` : `Public ☀️`
+          const isPrivate = !!isPrivateChannel ? `private 🌚` : `public ☀️`
           
-
           const elements = [
             `${icons.opening} ${action} new`,
             escape(formatTokens({tokens: chan.capacity}).display),
-            `${isPrivate} `,
+            `${isPrivate}`,
             `channel ${direction} ${moniker}${escape('.')}`,
           ];
 
