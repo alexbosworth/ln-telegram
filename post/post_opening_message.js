@@ -68,7 +68,7 @@ module.exports = ({from, id, lnd, opening, send}, cbk) => {
         cbk);
       }],
 
-      // Check if channel is private
+      // Get pending channels
       getPendingChannels: ['validate', ({}, cbk) => {
         return getPendingChannels({lnd}, cbk);
       }],
