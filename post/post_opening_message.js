@@ -1,6 +1,5 @@
 const asyncAuto = require('async/auto');
 const asyncMap = require('async/map');
-const {getPendingChannels} = require('ln-service');
 const {getNodeAlias} = require('ln-sync');
 const {returnResult} = require('asyncjs-util');
 
