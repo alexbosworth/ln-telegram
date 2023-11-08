@@ -68,29 +68,20 @@ module.exports = ({from, id, lnd, opening, send}, cbk) => {
         cbk);
       }],
 
-      // Get pending channels
-      getPendingChannels: ['validate', ({}, cbk) => {
-        return getPendingChannels({lnd}, cbk);
-      }],
-
       // Put together the message to summarize the channels opening
-      message: ['getAliases', 'getPendingChannels', ({getAliases, getPendingChannels}, cbk) => {
+      message: ['getAliases', ({getAliases}, cbk) => {
         const lines = opening.map(chan => {
           const node = getAliases.find(n => n.id === chan.partner_public_key);
-
-          const isPrivateChannel = getPendingChannels.pending_channels.
-                                  find(n => n.partner_public_key === chan.partner_public_key)
-                                  .is_private;
 
           const action = chan.is_partner_initiated ? 'Accepting' : 'Opening';
           const direction = !!chan.is_partner_initiated ? 'from' : 'to';
           const moniker = `${escape(node.alias)} \`${node.id}\``.trim();
-          const isPrivate = !!isPrivateChannel ? `private 🌚` : `public ☀️`
+          const isPrivate = chan.is_private ? `private 🌚` : undefined;
           
           const elements = [
             `${icons.opening} ${action} new`,
             escape(formatTokens({tokens: chan.capacity}).display),
-            `${isPrivate}`,
+            isPrivate,
             `channel ${direction} ${moniker}${escape('.')}`,
           ];
 
