@@ -82,7 +82,7 @@ module.exports = ({from, id, lnd, opening, send}, cbk) => {
             escape(formatTokens({tokens: chan.capacity}).display),
             isPrivate,
             `channel ${direction} ${moniker}${escape('.')}`,
-          ];
+          ].filter(n => !!n);
 
           return elements.join(elementJoiner);
         });
