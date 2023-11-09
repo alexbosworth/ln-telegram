@@ -8,14 +8,14 @@
   },
   "dependencies": {
     "@alexbosworth/fiat": "2.0.0",
-    "async": "3.2.4",
+    "async": "3.2.5",
     "asyncjs-util": "1.2.12",
     "bolt07": "1.8.4",
     "goldengate": "13.0.2",
     "grammy": "1.19.2",
     "ln-accounting": "7.0.2",
     "ln-service": "57.1.0",
-    "ln-sync": "5.2.3",
+    "ln-sync": "6.0.0",
     "luxon": "3.4.3",
     "paid-services": "5.0.5",
     "table": "6.8.1"
@@ -43,5 +43,5 @@
     "integration-tests": "node test/integration",
     "test": "npx nyc@15.1.0 node --experimental-test-coverage --test test/commands/*.js test/messages/*.js test/post/*.js"
   },
-  "version": "6.0.0"
+  "version": "6.1.0"
 }

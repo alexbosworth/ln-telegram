@@ -1,5 +1,9 @@
 # Versions
 
+## Version 6.1.0
+
+- Add support for indicating if a channel is unannounced in opening message
+
 ## Version 6.0.0
 
 - Add support for `PREFERRED_TOKENS_TYPE=rounded` to adjust amount formatting
