@@ -11,6 +11,7 @@ const escape = text => text.replace(/[_*[\]()~`>#+\-=|{}.!\\]/g, '\\\$&');
 const {isArray} = Array;
 const markup = {parse_mode: 'MarkdownV2'};
 const textJoiner = '\n';
+const {unannounced} = icons;
 
 /** Send channel opening message to telegram
 
@@ -21,6 +22,7 @@ const textJoiner = '\n';
     opening: [{
       capacity: <Channel Token Capacity Number>
       [is_partner_initiated]: <Channel Partner Opened Channel>
+      [is_private]: <Channel is Not Announced to Gossip Bool>
       partner_public_key: <Channel Partner Public Key String>
     }]
     send: <Send Message to Telegram User Id Function>
@@ -73,16 +75,15 @@ module.exports = ({from, id, lnd, opening, send}, cbk) => {
           const node = getAliases.find(n => n.id === chan.partner_public_key);
 
           const action = chan.is_partner_initiated ? 'Accepting' : 'Opening';
+          const announce = chan.is_private ? `${unannounced} private` : '';
           const direction = !!chan.is_partner_initiated ? 'from' : 'to';
           const moniker = `${escape(node.alias)} \`${node.id}\``.trim();
-          const isPrivate = chan.is_private ? `private 🌚` : undefined;
-          
+
           const elements = [
             `${icons.opening} ${action} new`,
             escape(formatTokens({tokens: chan.capacity}).display),
-            isPrivate,
-            `channel ${direction} ${moniker}${escape('.')}`,
-          ].filter(n => !!n);
+            `${announce} channel ${direction} ${moniker}${escape('.')}`.trim(),
+          ];
 
           return elements.join(elementJoiner);
         });

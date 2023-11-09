@@ -75,6 +75,23 @@ const tests = [
     args: makeArgs({
       opening: [{
         capacity: 1,
+        is_partner_initiated: true,
+        is_private: true,
+        partner_public_key: pubKey,
+      }],
+    }),
+    description: 'Post private channel accepting message to Telegram',
+    expected: {
+      text: [
+        '⏳ Accepting new 0\\.00000001 🌚 private channel from alias `000000000000000000000000000000000000000000000000000000000000000000`\\.',
+        '_node1_',
+      ],
+    },
+  },
+  {
+    args: makeArgs({
+      opening: [{
+        capacity: 1,
         is_partner_initiated: false,
         partner_public_key: pubKey,
       }],
