@@ -1,5 +1,9 @@
 # Versions
 
+## Version 6.1.1
+
+- `handleEarningsCommand`: Support large numbers of forwards
+
 ## Version 6.1.0
 
 - Add support for indicating if a channel is unannounced in opening message

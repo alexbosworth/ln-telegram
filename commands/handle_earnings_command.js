@@ -23,7 +23,7 @@ const formatReport = (from, n) => `💰 Earned on ${from}\n\n\`\`\`${n}\`\`\``;
 const formatReports = reports => reports.join('\n');
 const header = ['', 'Day', 'Week'];
 const {isArray} = Array;
-const limit = 99999;
+const limit = 999999;
 const notFound = 404;
 const {now} = Date;
 const sumOf = arr => arr.reduce((sum, n) => sum + n, BigInt(Number()));
