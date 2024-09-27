@@ -4,7 +4,7 @@ const {returnResult} = require('asyncjs-util');
 const {bot} = require('./../interaction');
 const {checkAccess} = require('./../authentication');
 
-const failedToGetVersion = `${bot} Failed to get version information from NPM`;
+const failedToGetLatestVersion = `${bot} Failed to get latest version information from NPM`;
 const currentVersion = n => `${bot} Running version: ${n}`;
 const latestVersion = n => `${bot} Latest version: ${n}`;
 const ok = 200;
@@ -60,7 +60,7 @@ module.exports = ({from, id, named, reply, request, version}, cbk) => {
 
         return request({json: true, url: url(named)}, (err, r, pkg) => {
           if (!!err || !r || r.statusCode !== ok || !pkg || !pkg.version) {
-            reply(failedToGetVersion);
+            reply(failedToGetLatestVersion);
 
             return cbk();
           }
