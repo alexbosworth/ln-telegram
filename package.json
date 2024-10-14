@@ -17,7 +17,7 @@
     "ln-service": "57.22.0",
     "ln-sync": "6.4.0",
     "luxon": "3.5.0",
-    "paid-services": "6.1.7",
+    "paid-services": "6.2.0",
     "table": "6.8.2"
   },
   "description": "Lightning Network Telegram bot commands",
@@ -43,5 +43,5 @@
     "integration-tests": "node test/integration",
     "test": "npx nyc@17.0.0 node --experimental-test-coverage --test test/commands/*.js test/messages/*.js test/post/*.js"
   },
-  "version": "6.1.9"
+  "version": "6.1.10"
 }
