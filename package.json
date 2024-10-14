@@ -11,13 +11,13 @@
     "async": "3.2.6",
     "asyncjs-util": "1.2.12",
     "bolt07": "1.9.4",
-    "goldengate": "14.0.8",
+    "goldengate": "14.0.9",
     "grammy": "1.30.0",
-    "ln-accounting": "8.0.4",
-    "ln-service": "57.20.2",
+    "ln-accounting": "8.0.5",
+    "ln-service": "57.22.0",
     "ln-sync": "6.4.0",
     "luxon": "3.5.0",
-    "paid-services": "6.1.6",
+    "paid-services": "6.1.7",
     "table": "6.8.2"
   },
   "description": "Lightning Network Telegram bot commands",
@@ -41,7 +41,7 @@
   },
   "scripts": {
     "integration-tests": "node test/integration",
-    "test": "npx nyc@15.1.0 node --experimental-test-coverage --test test/commands/*.js test/messages/*.js test/post/*.js"
+    "test": "npx nyc@17.0.0 node --experimental-test-coverage --test test/commands/*.js test/messages/*.js test/post/*.js"
   },
-  "version": "6.1.8"
+  "version": "6.1.9"
 }
