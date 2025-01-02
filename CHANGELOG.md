@@ -1,6 +1,6 @@
 # Versions
 
-## Version 6.1.10
+## Version 6.1.11
 
 - `handleEarningsCommand`: Support large numbers of forwards
 
