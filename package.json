@@ -10,22 +10,22 @@
     "@alexbosworth/fiat": "2.0.0",
     "async": "3.2.6",
     "asyncjs-util": "1.2.12",
-    "bolt07": "1.9.4",
-    "goldengate": "14.0.11",
-    "grammy": "1.34.0",
-    "ln-accounting": "8.0.7",
-    "ln-service": "57.22.3",
-    "ln-sync": "6.4.0",
-    "luxon": "3.5.0",
-    "paid-services": "7.0.1",
+    "bolt07": "1.9.5",
+    "goldengate": "15.0.0",
+    "grammy": "1.40.0",
+    "ln-accounting": "9.0.0",
+    "ln-service": "58.0.2",
+    "ln-sync": "7.0.0",
+    "luxon": "3.7.2",
+    "paid-services": "7.0.2",
     "table": "6.9.0"
   },
   "description": "Lightning Network Telegram bot commands",
   "devDependencies": {
-    "ln-docker-daemons": "6.0.28"
+    "ln-docker-daemons": "7.0.0"
   },
   "engines": {
-    "node": ">=18"
+    "node": ">=20"
   },
   "keywords": [
     "lightning",
@@ -43,5 +43,5 @@
     "integration-tests": "node test/integration",
     "test": "npx nyc@17.1.0 node --experimental-test-coverage --test test/commands/*.js test/messages/*.js test/post/*.js"
   },
-  "version": "6.1.13"
+  "version": "7.0.0"
 }

@@ -1,5 +1,11 @@
 # Versions
 
+## Version 7.0.0
+
+### Breaking Changes
+
+- Node 20 or higher is now required
+
 ## Version 6.1.13
 
 - `handleEarningsCommand`: Support large numbers of forwards
