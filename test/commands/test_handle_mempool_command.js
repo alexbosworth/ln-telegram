@@ -3,14 +3,14 @@ const test = require('node:test');
 
 const {handleMempoolCommand} = require('./../../');
 
+const mempoolBlocksUrl = 'https://example.com/api/v1/fees/mempool-blocks';
+
 test('Mempool command accepts a mempool blocks URL argument', async () => {
-  const mempoolBlocksUrl = 'https://example.com/api/v1/fees/mempool-blocks';
   let requestedUrl;
 
   await handleMempoolCommand({
     from: 1,
     id: 1,
-    mempool_blocks_url: mempoolBlocksUrl,
     reply: () => {},
     request: ({url}, cbk) => {
       requestedUrl = url;
@@ -20,6 +20,7 @@ test('Mempool command accepts a mempool blocks URL argument', async () => {
         medianFee: 1,
       }]);
     },
+    url: mempoolBlocksUrl,
   });
 
   equal(requestedUrl, mempoolBlocksUrl, 'Requested configured mempool URL');
