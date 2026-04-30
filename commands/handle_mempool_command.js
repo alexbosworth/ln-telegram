@@ -13,7 +13,7 @@ const formatReport = n => `${interaction.mempool_report}\n\n\`\`\`${n}\`\`\``;
 const header = ['Wait', 'Fee Rate', 'Filled'];
 const {isArray} = Array;
 const ok = 200;
-const url = 'https://mempool.space/api/v1/fees/mempool-blocks';
+const defaultUrl = 'https://mempool.space/api/v1/fees/mempool-blocks';
 const vbytesLimit = 1e6;
 const virtualBlocksLimit = 6;
 const waitTimeForBlock = n => `${n * 10} min`;
@@ -23,13 +23,14 @@ const waitTimeForBlock = n => `${n * 10} min`;
   {
     from: <Command From User Id Number>
     id: <Connected User Id Number>
+    [mempool_blocks_url]: <Mempool Blocks API URL String>
     reply: <Reply Function>
     request: <Request Function>
   }
 
   @returns via cbk or Promise
 */
-module.exports = ({from, id, reply, request}, cbk) => {
+module.exports = ({from, id, mempool_blocks_url, reply, request}, cbk) => {
   return new Promise((resolve, reject) => {
     return asyncAuto({
       // Check arguments
@@ -54,6 +55,8 @@ module.exports = ({from, id, reply, request}, cbk) => {
 
       // Get block data from mempool.space
       getMempool: ['checkAccess', ({}, cbk) => {
+        const url = mempool_blocks_url || defaultUrl;
+
         reply(interaction.requesting_mempool);
 
         return request({url, json: true}, (err, r, mempool) => {
