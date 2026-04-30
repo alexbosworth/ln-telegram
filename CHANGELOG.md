@@ -1,5 +1,9 @@
 # Versions
 
+## Version 7.1.0
+
+- `handleMempoolCommand`: Add `url` to override the default data source
+
 ## Version 7.0.1
 
 ### Breaking Changes
