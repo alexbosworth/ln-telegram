@@ -1,5 +1,11 @@
 # Versions
 
+## Version 8.0.0
+
+### Breaking Changes
+
+- Node 22 or higher is now required
+
 ## Version 7.1.0
 
 - `handleMempoolCommand`: Add `url` to override the default data source
