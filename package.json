@@ -11,18 +11,18 @@
     "async": "3.2.6",
     "asyncjs-util": "1.2.12",
     "bolt07": "1.9.5",
-    "goldengate": "16.0.3",
-    "grammy": "1.44.0",
-    "ln-accounting": "10.0.3",
-    "ln-service": "59.1.1",
+    "goldengate": "16.0.4",
+    "grammy": "1.45.1",
+    "ln-accounting": "10.0.4",
+    "ln-service": "59.2.1",
     "ln-sync": "8.0.3",
     "luxon": "3.7.2",
-    "paid-services": "8.0.3",
+    "paid-services": "8.0.4",
     "table": "6.9.0"
   },
   "description": "Lightning Network Telegram bot commands",
   "devDependencies": {
-    "ln-docker-daemons": "8.0.1"
+    "ln-docker-daemons": "8.0.2"
   },
   "engines": {
     "node": ">=22"
@@ -41,7 +41,7 @@
   },
   "scripts": {
     "integration-tests": "node test/integration",
-    "test": "npx nyc@17.1.0 node --experimental-test-coverage --test test/commands/*.js test/messages/*.js test/post/*.js"
+    "test": "node --experimental-test-coverage --test test/commands/*.js test/messages/*.js test/post/*.js"
   },
-  "version": "8.0.3"
+  "version": "8.0.4"
 }
