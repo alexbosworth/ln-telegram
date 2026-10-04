@@ -20,7 +20,7 @@ test(`Get an amount as tokens`, async () => {
       [
         400,
         'FailedToParseAmount',
-        {err: new Error('UnrecognizedVariableOrFunctionInSpecifiedAmount')}
+        {err: new Error('ExpectedAllKnownConstantsInFormulaToEvaluate')}
       ],
       'Invalid amount'
     );
