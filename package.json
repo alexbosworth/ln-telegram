@@ -60,5 +60,5 @@
     "integration-tests": "node test/integration",
     "test": "node --experimental-test-coverage --test test/commands/*.js test/messages/*.js test/post/*.js"
   },
-  "version": "8.0.7"
+  "version": "8.1.0"
 }
