@@ -118,6 +118,26 @@ const tests = [
     },
   },
   {
+    args: makeArgs({is_cooperative_close: true, is_partner_closed: false}),
+    description: 'Post locally initiated cooperative close message',
+    expected: {
+      text: [
+        `🥀 Cooperatively closed 0\\.00000001 channel with alias ${pubKey}\\. Inbound liquidity now: 0\\.00000001\\. Outbound liquidity now: 0\\.00000001\\.`,
+        'node1',
+      ],
+    },
+  },
+  {
+    args: makeArgs({is_cooperative_close: true, is_partner_closed: true}),
+    description: 'Post peer initiated cooperative close message',
+    expected: {
+      text: [
+        `🥀 0\\.00000001 channel was cooperatively closed by alias ${pubKey}\\. Inbound liquidity now: 0\\.00000001\\. Outbound liquidity now: 0\\.00000001\\.`,
+        'node1',
+      ],
+    },
+  },
+  {
     args: makeArgs({is_local_force_close: true}),
     description: 'Post local force channel close message to Telegram',
     expected: {
@@ -130,6 +150,16 @@ const tests = [
   {
     args: makeArgs({is_remote_force_close: true}),
     description: 'Post remote force channel close message to Telegram',
+    expected: {
+      text: [
+        `🥀 0\\.00000001 channel was force closed by alias ${pubKey}\\. Inbound liquidity now: 0\\.00000001\\. Outbound liquidity now: 0\\.00000001\\.`,
+        'node1',
+      ],
+    },
+  },
+  {
+    args: makeArgs({is_partner_closed: true, is_remote_force_close: true}),
+    description: 'Peer closed flag does not change remote force close message',
     expected: {
       text: [
         `🥀 0\\.00000001 channel was force closed by alias ${pubKey}\\. Inbound liquidity now: 0\\.00000001\\. Outbound liquidity now: 0\\.00000001\\.`,

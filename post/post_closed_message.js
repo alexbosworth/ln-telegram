@@ -19,6 +19,7 @@ const textJoiner = '\n';
     is_breach_close: <Is Breach Close Bool>
     is_cooperative_close: <Is Cooperative Close Bool>
     is_local_force_close: <Is Local Force Close Bool>
+    [is_partner_closed]: <Channel Was Closed By Channel Peer Bool>
     is_remote_force_close: <Is Remote Force close Bool>
     lnd: <Authenticated LND API Object>
     partner_public_key: <Partner Public Key Hex String>
@@ -84,6 +85,8 @@ module.exports = (args, cbk) => {
 
         if (args.is_breach_close) {
           return `Breach countered on ${capacity} channel with`;
+        } else if (args.is_cooperative_close && !!args.is_partner_closed) {
+          return `${capacity} channel was cooperatively closed by`;
         } else if (args.is_cooperative_close) {
           return `Cooperatively closed ${capacity} channel with`;
         } else if (args.is_local_force_close) {

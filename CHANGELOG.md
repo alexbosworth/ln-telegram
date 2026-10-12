@@ -1,5 +1,9 @@
 # Versions
 
+## Version 8.1.0
+
+- `postClosedMessage`: Add `is_partner_closed` to indicate peer coop closes
+
 ## Version 8.0.7
 
 ### Breaking Changes

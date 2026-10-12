@@ -19,15 +19,15 @@
     "goldengate": "16.0.8",
     "grammy": "1.46.0",
     "ln-accounting": "10.0.8",
-    "ln-service": "60.1.2",
+    "ln-service": "60.1.6",
     "ln-sync": "8.0.7",
     "luxon": "3.7.2",
-    "paid-services": "9.0.1",
+    "paid-services": "10.3.0",
     "table": "6.9.0"
   },
   "description": "Lightning Network Telegram bot commands",
   "devDependencies": {
-    "ln-docker-daemons": "8.1.0"
+    "ln-docker-daemons": "8.1.2"
   },
   "engines": {
     "node": ">=22"
