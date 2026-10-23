@@ -3,12 +3,14 @@ const {returnResult} = require('asyncjs-util');
 
 const {formatTokens} = require('./../interface');
 const {icons} = require('./../interface');
+const {preventLinks} = require('./../interface');
 
 const escape = text => text.replace(/[_*[\]()~`>#+\-=|{}.!\\]/g, '\\\$&');
 const formatAmount = tokens => formatTokens({tokens}).display;
 const {isArray} = Array;
 const joinElements = arr => arr.join(' ');
 const markup = {parse_mode: 'MarkdownV2'};
+const noLinks = text => preventLinks({text}).text;
 
 /** Post chain transaction
 
@@ -75,7 +77,7 @@ module.exports = ({confirmed, from, id, nodes, send, transaction}, cbk) => {
         const fee = !!chainFee ? `Paid ${formatAmount(chainFee)} fee` : '';
 
         const related = transaction.related_channels.map(related => {
-          const alias = related.node || related.with || String();
+          const alias = noLinks(related.node || related.with || String());
 
           switch (related.action) {
           case 'channel_closing':
@@ -154,7 +156,7 @@ module.exports = ({confirmed, from, id, nodes, send, transaction}, cbk) => {
         return cbk(null, joinElements([
           action,
           escape('-'),
-          `_${escape(from)}_`,
+          `_${escape(noLinks(from))}_`,
         ]));
       }],
 

@@ -5,13 +5,15 @@ const {returnResult} = require('asyncjs-util');
 
 const {icons} = require('./../interface');
 const {formatTokens} = require('./../interface');
+const {preventLinks} = require('./../interface');
 
 const display = tokens => formatTokens({tokens}).display;
 const escape = text => text.replace(/[_*[\]()~`>#+\-=|{}.!\\]/g, '\\\$&');
 const {isArray} = Array;
 const join = arr => arr.join(', ');
 const markup = {parse_mode: 'MarkdownV2'};
-const niceName = node => node.alias || node.id.substring(0, 8);
+const niceName = n => n.alias || n.id.substring(0, 8);
+const noLinks = text => preventLinks({text}).text;
 
 /** Post settled payment
 
@@ -94,17 +96,19 @@ module.exports = ({from, id, lnd, nodes, payment, send}, cbk) => {
       // Create the message details
       message: ['getNode', 'getRelays', ({getNode, getRelays}, cbk) => {
         const isTransfer = nodes.includes(payment.destination);
+        const relays = getRelays.filter(n => !!n).map(niceName).map(noLinks);
         const routingFee = `. Paid routing fee: ${display(payment.safe_fee)}`;
         const sent = display(payment.safe_tokens - payment.safe_fee);
-        const toNode = niceName(getNode);
-        const via = ` out ${join(getRelays.filter(n => !!n).map(niceName))}`;
+        const toNode = noLinks(niceName(getNode));
 
         const action = isTransfer ? 'Transferred' : 'Sent';
         const fee = !payment.safe_fee ? '' : routingFee;
+        const via = !relays.length ? '' : ` out ${join(relays)}`;
 
         const details = escape(`${action} ${sent} to ${toNode}${via}${fee} -`);
+        const fromNode = escape(noLinks(from));
 
-        return cbk(null, `${icons.spent} ${details} _${escape(from)}_`);
+        return cbk(null, `${icons.spent} ${details} _${fromNode}_`);
       }],
 
       // Post message summarizing the payment

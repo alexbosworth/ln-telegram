@@ -1,21 +1,23 @@
 const asyncAuto = require('async/auto');
 const asyncReflect = require('async/reflect');
-const {createInvoice} = require('ln-service');
+const {cancelHodlInvoice} = require('ln-service');
+const {getInvoice} = require('ln-service');
 const {parsePaymentRequest} = require('ln-service');
 const {returnResult} = require('asyncjs-util');
 
 const {callbackCommands} = require('./../interface');
 const {checkAccess} = require('./../authentication');
 const {createInvoiceMessage} = require('./../messages');
-const {editQuestions} = require('./../interface');
 const {failureMessage} = require('./../messages');
 const {getAmountAsTokens} = require('./../interface');
 const invoiceActionType = require('./invoice_action_type');
 const {postCreatedInvoice} = require('./../post');
 
+const byteLength = text => Buffer.byteLength(text, 'utf8');
 const {isArray} = Array;
-const {isInteger} = Number;
-const isNumber = n => !isNaN(n);
+const {isSafeInteger} = Number;
+const maxDescriptionBytes = 639;
+const maxTokens = 1e13;
 const split = n => n.split('\n');
 
 /** Update the details of a created invoice from reply input
@@ -25,6 +27,7 @@ const split = n => n.split('\n');
     ctx: <Telegram Context Object>
     id: <Connected User Id Number>
     nodes: [{
+      from: <Saved Node Name String>
       lnd: <Authenticated LND API Object>
       public_key: <Node Identity Public Key Hex String>
     }]
@@ -76,6 +79,13 @@ module.exports = ({api, ctx, id, nodes, request}, cbk) => {
         return cbk(null, details);
       }],
 
+      // Find the node that created the invoice
+      node: ['details', ({details}, cbk) => {
+        return cbk(
+          null, nodes.find(n => n.public_key === details.destination)
+        );
+      }],
+
       // Determine what type of edit message this is
       type: ['checkAccess', ({}, cbk) => {
         const {text} = ctx.update.message.reply_to_message;
@@ -112,6 +122,27 @@ module.exports = ({api, ctx, id, nodes, request}, cbk) => {
         }
       }],
 
+      // Check the new description fits before the original is canceled
+      checkDescription: ['type', asyncReflect(({type}, cbk) => {
+        // Exit early when not updating the invoice description
+        if (type !== callbackCommands.setInvoiceDescription) {
+          return cbk();
+        }
+
+        const {text} = ctx.update.message;
+
+        if (typeof text !== 'string') {
+          return cbk([400, 'ExpectedTextToUpdateInvoiceDescription']);
+        }
+
+        // A payment request has room for a 639 byte description
+        if (byteLength(text) > maxDescriptionBytes) {
+          return cbk([400, 'ExpectedShorterDescriptionToUpdateInvoice']);
+        }
+
+        return cbk();
+      })],
+
       // Get the amount as tokens for the invoice
       getTokens: ['details', 'type', asyncReflect(({details, type}, cbk) => {
         // Exit early when not updating the invoice amount
@@ -127,20 +158,40 @@ module.exports = ({api, ctx, id, nodes, request}, cbk) => {
           return cbk([400, 'InvoicingNodeNotFound']);
         }
 
+        if (typeof ctx.update.message.text !== 'string') {
+          return cbk([400, 'ExpectedTextToUpdateInvoiceAmount']);
+        }
+
         return getAmountAsTokens({
           request,
           amount: ctx.update.message.text,
           lnd: node.lnd,
         },
-        cbk);
+        (err, res) => {
+          if (!!err) {
+            return cbk(err);
+          }
+
+          // LND caps invoices at 100k BTC; validate before canceling
+          if (
+            res.tokens < 0 ||
+            res.tokens > maxTokens ||
+            !isSafeInteger(res.tokens)
+          ) {
+            return cbk([400, 'ExpectedValidAmountToUpdateInvoice']);
+          }
+
+          return cbk(null, res);
+        });
       })],
 
       // Details for the updated new invoice
       updated: [
+        'checkDescription',
         'details',
         'getTokens',
         'type',
-        ({details, getTokens, type}, cbk) =>
+        ({checkDescription, details, getTokens, type}, cbk) =>
       {
         // Exit early when the type of update is not known
         if (!type) {
@@ -154,25 +205,67 @@ module.exports = ({api, ctx, id, nodes, request}, cbk) => {
         switch (type) {
         // Updating the invoice description
         case callbackCommands.setInvoiceDescription:
+          // Exit early when the description is invalid
+          if (!!checkDescription.error) {
+            return cbk();
+          }
+
           return cbk(null, {tokens, description: text});
 
         // Updating the invoice amount
         case callbackCommands.setInvoiceTokens:
-          // Revert back to the last good tokens when there is a parse fail
-          return cbk(null, {
-            description,
-            tokens: !!getTokens.value ? getTokens.value.tokens : tokens,
-          });
+          // Exit early when the amount could not be understood
+          if (!getTokens.value) {
+            return cbk();
+          }
+
+          return cbk(null, {description, tokens: getTokens.value.tokens});
 
         default:
           return cbk();
         }
       }],
 
-      // Post the invoice
-      postInvoice: ['details', 'updated', ({details, updated}, cbk) => {
-        // Exit early when there is no update
+      // Cancel the original invoice so that it can no longer be paid
+      cancel: [
+        'details',
+        'node',
+        'updated',
+        asyncReflect(({details, node, updated}, cbk) =>
+      {
+        // Exit early when there is no update to make
         if (!updated) {
+          return cbk();
+        }
+
+        // An update means that the invoice is from one of the nodes
+        return cancelHodlInvoice({id: details.id, lnd: node.lnd}, cbk);
+      })],
+
+      // Check if an invoice that could not be canceled was already paid
+      getInvoice: [
+        'cancel',
+        'details',
+        'node',
+        asyncReflect(({cancel, details, node}, cbk) =>
+      {
+        // Exit early when the invoice was canceled
+        if (!cancel.error) {
+          return cbk();
+        }
+
+        return getInvoice({id: details.id, lnd: node.lnd}, cbk);
+      })],
+
+      // Post the invoice
+      postInvoice: [
+        'cancel',
+        'details',
+        'updated',
+        ({cancel, details, updated}, cbk) =>
+      {
+        // Exit early when there is no update or the original was not canceled
+        if (!updated || !!cancel.error) {
           return cbk();
         }
 
@@ -188,18 +281,72 @@ module.exports = ({api, ctx, id, nodes, request}, cbk) => {
       }],
 
       // Post a failure message if necessary
-      postFailure: ['getTokens', async ({getTokens}) => {
+      postFailure: [
+        'cancel',
+        'checkDescription',
+        'getInvoice',
+        'getTokens',
+        async ({cancel, checkDescription, getInvoice, getTokens}) =>
+      {
         // Exit early when there is no failure
-        if (!getTokens.error) {
+        if (!cancel.error && !checkDescription.error && !getTokens.error) {
           return;
         }
 
-        const [, message] = getTokens.error;
+        const error = checkDescription.error || getTokens.error ||
+          cancel.error;
 
-        const failure = failureMessage({});
+        const [, code] = error;
+        const isPaid = !!getInvoice.value && getInvoice.value.is_confirmed;
+
+        const failure = failureMessage({is_paid_invoice: isPaid});
+
+        // A paid invoice gets an explanation instead of the error code
+        const message = isPaid ? failure.message : code;
 
         try {
           await ctx.reply(message, failure.actions);
+        } catch (err) {
+          // Ignore errors
+        }
+      }],
+
+      // Post the original invoice again when it was not replaced
+      restoreInvoice: [
+        'cancel',
+        'checkDescription',
+        'getInvoice',
+        'getTokens',
+        'node',
+        'postFailure',
+        async ({cancel, checkDescription, getInvoice, getTokens, node}) =>
+      {
+        // Exit early when there was no failure
+        if (!cancel.error && !checkDescription.error && !getTokens.error) {
+          return;
+        }
+
+        // Exit early when the invoice was paid since it cannot be used again
+        if (!!getInvoice.value && getInvoice.value.is_confirmed) {
+          return;
+        }
+
+        const [, other] = nodes;
+        const {text} = ctx.update.message.reply_to_message;
+
+        const [, original] = split(text);
+
+        // Make the message for the original invoice
+        const message = createInvoiceMessage({
+          from: !!other ? node.from : undefined,
+          request: original,
+        });
+
+        try {
+          await ctx.reply(message.text, {
+            parse_mode: message.mode,
+            reply_markup: message.markup,
+          });
         } catch (err) {
           // Ignore errors
         }

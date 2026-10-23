@@ -2,6 +2,7 @@ const {encodeTrade} = require('paid-services');
 const {DateTime} = require('luxon');
 
 const {formatTokens} = require('./../interface');
+const {preventLinks} = require('./../interface');
 const {titles} = require('./../interface');
 const tradeEditButtons = require('./trade_edit_buttons');
 
@@ -9,6 +10,7 @@ const escape = text => text.replace(/[_*[\]()~`>#+\-=|{}.!\\]/g, '\\\$&');
 const {fromISO} = DateTime;
 const join = arr => arr.filter(n => !!n).join('\n');
 const mode = 'MarkdownV2';
+const noLinks = text => preventLinks({text}).text;
 const titlePrefix = titles.createdTradePrefix;
 
 /** Created trade message
@@ -51,7 +53,7 @@ module.exports = args => {
   const text = join([
     `${escape(titlePrefix)}${price} ${memo}expires ${expiry}`,
     `\`${trade}\``,
-    `${escape(args.from || '')}`,
+    `${escape(noLinks(args.from || ''))}`,
   ]);
 
   return {markup, mode, text};

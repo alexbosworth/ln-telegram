@@ -59,10 +59,125 @@ const tests = [
       sending: [],
     },
   },
+  {
+    args: makeArgs({
+      channels: [
+        {
+          id: '1x1x1',
+          partner_public_key: Buffer.alloc(33, 3).toString('hex'),
+          pending_payments: [
+            {
+              id: Buffer.alloc(32).toString('hex'),
+              is_outgoing: true,
+              timeout: 1,
+              tokens: 1,
+            },
+            {
+              id: Buffer.alloc(32, 1).toString('hex'),
+              is_outgoing: false,
+              timeout: 2,
+              tokens: 2,
+            },
+          ],
+        },
+        {
+          id: '2x2x2',
+          partner_public_key: Buffer.alloc(33, 2).toString('hex'),
+        },
+      ],
+    }),
+    description: 'Pending payments derives payments being sent out',
+    expected: {
+      forwarding: [],
+      sending: [{
+        out_channel: '1x1x1',
+        out_peer: '030303030303030303030303030303030303030303030303030303030303030303',
+        timeout: 1,
+        tokens: 1,
+      }],
+    },
+  },
+  {
+    args: makeArgs({
+      channels: [{
+        id: '1x1x1',
+        partner_public_key: Buffer.alloc(33, 3).toString('hex'),
+        pending_payments: [
+          {
+            id: Buffer.alloc(32).toString('hex'),
+            in_payment: 1,
+            is_forward: true,
+            is_outgoing: true,
+            payment: 2,
+            timeout: 1,
+            tokens: 1,
+          },
+          {
+            id: Buffer.alloc(32).toString('hex'),
+            in_channel: '2x2x2',
+            is_forward: true,
+            is_outgoing: true,
+            payment: 3,
+            timeout: 1,
+            tokens: 1,
+          },
+        ],
+      }],
+    }),
+    description: 'Forwards without channel and payment references are skipped',
+    expected: {forwarding: [], sending: []},
+  },
+  {
+    args: makeArgs({
+      channels: [{
+        id: '1x1x1',
+        partner_public_key: Buffer.alloc(33, 3).toString('hex'),
+        pending_payments: [{
+          id: Buffer.alloc(32).toString('hex'),
+          in_channel: '2x2x2',
+          in_payment: 1,
+          is_forward: true,
+          is_outgoing: true,
+          payment: 2,
+          timeout: 1,
+          tokens: 1,
+        }],
+      }],
+    }),
+    description: 'Forwards in from an unknown channel are skipped',
+    expected: {forwarding: [], sending: []},
+  },
+  {
+    args: makeArgs({
+      channels: [
+        {
+          id: '1x1x1',
+          partner_public_key: Buffer.alloc(33, 3).toString('hex'),
+          pending_payments: [{
+            id: Buffer.alloc(32).toString('hex'),
+            in_channel: '2x2x2',
+            in_payment: 1,
+            is_forward: true,
+            is_outgoing: true,
+            payment: 2,
+            timeout: 1,
+            tokens: 1,
+          }],
+        },
+        {
+          id: '2x2x2',
+          partner_public_key: Buffer.alloc(33, 2).toString('hex'),
+          pending_payments: [],
+        },
+      ],
+    }),
+    description: 'Forwards in from an unknown payment are skipped',
+    expected: {forwarding: [], sending: []},
+  },
 ];
 
 tests.forEach(({args, description, error, expected}) => {
-  return test(description, (t, end) => {
+  return test(description, (context, end) => {
     if (!!error) {
       throws(() => pendingPayments(args), error, 'Got expected error');
     } else {

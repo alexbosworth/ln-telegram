@@ -49,16 +49,16 @@ module.exports = ({id, key, request, text}, cbk) => {
           },
           url: `${api}/bot${key}/sendMessage`,
         },
-        (err, r, body) => {
+        (err, response, body) => {
           if (!!err) {
             return cbk([503, 'FailedToConnectToTelegramToSendMessage', {err}]);
           }
 
-          if (!r) {
+          if (!response) {
             return cbk([503, 'ExpectedResponseFromTelegramSendMessage']);
           }
 
-          if (r.statusCode !== ok) {
+          if (response.statusCode !== ok) {
             return cbk();
           }
 
@@ -77,16 +77,16 @@ module.exports = ({id, key, request, text}, cbk) => {
           qs: {text, chat_id: id, disable_web_page_preview: true},
           url: `${api}/bot${key}/sendMessage`,
         },
-        (err, r, body) => {
+        (err, response, body) => {
           if (!!err) {
             return cbk([503, 'FailedToConnectToTelegramApiToSend', {err}]);
           }
 
-          if (!r) {
+          if (!response) {
             return cbk([503, 'ExpectedResponseFromTelegramSend']);
           }
 
-          if (r.statusCode !== ok) {
+          if (response.statusCode !== ok) {
             return cbk([503, 'UnexpectedStatusCodeFromTelegram', {body}]);
           }
 

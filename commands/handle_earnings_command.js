@@ -12,6 +12,7 @@ const {returnResult} = require('asyncjs-util');
 
 const {checkAccess} = require('./../authentication');
 const {formatTokens} = require('./../interface');
+const {preventLinks} = require('./../interface');
 
 const border = getBorderCharacters('void');
 const dayMs = 1000 * 60 * 60 * 24;
@@ -24,6 +25,7 @@ const formatReports = reports => reports.join('\n');
 const header = ['', 'Day', 'Week'];
 const {isArray} = Array;
 const limit = 999999;
+const noLinks = text => preventLinks({text}).text;
 const notFound = 404;
 const {now} = Date;
 const sumOf = arr => arr.reduce((sum, n) => sum + n, BigInt(Number()));
@@ -71,10 +73,18 @@ module.exports = ({from, id, nodes, reply, working}, cbk) => {
       // Authenticate the command caller is authorized to this command
       checkAccess: ['validate', ({}, cbk) => checkAccess({from, id}, cbk)],
 
+      // Notify of record lookup time
+      working: ['checkAccess', async ({}) => {
+        try {
+          return await working();
+        } catch (err) {
+          // Ignore errors notifying working
+          return;
+        }
+      }],
+
       // Get invoices
       getInvoices: ['checkAccess', ({}, cbk) => {
-        working();
-
         return asyncMap(nodes, (node, cbk) => {
           const after = new Date(now() - weekMs).toISOString();
           const dayStart = new Date(now() - dayMs).toISOString();
@@ -124,7 +134,7 @@ module.exports = ({from, id, nodes, reply, working}, cbk) => {
                     lnd: node.lnd,
                   },
                   (err, res) => {
-                    if (isArray(err) && err.shift() === notFound) {
+                    if (isArray(err) && err[0] === notFound) {
                       return cbk(null, false);
                     }
 
@@ -198,7 +208,7 @@ module.exports = ({from, id, nodes, reply, working}, cbk) => {
         const reports = getForwards.map(node => {
           const key = node.public_key;
 
-          const {from} = nodes.find(n => n.public_key === key);
+          const from = noLinks(nodes.find(n => n.public_key === key).from);
           const got = getInvoices.find(n => n.public_key === key);
 
           // Exit early when there are no earnings

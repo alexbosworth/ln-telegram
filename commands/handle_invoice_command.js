@@ -126,7 +126,10 @@ module.exports = ({ctx, id, nodes, request}, cbk) => {
           return;
         }
 
-        const [, message] = create.error;
+        const {error} = create;
+
+        // Thrown errors have a message instead of being an error array
+        const message = isArray(error) ? error[1] : error.message;
 
         const failure = failureMessage({});
 

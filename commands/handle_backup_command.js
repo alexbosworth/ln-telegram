@@ -5,11 +5,13 @@ const {getBackups} = require('ln-service');
 const {returnResult} = require('asyncjs-util');
 
 const {checkAccess} = require('./../authentication');
+const {preventLinks} = require('./../interface');
 
+const asChannels = n => `${n} channel${n !== 1 ? 's' : ''}`;
 const date = () => new Date().toISOString().substring(0, 10);
 const hexAsBuffer = hex => Buffer.from(hex, 'hex');
 const {isArray} = Array;
-const replyMarkdownV1 = reply => n => reply(n, {parse_mode: 'Markdown'});
+const noLinks = text => preventLinks({text}).text;
 
 /** Execute backup command
 
@@ -45,7 +47,7 @@ module.exports = ({from, id, nodes, reply, send}, cbk) => {
         }
 
         if (!send) {
-          return cbk([[400, 'ExpectedSendDocumentFunctionToHandleBackupCmd']]);
+          return cbk([400, 'ExpectedSendDocumentFunctionToHandleBackupCmd']);
         }
 
         return cbk();
@@ -76,9 +78,9 @@ module.exports = ({from, id, nodes, reply, send}, cbk) => {
       // Post the backups
       postBackups: ['getBackups', async ({getBackups}) => {
         return await asyncEach(getBackups, async (node) => {
-          const channels = `${node.channels.length} channels`;
+          const channels = asChannels(node.channels.length);
           const filename = `${date()}-${node.alias}-${node.public_key}`;
-          const named = `${node.alias} ${node.public_key}`;
+          const named = `${noLinks(node.alias)} ${node.public_key}`;
 
           return await send({
             filename: `${filename}.backup`,

@@ -70,7 +70,7 @@ const tests = [
     description: 'Post channel closing message to Telegram',
     expected: {
       text: [
-        '⏳ Closing 0\\.00000001 channel with alias 000000000000000000000000000000000000000000000000000000000000000000',
+        '⏳ Closing 0\\.00000001 channel with alias `000000000000000000000000000000000000000000000000000000000000000000`',
         '*Funding Outpoint:* `0000000000000000000000000000000000000000000000000000000000000000:0`',
       ],
     },
@@ -80,9 +80,29 @@ const tests = [
     description: 'Post closing message when there are multiple nodes',
     expected: {
       text: [
-        '⏳ Closing 0\\.00000001 channel with alias 000000000000000000000000000000000000000000000000000000000000000000',
+        '⏳ Closing 0\\.00000001 channel with alias `000000000000000000000000000000000000000000000000000000000000000000`',
         '*Funding Outpoint:* `0000000000000000000000000000000000000000000000000000000000000000:0`',
         '_node1_',
+      ],
+    },
+  },
+  {
+    args: makeArgs({
+      lnd: {
+        default: {
+          getChanInfo: ({}, cbk) => cbk(null, chanInfoResponse),
+          getNodeInfo: ({}, cbk) => cbk(null, {
+            ...getNodeInfoResponse,
+            node: {...getNodeInfoResponse.node, alias: 'lnd.example.com'},
+          }),
+        },
+      },
+    }),
+    description: 'A peer alias that would be linked is not linked',
+    expected: {
+      text: [
+        '⏳ Closing 0\\.00000001 channel with lnd\\.\u2060example\\.\u2060com `000000000000000000000000000000000000000000000000000000000000000000`',
+        '*Funding Outpoint:* `0000000000000000000000000000000000000000000000000000000000000000:0`',
       ],
     },
   },

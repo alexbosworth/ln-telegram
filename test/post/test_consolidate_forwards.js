@@ -38,7 +38,7 @@ const tests = [
 ];
 
 tests.forEach(({args, description, error, expected}) => {
-  return test(description, (t, end) => {
+  return test(description, (context, end) => {
     const res = method(args);
 
     deepEqual(res, expected, 'Got expected result');

@@ -3,6 +3,7 @@ const renderTable = require('table').table;
 
 const {formatTokens} = require('./../interface');
 const {icons} = require('./../interface');
+const {preventLinks} = require('./../interface');
 
 const border = getBorderCharacters('void');
 const escape = text => text.replace(/[_*[\]()~`>#+\-=|{}.!\\]/g, '\\\$&');
@@ -11,6 +12,7 @@ const formatLiquidity = tokens => formatTokens({tokens, none: '-'}).display;
 const formatReport = (from, n) => `${from}\`\`\`\n${n}\`\`\``;
 const head = `*Liquidity:*\n\n`;
 const noFrom = '';
+const noLinks = text => preventLinks({text}).text;
 const peerTitle = (query, k) => `*Liquidity with ${query} ${k}:*\n\n`;
 const shortId = key => key.substring(0, 8);
 
@@ -43,8 +45,9 @@ const shortId = key => key.substring(0, 8);
 */
 module.exports = ({alias, inbound, nodes, outbound, peer}) => {
   const [, otherNode] = nodes;
+  const peerAlias = escape(noLinks(alias || String()));
 
-  const header = !!peer ? peerTitle(escape(alias), shortId(peer)) : head;
+  const header = !!peer ? peerTitle(peerAlias, shortId(peer)) : head;
   const icon = !otherNode ? `${icons.liquidity} ` : '';
 
   const table = nodes
@@ -56,7 +59,7 @@ module.exports = ({alias, inbound, nodes, outbound, peer}) => {
     })
     .map(node => {
       const local = outbound.find(n => n.public_key === node.public_key);
-      const named = escape(node.from).trim();
+      const named = escape(noLinks(node.from)).trim();
       const remote = inbound.find(n => n.public_key === node.public_key);
 
       const from = !otherNode ? noFrom : `_${icons.liquidity} ${named}_:\n`;

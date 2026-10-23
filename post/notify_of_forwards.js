@@ -2,12 +2,12 @@ const asyncAuto = require('async/auto');
 const asyncMap = require('async/map');
 const {getChannel} = require('ln-service');
 const {getNodeAlias} = require('ln-sync');
-const {getWalletInfo} = require('ln-service');
 const {returnResult} = require('asyncjs-util');
 
 const consolidateForwards = require('./consolidate_forwards');
 const {formatTokens} = require('./../interface');
 const {icons} = require('./../interface');
+const {preventLinks} = require('./../interface');
 
 const asPercent = (fee, tokens) => (fee / tokens * 100).toFixed(2);
 const asPpm = (fee, tokens) => (fee / tokens * 1e6).toFixed();
@@ -18,6 +18,8 @@ const {isArray} = Array;
 const join = n => n.filter(n => !!n).join(' ');
 const joinAsLines = n => n.join('\n');
 const markup = {parse_mode: 'MarkdownV2'};
+const noLinks = text => preventLinks({text}).text;
+const peerName = n => n.alias || n.id || n.channel;
 const uniq = arr => Array.from(new Set(arr));
 
 /** Notify Telegram of forwarded payments
@@ -140,8 +142,8 @@ module.exports = ({forwards, from, id, lnd, node, nodes, send}, cbk) => {
         const allForwards = details.map(({fee, inbound, outbound, tokens}) => {
           const feePercent = asPercent(fee, tokens);
           const feeRate = asPpm(fee, tokens);
-          const fromPeer = inbound.alias || inbound.id || inbound.channel;
-          const toPeer = outbound.alias || outbound.id || outbound.channel;
+          const fromPeer = noLinks(peerName(inbound));
+          const toPeer = noLinks(peerName(outbound));
 
           const between = `${escape(fromPeer)} *→* ${escape(toPeer)}`;
           const feeInfo = `${formatValue(fee)} ${feePercent}% (${feeRate})`;
@@ -162,7 +164,9 @@ module.exports = ({forwards, from, id, lnd, node, nodes, send}, cbk) => {
           return cbk(null, lines);
         }
 
-        return cbk(null, join([lines, escape('-'), `_${escape(from)}_`]));
+        const fromNode = `_${escape(noLinks(from))}_`;
+
+        return cbk(null, join([lines, escape('-'), fromNode]));
       }],
 
       // Send the forwards report message

@@ -1,9 +1,10 @@
 const asyncAuto = require('async/auto');
 const {returnResult} = require('asyncjs-util');
 
-const interaction = require('./../interaction');
+const {preventLinks} = require('./../interface');
 
 const {isArray} = Array;
+const noLinks = text => preventLinks({text}).text;
 
 /** Decode the command text
 
@@ -70,7 +71,7 @@ module.exports = ({help, nodes, reply, text}, cbk) => {
 
           const text = []
             .concat([help.select_node_text])
-            .concat(nodes.map(({from}, i) => `- ${i + 1}: ${from}`))
+            .concat(nodes.map(({from}, i) => `- ${i + 1}: ${noLinks(from)}`))
             .concat([syntax.join(' ')]);
 
           reply(text.join('\n'));

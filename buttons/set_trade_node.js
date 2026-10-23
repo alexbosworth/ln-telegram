@@ -1,14 +1,9 @@
 const asyncAuto = require('async/auto');
-const {InlineKeyboard} = require('grammy');
 const {returnResult} = require('asyncjs-util');
 
-const {callbackCommands} = require('./../interface');
-const {labels} = require('./../interface');
 const {tradeEditButtons} = require('./../messages');
 
 const {isArray} = Array;
-const nodeLabel = named => `Node: ${named}`;
-const switchNode = id => `${callbackCommands.moveInvoiceNode}${id}`;
 
 /** User pressed a set trade node button
 

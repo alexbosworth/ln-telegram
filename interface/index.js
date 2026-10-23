@@ -4,6 +4,7 @@ const formatTokens = require('./format_tokens');
 const getAmountAsTokens = require('./get_amount_as_tokens');
 const icons = require('./icons');
 const labels = require('./labels');
+const preventLinks = require('./prevent_links');
 const titles = require('./titles');
 
 module.exports = {
@@ -13,5 +14,6 @@ module.exports = {
   getAmountAsTokens,
   icons,
   labels,
+  preventLinks,
   titles,
 };

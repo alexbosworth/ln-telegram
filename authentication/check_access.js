@@ -1,8 +1,6 @@
 const asyncAuto = require('async/auto');
 const {returnResult} = require('asyncjs-util');
 
-const interaction = require('./../interaction');
-
 /** Check access to private commands
 
   {

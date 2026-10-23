@@ -2,13 +2,15 @@ const {DateTime} = require('luxon');
 
 const {formatTokens} = require('./../interface');
 const {icons} = require('./../interface');
+const {preventLinks} = require('./../interface');
 
 const asRelative = n => n.toRelative({locale: 'en'});
 const blocksAsEpoch = blocks => Date.now() + blocks * 1000 * 60 * 10;
 const escape = text => text.replace(/[_*[\]()~`>#+\-=|{}.!\\]/g, '\\\$&');
 const flatten = arr => [].concat(...arr);
 const fromNow = ms => !ms ? undefined : DateTime.fromMillis(ms);
-const nodeAlias = (alias, id) => `${alias} ${id.substring(0, 8)}`.trim();
+const noLinks = text => preventLinks({text}).text;
+const nodeAlias = (alias, id) => `${alias} ${id.slice(0, 8)}`.trim();
 const sumOf = arr => arr.reduce((sum, n) => sum + n, Number());
 const uniq = arr => Array.from(new Set(arr));
 
@@ -73,7 +75,7 @@ module.exports = ({count, htlcs, pending}) => {
         const capacity = sumOf(funds.concat(opening.transaction_fee));
         const peer = node.nodes.find(n => n.id === peerId);
 
-        const alias = escape(nodeAlias(peer.alias, peer.id));
+        const alias = escape(noLinks(nodeAlias(peer.alias, peer.id)));
         const channel = `${formatTokens({tokens: capacity}).display} channel`;
 
         const action = `${direction}bound ${escape(channel)}`;
@@ -95,7 +97,7 @@ module.exports = ({count, htlcs, pending}) => {
         const time = escape(asRelative(fromNow(blocksAsEpoch(waitBlocks))));
 
         const action = `recover ${escape(funds)} ${time} from closing channel`;
-        const alias = nodeAlias(peer.alias, peer.id);
+        const alias = noLinks(nodeAlias(peer.alias, peer.id));
 
         return `${waiting} to ${action} with ${escape(alias)}`;
       });
@@ -117,8 +119,8 @@ module.exports = ({count, htlcs, pending}) => {
 
       const action = `${tokens} for ${fee} fee`;
       const forwarding = `${icons.forwarding} Forwarding`;
-      const inPeer = escape(nodeAlias(from.alias, from.id));
-      const outPeer = escape(nodeAlias(to.alias, to.id));
+      const inPeer = escape(noLinks(nodeAlias(from.alias, from.id)));
+      const outPeer = escape(noLinks(nodeAlias(to.alias, to.id)));
 
       return `${forwarding} ${action} from ${inPeer} to ${outPeer}`;
     });
@@ -127,7 +129,7 @@ module.exports = ({count, htlcs, pending}) => {
     const probes = uniq(node.sending.map(n => n.out_peer)).map(key => {
       const out = node.nodes.find(n => n.id === key);
 
-      return escape(nodeAlias(out.alias, out.id));
+      return escape(noLinks(nodeAlias(out.alias, out.id)));
     });
 
     const probing = !probes.length ?
@@ -156,7 +158,9 @@ module.exports = ({count, htlcs, pending}) => {
   const sections = uniq(nodes.map(n => n.from));
 
   return flatten(sections.map(from => {
-    const title = (count <= [from].length) ? [] : [`\n*${escape(from)}*`];
+    const named = escape(noLinks(from));
+
+    const title = (count <= [from].length) ? [] : [`\n*${named}*`];
 
     return title.concat(nodes.filter(n => n.from === from).map(n => n.item));
   }));

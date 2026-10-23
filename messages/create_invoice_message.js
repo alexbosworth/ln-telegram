@@ -4,6 +4,7 @@ const {parsePaymentRequest} = require('ln-service');
 const {callbackCommands} = require('./../interface');
 const {formatTokens} = require('./../interface');
 const {labels} = require('./../interface');
+const {preventLinks} = require('./../interface');
 const {titles} = require('./../interface');
 
 const {cancelInvoice} = callbackCommands;
@@ -14,6 +15,7 @@ const {invoiceMessageNodeButtonLabel} = labels;
 const {invoiceMessageSetTokensButtonLabel} = labels;
 const join = arr => arr.filter(n => !!n).join('\n');
 const mode = 'MarkdownV2';
+const noLinks = text => preventLinks({text}).text;
 const {setInvoiceDescription} = callbackCommands;
 const {setInvoiceNode} = callbackCommands;
 const {setInvoiceTokens} = callbackCommands;
@@ -54,7 +56,7 @@ module.exports = ({from, request}) => {
   const text = join([
     `${title}${amount} ${escape(memo)}`,
     `\`${escape(request)}\``,
-    `${escape(from || '')}`,
+    `${escape(noLinks(from || ''))}`,
   ]);
 
   return {markup, mode, text};

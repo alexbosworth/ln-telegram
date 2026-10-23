@@ -4,6 +4,7 @@ const makeKeyboard = () => new InlineKeyboard();
 const genericError = '⚠️ _Unexpected error :(_'
 const invalidNumber = '⚠️ _Amount not understood. Try a number?_';
 const invalidInt = '⚠️ _Amount not understood. Try a non-fractional number? _';
+const paidInvoice = '⚠️ _Invoice already paid, so it cannot be changed._';
 const parseMode = 'Markdown';
 
 /** Get a failure message
@@ -11,6 +12,7 @@ const parseMode = 'Markdown';
   {
     [is_fractional_amount]: <Failure is Fractional Amount Bool>
     [is_invalid_amount]: <Failure Is Invalid Amount Bool>
+    [is_paid_invoice]: <Failure is Invoice Already Paid Bool>
   }
 
   @returns
@@ -36,6 +38,10 @@ module.exports = args => {
 
   if (!!args.is_invalid_amount) {
     return {actions, message: invalidNumber};
+  }
+
+  if (!!args.is_paid_invoice) {
+    return {actions, message: paidInvoice};
   }
 
   return {actions, message: genericError};

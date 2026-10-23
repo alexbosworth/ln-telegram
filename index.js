@@ -32,8 +32,6 @@ const {postSettledPayment} = require('./post');
 const {postSettledTrade} = require('./post');
 const {postUpdatedBackup} = require('./post');
 const {sendMessage} = require('./post');
-const {updateInvoiceFromReply} = require('./replies');
-const {updateTradeFromReply} = require('./replies');
 
 module.exports = {
   actOnMessageReply,
@@ -70,5 +68,4 @@ module.exports = {
   postSettledTrade,
   postUpdatedBackup,
   sendMessage,
-  updateInvoiceFromReply,
 };

@@ -10,8 +10,6 @@ const {returnResult} = require('asyncjs-util');
 
 const {callbackCommands} = require('./../interface');
 const {checkAccess} = require('./../authentication');
-const {createTradeMessage} = require('./../messages');
-const {editQuestions} = require('./../interface');
 const {failureMessage} = require('./../messages');
 const {postCreatedTrade} = require('./../post');
 const tradeActionType = require('./trade_action_type');
@@ -175,7 +173,11 @@ module.exports = ({api, ctx, id, nodes}, cbk) => {
 
         switch (type) {
         case callbackCommands.setTradeDescription:
-          if (!!type.description && text.length > maxDescriptionLength) {
+          if (typeof text !== 'string') {
+            return cbk([400, 'ExpectedTextToUpdateTradeDescription']);
+          }
+
+          if (text.length > maxDescriptionLength) {
             return cbk([400, 'ExpectedShorterDescriptionForTrade']);
           }
 
@@ -217,8 +219,8 @@ module.exports = ({api, ctx, id, nodes}, cbk) => {
 
       // Remove the existing open trade
       removeTrade: ['update', asyncReflect(({update}, cbk) => {
-        // Exit early when there was an issue with the update
-        if (!!update.error) {
+        // Exit early when there is no update to make
+        if (!update.value) {
           return cbk();
         }
 
@@ -233,8 +235,8 @@ module.exports = ({api, ctx, id, nodes}, cbk) => {
         'update',
         asyncReflect(({removeTrade, update}, cbk) =>
       {
-        // Exit early when the trade could not be removed or the update is bad
-        if (!!removeTrade.error || !!update.error) {
+        // Exit early when the trade could not be removed or there is no update
+        if (!!removeTrade.error || !update.value) {
           return cbk();
         }
 
@@ -274,9 +276,16 @@ module.exports = ({api, ctx, id, nodes}, cbk) => {
       restoreFromFailure: [
         'getTrade',
         'postFailure',
-        ({getTrade, postFailure}, cbk) =>
+        'removeTrade',
+        'update',
+        ({getTrade, postFailure, removeTrade, update}, cbk) =>
       {
         if (!getTrade.value || !postFailure.is_failed) {
+          return cbk();
+        }
+
+        // Exit early when the original trade was already canceled
+        if (!!update.value && !removeTrade.error) {
           return cbk();
         }
 

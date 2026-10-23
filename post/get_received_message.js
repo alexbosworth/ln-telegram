@@ -6,6 +6,7 @@ const {verifyBytesSignature} = require('ln-service');
 
 const {formatTokens} = require('./../interface');
 const {icons} = require('./../interface');
+const {preventLinks} = require('./../interface');
 
 const bufFromHex = hex => Buffer.from(hex, 'hex');
 const dash = ' - ';
@@ -19,7 +20,7 @@ const {isArray} = Array;
 const maxAnswer = BigInt(80518);
 const messageType = '34349334';
 const minAnswer = BigInt(80509);
-const newLine = '\n';
+const noLinks = text => preventLinks({text}).text;
 const short = n => n.slice(0, 32);
 const signatureType = '34349337';
 const sort = (a, b) => (a < b) ? -1 : ((a > b) ? 1 : 0);
@@ -44,8 +45,8 @@ const sort = (a, b) => (a < b) ? -1 : ((a > b) ? 1 : 0);
 
   @returns via cbk or Promise
   {
-    [icon]: <Message Icon String>
-    [message]: <Embedded Message Payment Received String>
+    icon: <Message Icon String>
+    message: <Embedded Message Payment Received String>
     [quiz]: [<Quiz Answer String>]
     [title]: <Sender Message String>
   }
@@ -108,7 +109,9 @@ module.exports = ({description, lnd, payments, received, via}, cbk) => {
 
       // Description of the received amount
       receiveLine: ['validate', ({}, cbk) => {
-        const relays = `${via.map(n => short(n.alias || n.id)).join(', ')}`;
+        const relays = via
+          .map(n => noLinks(short(n.alias || n.id)))
+          .join(', ');
         const quoted = !description ? '' : `for “${description}”`;
 
         const got = `Received ${formatAmt(received)} ${quoted}`.trim();
@@ -196,7 +199,7 @@ module.exports = ({description, lnd, payments, received, via}, cbk) => {
           return cbk(null, [receiveLine, senderLine].join(dash));
         }
 
-        const from = getFromNode.alias || getFromNode.id;
+        const from = noLinks(getFromNode.alias || getFromNode.id);
 
         // Exit early when there is a from key but it's not verified
         if (!isSignatureValid) {
@@ -216,10 +219,6 @@ module.exports = ({description, lnd, payments, received, via}, cbk) => {
         'receivedMessage',
         ({messageDetails, receivedMessage}, cbk) =>
       {
-        if (!receivedMessage) {
-          return cbk(null, {});
-        }
-
         if (!messageDetails) {
           return cbk(null, {
             icon: icons.receive,

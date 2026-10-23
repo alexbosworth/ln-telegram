@@ -85,7 +85,7 @@ module.exports = ({bot, ctx, id, nodes}, cbk) => {
         switch (type) {
         // Pressed to remove a created invoice
         case callbackCommands.cancelInvoice:
-          return cancelInvoice({ctx}, cbk);
+          return cancelInvoice({ctx, nodes}, cbk);
 
         // Pressed to remove a created trade
         case callbackCommands.cancelTrade:

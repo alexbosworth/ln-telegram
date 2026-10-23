@@ -1,4 +1,5 @@
 const asyncAuto = require('async/auto');
+const {getNode} = require('ln-service');
 const {getPayment} = require('ln-service');
 const {parsePaymentRequest} = require('ln-service');
 const {payViaRoutes} = require('ln-service');
@@ -9,7 +10,7 @@ const {checkAccess} = require('./../authentication');
 const decodeCommand = require('./decode_command');
 const {icons} = require('./../interface');
 const interaction = require('./../interaction');
-const {sendMessage} = require('./../post');
+const {preventLinks} = require('./../interface');
 
 const {ceil} = Math;
 const cltvDeltaBuffer = 3;
@@ -18,6 +19,7 @@ const {isArray} = Array;
 const isNumber = n => !isNaN(n);
 const {min} = Math;
 const mtokensToTokens = tokens => Number(BigInt(tokens) / BigInt(1e3));
+const noLinks = text => preventLinks({text}).text;
 const pathTimeoutMs = 1000 * 30;
 const pathfindTimeoutMs = 1000 * 60;
 
@@ -71,7 +73,7 @@ module.exports = ({budget, from, id, nodes, reply, text}, cbk) => {
       checkAccess: ['validate', ({}, cbk) => checkAccess({from, id}, cbk)],
 
       // Decode the command
-      decodeCommand: ['validate', ({}, cbk) => {
+      decodeCommand: ['checkAccess', ({}, cbk) => {
         const help = {
           select_node_text: interaction.select_node_for_payment,
           syntax_example_text: interaction.pay_syntax,
@@ -186,17 +188,17 @@ module.exports = ({budget, from, id, nodes, reply, text}, cbk) => {
 
           try {
             const node = await getNode({
-              lnd,
               is_omitting_channels: true,
+              lnd: decodeCommand.lnd,
               public_key: source.public_key,
             });
 
-            fromName = node.alias;
+            fromName = node.alias || fromName;
           } catch (err) {}
 
-          const from = !source ? '' : `from ${fromName}`;
+          const from = !source ? '' : ` from ${noLinks(fromName)}`;
 
-          const text = `${fail.reason} ${at} ${from}`;
+          const text = `${fail.reason} ${at}${from}`;
 
           return reply(text);
         });
@@ -251,7 +253,7 @@ module.exports = ({budget, from, id, nodes, reply, text}, cbk) => {
           }
 
           // Exit with error when the payment was rejected
-          if (!!res.failed && !!res.is_invalid_payment) {
+          if (!!res.failed && !!res.failed.is_invalid_payment) {
             return cbk([503, 'PaymentRejectedByDestination']);
           }
 

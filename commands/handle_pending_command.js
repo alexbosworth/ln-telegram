@@ -10,12 +10,9 @@ const {checkAccess} = require('./../authentication');
 const pendingPayments = require('./pending_payments');
 const pendingSummary = require('./pending_summary');
 
-const blocksAsEpoch = blocks => Date.now() + blocks * 1000 * 60 * 10;
-const flatten = arr => [].concat(...arr);
 const {isArray} = Array;
 const join = lines => lines.join('\n').trim();
 const markup = {parse_mode: 'MarkdownV2'};
-const sumOf = arr => arr.reduce((sum, n) => sum + n, Number());
 const uniq = arr => Array.from(new Set(arr));
 
 /** Handle pending command

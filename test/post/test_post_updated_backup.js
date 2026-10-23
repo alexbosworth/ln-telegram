@@ -41,6 +41,13 @@ const tests = [
     error: [400, 'ExpectedSendFunctionToPostUpdatedBackup'],
   },
   {
+    args: makeArgs({
+      send: () => new Promise((resolve, reject) => reject('err')),
+    }),
+    description: 'Posting an updated backup returns a send file error',
+    error: [503, 'UnexpectedErrorSendingBackupFileUpdate', {err: 'err'}],
+  },
+  {
     args: makeArgs({}),
     description: 'An updated backup is posted',
   },

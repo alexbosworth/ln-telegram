@@ -15,11 +15,11 @@ const {returnResult} = require('asyncjs-util');
 const {checkAccess} = require('./../authentication');
 const {formatTokens} = require('./../interface');
 const {icons} = require('./../interface');
+const {preventLinks} = require('./../interface');
 const {makeRemoveButton} = require('./../buttons');
 
-const {isArray} = Array;
-
 const argsFromText = text => text.split(' ');
+const asPeers = n => `${n} peer${n !== 1 ? 's' : ''}`;
 const bigType = 'large_channels';
 const blockTime = (now, start) => Date.now() - 1000 * 60 * 10 * (now - start);
 const border = getBorderCharacters('void');
@@ -29,23 +29,21 @@ const expectedQueryErrorMessage = 'ExpectedQueryForGraphCommand';
 const formatAmount = tokens => formatTokens({tokens}).display;
 const fromNow = ms => !ms ? undefined : DateTime.fromMillis(ms).toRelative();
 const header = [' ', ' ', 'In %', 'Capacity', 'Out %'];
+const {isArray} = Array;
 const ipv4Match = /^((25[0-5]|(2[0-4]|1\d|[1-9]|)\d)(\.(?!$)|$)){4}$/;
-const ipv6Match = /^[a-fA-F0-9:]+$/;
-const isEmoji = /[^\p{L}\p{N}\p{P}\p{Z}{\^\$}]/gu;
+const ipv6Match = /^\[?[a-fA-F0-9:]+\]?$/;
 const limitPeers = peers => peers.slice(0, 6);
 const markup = {parse_mode: 'MarkdownV2'};
 const {max} = Math;
 const niceAlias = (alias, id) => (alias.trim() || id).substring(0, 16);
-const noEmoji = str => str.replace(isEmoji, String()).trim();
+const noEmoji = n => n.replace(/[^\p{L}\p{N}\p{P}\p{Z}{\^\$}]/gu, '').trim();
+const noLinks = text => preventLinks({text}).text;
 const noQueryMsg = 'Missing graph query, try `/graph (public key/peer alias)`';
 const none = ' ';
 const notFoundCode = 404;
 const notFoundMsg = query => `\`${query}\` not found\\\. Wrong public key?`;
-const replyMarkdownV1 = reply => n => reply(n, {parse_mode: 'Markdown'});
-const sanitize = n => (n || '').replace(/_/g, '\\_').replace(/[*~`]/g, '');
 const shortKey = key => key.substring(0, 16);
 const socketHost = n => n.split(':').slice(0, -1).join(':');
-const sumOf = arr => arr.reduce((sum, n) => sum + n, 0);
 const torV3Match = /[a-z2-7]{56}.onion/i;
 const uniq = arr => Array.from(new Set(arr));
 
@@ -295,6 +293,7 @@ module.exports = ({from, id, nodes, remove, reply, text, working}, cbk) => {
 
         const node = getNodeInfo.value;
 
+        const alias = escape(noLinks(node.alias));
         const capacity = `${formatAmount(node.capacity)} capacity `;
         const isBig = !!node.features.find(n => n.type === bigType);
         const isIpV4 = !!node.sockets.find(n => ipv4Match.test(socketHost(n)));
@@ -314,14 +313,14 @@ module.exports = ({from, id, nodes, remove, reply, text, working}, cbk) => {
 
         const summary = [
           `A ${!!node.capacity ? escape(capacity) : ''}node`,
-          ` with ${node.peers.length} peer${node.peers.length > 1 ? 's' : ''}`,
+          ` with ${asPeers(node.peers.length)}`,
           isBig ? ' that accepts large channels' : '',
           escape('.'),
           !!connection ? ` ${escape(connection)}` : '',
         ];
 
         const report = [
-          `Node: *${escape(node.alias) || shortKey(node.id)}* \`${node.id}\``,
+          `Node: *${alias || shortKey(node.id)}* \`${node.id}\``,
           summary.filter(n => !!n).join(''),
           peers,
         ];

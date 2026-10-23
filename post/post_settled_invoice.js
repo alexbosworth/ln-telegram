@@ -10,12 +10,13 @@ const {subscribeToPastPayment} = require('ln-service');
 const getBalancedOpenMessage = require('./get_balanced_open_message');
 const getRebalanceMessage = require('./get_rebalance_message');
 const getReceivedMessage = require('./get_received_message');
-const {icons} = require('./../interface');
+const {preventLinks} = require('./../interface');
 
 const escape = text => text.replace(/[_*[\]()~`>#+\-=|{}.!\\]/g, '\\\$&');
 const {isArray} = Array;
 const minQuizLength = 2;
 const maxQuizLength = 10;
+const noLinks = text => preventLinks({text}).text;
 const randomIndex = n => Math.floor(Math.random() * n);
 const sendOptions = {parse_mode: 'MarkdownV2'};
 const uniq = arr => Array.from(new Set(arr));
@@ -243,7 +244,9 @@ module.exports = (args, cbk) => {
         // Determine if node qualifier is necessary
         const isMultiNode = args.nodes.length > [args.key].length;
 
-        const receivedOnNode = isMultiNode ? escape(` - ${args.from}`) : '';
+        const receivedOn = ` - ${noLinks(args.from)}`;
+
+        const receivedOnNode = isMultiNode ? escape(receivedOn) : '';
 
         const message = `${details.icon} ${details.message}${receivedOnNode}`;
 
@@ -268,16 +271,16 @@ module.exports = (args, cbk) => {
         const replace = details.quiz[correct];
 
         // Randomize the position of the correct answer
-        const answers = details.quiz.map((n, i) => {
-          if (i === correct) {
+        const answers = details.quiz.map((option, index) => {
+          if (index === correct) {
             return answer;
           }
 
-          if (!i) {
+          if (!index) {
             return replace;
           }
 
-          return n;
+          return option;
         });
 
         return await args.quiz({answers, correct, question: details.title});

@@ -114,10 +114,35 @@ const tests = [
       '```',
     ],
   },
+  {
+    args: {
+      inbound: [{
+        balance: 1,
+        fee_rate: 1000,
+        public_key: Buffer.alloc(33, 2).toString('hex'),
+      }],
+      nodes: [{from: 'from', public_key: Buffer.alloc(33, 2).toString('hex')}],
+      outbound: [{
+        balance: 2,
+        fee_rate: 500,
+        public_key: Buffer.alloc(33, 2).toString('hex'),
+      }],
+    },
+    description: 'Liquidity summary with fee rates',
+    expected: [
+      '🌊 *Liquidity:*',
+      '',
+      '```',
+      ' Inbound   0.00000001  0.10% (1000) ',
+      ' Outbound  0.00000002  0.05% (500)  ',
+      '',
+      '```',
+    ],
+  },
 ];
 
 tests.forEach(({args, description, error, expected}) => {
-  return test(description, (t, end) => {
+  return test(description, (context, end) => {
     const {message} = liquiditySummary(args);
 
     deepEqual(message.split('\n'), expected, 'Got expected result');

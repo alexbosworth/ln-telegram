@@ -8,14 +8,14 @@ const {returnResult} = require('asyncjs-util');
 
 const {checkAccess} = require('./../authentication');
 const {formatTokens} = require('./../interface');
+const {preventLinks} = require('./../interface');
 
 const border = getBorderCharacters('void');
 const dayMs = 1000 * 60 * 60 * 24;
-const flatten = arr => [].concat(...arr);
 const formatReport = (from, n) => `⚡️ Spent on ${from}\n\n\`\`\`${n}\`\`\``;
 const formatReports = reports => reports.join('\n');
 const header = ['', 'Day', 'Week'];
-const {isArray} = Array;
+const noLinks = text => preventLinks({text}).text;
 const {now} = Date;
 const paidAmount = tokens => formatTokens({tokens, none: '-'}).display;
 const sumOf = arr => arr.reduce((sum, n) => sum + n, BigInt(Number()));
@@ -137,7 +137,7 @@ module.exports = ({from, id, nodes, reply, request, working}, cbk) => {
         const reports = getTransactions.map(node => {
           const key = node.public_key;
 
-          const {from} = nodes.find(n => n.public_key === key);
+          const from = noLinks(nodes.find(n => n.public_key === key).from);
           const paid = getRebalances.find(n => n.public_key === key);
 
           // Exit early when there were no costs in the week

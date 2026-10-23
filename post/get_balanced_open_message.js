@@ -4,11 +4,13 @@ const {returnResult} = require('asyncjs-util');
 
 const {icons} = require('./../interface');
 const {formatTokens} = require('./../interface');
+const {preventLinks} = require('./../interface');
 
 const escape = text => text.replace(/[_*[\]()~`>#+\-=|{}.!\\]/g, '\\\$&');
 const formatCapacity = tokens => formatTokens({tokens}).display;
-const fromName = res => res.alias || res.id.substring(0, 8);
+const fromName = n => n.alias || n.id.substring(0, 8);
 const join = arr => arr.join('\n');
+const noLinks = text => preventLinks({text}).text;
 
 /** Get a message representing a balanced open proposal
 
@@ -54,10 +56,11 @@ module.exports = ({capacity, from, lnd, rate}, cbk) => {
 
       // Message to post
       message: ['getAlias', ({getAlias}, cbk) => {
+        const alias = noLinks(fromName(getAlias));
         const proposal = `${formatCapacity(capacity)} balanced channel open`;
 
         const elements = [
-          escape(`Received a ${proposal} proposal from ${fromName(getAlias)}`),
+          escape(`Received a ${proposal} proposal from ${alias}`),
           `\`${from}\``,
           `Proposed chain fee rate: ${rate}/vbyte`,
         ];

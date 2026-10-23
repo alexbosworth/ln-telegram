@@ -26,8 +26,6 @@ const makeArgs = overrides => {
   return args;
 };
 
-const getInfoRes = () => JSON.parse(JSON.stringify(getInfoResponse));
-
 const tests = [
   {
     args: makeArgs({from: undefined}),
@@ -78,6 +76,34 @@ const tests = [
     }),
     description: 'A transfer notification is posted',
     expected: '⚡️ Transferred 0\\.00000002 to 03030303 out 02020202 \\- _from_',
+  },
+  {
+    args: makeArgs({
+      payment: {
+        destination: Buffer.alloc(33, 3).toString('hex'),
+        id: Buffer.alloc(32).toString('hex'),
+        paths: [
+          {hops: [{public_key: Buffer.alloc(33, 2).toString('hex')}]},
+          {hops: []},
+        ],
+        safe_fee: 1,
+        safe_tokens: 2,
+      },
+    }),
+    description: 'A payment path without hops is skipped in the relays',
+    expected: '⚡️ Sent 0\\.00000001 to alias out alias\\. Paid routing fee: 0\\.00000001 \\- _from_',
+  },
+  {
+    args: makeArgs({
+      payment: {
+        destination: Buffer.alloc(33, 3).toString('hex'),
+        id: Buffer.alloc(32).toString('hex'),
+        safe_fee: 1,
+        safe_tokens: 2,
+      },
+    }),
+    description: 'A payment without paths has no relays to show',
+    expected: '⚡️ Sent 0\\.00000001 to alias\\. Paid routing fee: 0\\.00000001 \\- _from_',
   },
 ];
 

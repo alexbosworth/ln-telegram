@@ -61,8 +61,13 @@ module.exports = ({from, id, reply, request, url}, cbk) => {
           json: true,
           url: url || defaultUrl,
         },
-        (err, r, mempool) => {
-          if (!!err || !r || r.statusCode !== ok || !isArray(mempool)) {
+        (err, response, mempool) => {
+          if (
+            !!err ||
+            !response ||
+            response.statusCode !== ok ||
+            !isArray(mempool)
+          ) {
             return cbk(null, {err: [503, 'ExpectedResponseFromMempoolSpace']});
           }
 
@@ -79,9 +84,9 @@ module.exports = ({from, id, reply, request, url}, cbk) => {
         const blocks = getMempool.mempool
           .filter(block => block.blockVSize <= vbytesLimit)
           .slice(Number(), virtualBlocksLimit)
-          .map((block, i) => {
+          .map((block, index) => {
             return [
-              waitTimeForBlock(++i),
+              waitTimeForBlock(++index),
               feeAsRate(block.medianFee),
               fillRatio(block.blockVSize).join(String()),
             ];

@@ -65,7 +65,7 @@ module.exports = ({ctx, nodes}, cbk) => {
         const {destination} = parsePaymentRequest({request});
 
         if (!nodes.find(n => n.public_key === destination)) {
-          return cbk([400, 'MissingNodeToUpdateInvoiceDescriptionFor']);
+          return cbk([400, 'MissingNodeToUpdateInvoiceTokensFor']);
         }
 
         return cbk(null, {request, title});

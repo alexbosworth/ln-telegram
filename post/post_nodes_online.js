@@ -2,11 +2,14 @@ const asyncAuto = require('async/auto');
 const {returnResult} = require('asyncjs-util');
 
 const {icons} = require('./../interface');
+const {preventLinks} = require('./../interface');
 
 const commaJoin = arr => arr.join(', ');
 const escape = text => text.replace(/[_*[\]()~`>#+\-=|{}.!\\]/g, '\\\$&');
 const {isArray} = Array;
 const markup = {parse_mode: 'MarkdownV2'};
+const noLinks = text => preventLinks({text}).text;
+const nodeName = n => (n.alias || n.id).trim();
 
 /** Post that nodes are now online
 
@@ -43,7 +46,7 @@ module.exports = ({id, nodes, send}, cbk) => {
 
       // Message to send
       message: ['validate', ({}, cbk) => {
-        const names = nodes.map(node => (node.alias || node.id).trim());
+        const names = nodes.map(nodeName).map(noLinks);
 
         const text = `${icons.bot} Connected to ${commaJoin(names)}`;
 

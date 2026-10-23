@@ -92,7 +92,7 @@ const tests = [
     description: 'Post channel close message to Telegram',
     expected: {
       text: [
-        `🥀 0\\.00000001 channel closed with alias ${pubKey}\\. Inbound liquidity now: 0\\.00000001\\. Outbound liquidity now: 0\\.00000001\\.`,
+        `🥀 0\\.00000001 channel closed with alias \`${pubKey}\`\\. Inbound liquidity now: 0\\.00000001\\. Outbound liquidity now: 0\\.00000001\\.`,
         'node1',
       ],
     },
@@ -102,7 +102,7 @@ const tests = [
     description: 'Post breach channel close message to Telegram',
     expected: {
       text: [
-        `🥀 Breach countered on 0\\.00000001 channel with alias ${pubKey}\\. Inbound liquidity now: 0\\.00000001\\. Outbound liquidity now: 0\\.00000001\\.`,
+        `🥀 Breach countered on 0\\.00000001 channel with alias \`${pubKey}\`\\. Inbound liquidity now: 0\\.00000001\\. Outbound liquidity now: 0\\.00000001\\.`,
         'node1',
       ],
     },
@@ -112,7 +112,7 @@ const tests = [
     description: 'Post cooperative channel close message to Telegram',
     expected: {
       text: [
-        `🥀 Cooperatively closed 0\\.00000001 channel with alias ${pubKey}\\. Inbound liquidity now: 0\\.00000001\\. Outbound liquidity now: 0\\.00000001\\.`,
+        `🥀 Cooperatively closed 0\\.00000001 channel with alias \`${pubKey}\`\\. Inbound liquidity now: 0\\.00000001\\. Outbound liquidity now: 0\\.00000001\\.`,
         'node1',
       ],
     },
@@ -122,7 +122,7 @@ const tests = [
     description: 'Post locally initiated cooperative close message',
     expected: {
       text: [
-        `🥀 Cooperatively closed 0\\.00000001 channel with alias ${pubKey}\\. Inbound liquidity now: 0\\.00000001\\. Outbound liquidity now: 0\\.00000001\\.`,
+        `🥀 Cooperatively closed 0\\.00000001 channel with alias \`${pubKey}\`\\. Inbound liquidity now: 0\\.00000001\\. Outbound liquidity now: 0\\.00000001\\.`,
         'node1',
       ],
     },
@@ -132,7 +132,7 @@ const tests = [
     description: 'Post peer initiated cooperative close message',
     expected: {
       text: [
-        `🥀 0\\.00000001 channel was cooperatively closed by alias ${pubKey}\\. Inbound liquidity now: 0\\.00000001\\. Outbound liquidity now: 0\\.00000001\\.`,
+        `🥀 0\\.00000001 channel was cooperatively closed by alias \`${pubKey}\`\\. Inbound liquidity now: 0\\.00000001\\. Outbound liquidity now: 0\\.00000001\\.`,
         'node1',
       ],
     },
@@ -142,7 +142,7 @@ const tests = [
     description: 'Post local force channel close message to Telegram',
     expected: {
       text: [
-        `🥀 Force\\-closed 0\\.00000001 channel with alias ${pubKey}\\. Inbound liquidity now: 0\\.00000001\\. Outbound liquidity now: 0\\.00000001\\.`,
+        `🥀 Force\\-closed 0\\.00000001 channel with alias \`${pubKey}\`\\. Inbound liquidity now: 0\\.00000001\\. Outbound liquidity now: 0\\.00000001\\.`,
         'node1',
       ],
     },
@@ -152,7 +152,7 @@ const tests = [
     description: 'Post remote force channel close message to Telegram',
     expected: {
       text: [
-        `🥀 0\\.00000001 channel was force closed by alias ${pubKey}\\. Inbound liquidity now: 0\\.00000001\\. Outbound liquidity now: 0\\.00000001\\.`,
+        `🥀 0\\.00000001 channel was force closed by alias \`${pubKey}\`\\. Inbound liquidity now: 0\\.00000001\\. Outbound liquidity now: 0\\.00000001\\.`,
         'node1',
       ],
     },
@@ -162,8 +162,28 @@ const tests = [
     description: 'Peer closed flag does not change remote force close message',
     expected: {
       text: [
-        `🥀 0\\.00000001 channel was force closed by alias ${pubKey}\\. Inbound liquidity now: 0\\.00000001\\. Outbound liquidity now: 0\\.00000001\\.`,
+        `🥀 0\\.00000001 channel was force closed by alias \`${pubKey}\`\\. Inbound liquidity now: 0\\.00000001\\. Outbound liquidity now: 0\\.00000001\\.`,
         'node1',
+      ],
+    },
+  },
+  {
+    args: makeArgs({from: 'node-1.local'}),
+    description: 'From node name is escaped',
+    expected: {
+      text: [
+        `🥀 0\\.00000001 channel closed with alias \`${pubKey}\`\\. Inbound liquidity now: 0\\.00000001\\. Outbound liquidity now: 0\\.00000001\\.`,
+        'node\\-1\\.local',
+      ],
+    },
+  },
+  {
+    args: makeArgs({from: 'lnd.example.com'}),
+    description: 'A from node name that would be linked is not linked',
+    expected: {
+      text: [
+        `🥀 0\\.00000001 channel closed with alias \`${pubKey}\`\\. Inbound liquidity now: 0\\.00000001\\. Outbound liquidity now: 0\\.00000001\\.`,
+        'lnd\\.\u2060example\\.\u2060com',
       ],
     },
   },

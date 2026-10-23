@@ -5,12 +5,14 @@ const {returnResult} = require('asyncjs-util');
 
 const {formatTokens} = require('./../interface');
 const {icons} = require('./../interface');
+const {preventLinks} = require('./../interface');
 
 const channelPoint = n => `${n.transaction_id}:${n.transaction_vout}`;
 const escape = text => text.replace(/[_*[\]()~`>#+\-=|{}.!\\]/g, '\\\$&');
 const {isArray} = Array;
 const joinLines = lines => lines.filter(n => !!n).join('\n');
 const markup = {parse_mode: 'MarkdownV2'};
+const noLinks = text => preventLinks({text}).text;
 const uniq = arr => Array.from(new Set(arr));
 
 /** Send channel closing message to telegram
@@ -83,7 +85,7 @@ module.exports = ({closing, from, id, lnd, nodes, send}, cbk) => {
           const amount = formatTokens({tokens: chan.capacity}).display;
           const node = getAliases.find(n => n.id === chan.partner_public_key);
 
-          const peer = escape(`${node.alias} ${node.id}`.trim());
+          const peer = `${escape(noLinks(node.alias))} \`${node.id}\``.trim();
 
           const details = [
             `${icons.closing} Closing ${escape(amount)} channel with ${peer}`,
@@ -95,7 +97,7 @@ module.exports = ({closing, from, id, lnd, nodes, send}, cbk) => {
 
         const lines = [
           joinLines(details),
-          !!otherNode ? `_${escape(from)}_` : '',
+          !!otherNode ? `_${escape(noLinks(from))}_` : '',
         ];
 
         return cbk(null, joinLines(lines));

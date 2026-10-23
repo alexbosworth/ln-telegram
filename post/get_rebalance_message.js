@@ -2,18 +2,18 @@ const asyncAuto = require('async/auto');
 const {getChannels} = require('ln-service');
 const {getNodeAlias} = require('ln-sync');
 const {returnResult} = require('asyncjs-util');
-const {subscribeToPastPayment} = require('ln-service');
 
 const {formatTokens} = require('./../interface');
 const {icons} = require('./../interface');
+const {preventLinks} = require('./../interface');
 
 const asPercent = (fee, tokens) => (fee / tokens * 100).toFixed(2);
 const asPpm = (fee, tokens) => (fee / tokens * 1e6).toFixed();
 const escape = text => text.replace(/[_*[\]()~`>#+\-=|{}.!\\]/g, '\\\$&');
 const {isArray} = Array;
 const mtokensAsTokens = n => Number(n) / 1e3;
-const niceName = node => node.alias || (node.id || '').substring(0, 8);
-const sanitize = n => (n || '').replace(/_/g, '\\_').replace(/[*~`]/g, '');
+const niceName = n => n.alias || (n.id || '').substring(0, 8);
+const noLinks = text => preventLinks({text}).text;
 
 /** Get a rebalance message
 
@@ -117,7 +117,7 @@ module.exports = (args, cbk) => {
         const feePercent = asPercent(args.fee_mtokens, args.received_mtokens);
         const feeRate = `(${asPpm(args.fee_mtokens, args.received_mtokens)})`;
         const separator = escape('. Fee: ');
-        const withNode = `${escape(niceName(getOut))}`;
+        const withNode = `${escape(noLinks(niceName(getOut)))}`;
 
         const amount = escape(formatTokens({tokens: received}).display);
         const niceFee = escape(formatTokens({tokens: fee}).display);
@@ -130,7 +130,7 @@ module.exports = (args, cbk) => {
           return cbk(null, `${increase}${separator}${feeInfo}`);
         }
 
-        const fromNode = escape(niceName(getIn));
+        const fromNode = escape(noLinks(niceName(getIn)));
 
         return cbk(null, `${increase} *→* ${fromNode}${separator}${feeInfo}`);
       }],

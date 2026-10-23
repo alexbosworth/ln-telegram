@@ -1,7 +1,5 @@
 const replyActionType = require('./reply_action_type');
 
-const split = n => n.split('\n');
-
 /** Determine if a message is a contextual reply that requires a reply action
 
   {

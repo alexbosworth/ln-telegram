@@ -58,8 +58,14 @@ module.exports = ({from, id, named, reply, request, version}, cbk) => {
       getVersion: ['checkAccess', ({}, cbk) => {
         reply(currentVersion(version));
 
-        return request({json: true, url: url(named)}, (err, r, pkg) => {
-          if (!!err || !r || r.statusCode !== ok || !pkg || !pkg.version) {
+        return request({json: true, url: url(named)}, (err, response, pkg) => {
+          if (
+            !!err ||
+            !response ||
+            response.statusCode !== ok ||
+            !pkg ||
+            !pkg.version
+          ) {
             reply(failedToGetLatestVersion);
 
             return cbk();

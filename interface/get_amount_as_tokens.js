@@ -4,17 +4,15 @@ const {getPrices} = require('@alexbosworth/fiat');
 const {parseAmount} = require('ln-accounting');
 const {returnResult} = require('asyncjs-util');
 
+const bitcoinNetworks = require('./bitcoin_networks');
+
 const defaultFiatRateProvider = 'coingecko';
 const defaultTokens = 0;
-const fiatTokens = n =>  Number(n.split('*')[0]);
-const fiatRate = n => Math.round(n/100).toFixed(2);
 const hasFiat = n => !!n && /(eur|usd)/gim.test(n);
 const {isInteger} = Number;
 const isNumber = n => !isNaN(n);
-const networks = {btc: 'BTC', btcregtest: 'BTC', btctestnet: 'BTC'};
 const rateAsTokens = rate => 1e10 / rate;
 const symbols = ['EUR', 'USD'];
-const tokensAsBigTokens = n => Math.round(n * 1e8);
 
 /** Get the tokens value for an amount string
 
@@ -63,7 +61,7 @@ module.exports = ({amount, lnd, request}, cbk) => {
         cbk);
       }],
 
-      // Get the network to figure out what currency is being used
+      // Get the network to confirm fiat conversion is for Bitcoin
       getNetwork: ['validate', ({}, cbk) => {
         // Exit early when no fiat symbol is referenced
         if (!hasFiat(amount)) {
@@ -84,7 +82,7 @@ module.exports = ({amount, lnd, request}, cbk) => {
           return cbk();
         }
 
-        if (!networks[getNetwork.network]) {
+        if (!bitcoinNetworks.includes(getNetwork.network)) {
           return cbk([400, 'UnsupportedCurrencyForFiatConversion']);
         }
 

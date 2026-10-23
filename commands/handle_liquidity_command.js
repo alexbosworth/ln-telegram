@@ -8,7 +8,6 @@ const {getNodeAlias} = require('ln-sync');
 const {returnResult} = require('asyncjs-util');
 
 const {checkAccess} = require('./../authentication');
-const {icons} = require('./../interface');
 const interaction = require('./../interaction');
 const {liquiditySummary} = require('./../messages');
 
@@ -16,7 +15,6 @@ const defaultAlias = '';
 const {isArray} = Array;
 const markup = {parse_mode: 'MarkdownV2'};
 const {max} = Math;
-const noLiquidityMessage = `${icons.liquidity} No channel liquidity`;
 const uniq = arr => Array.from(new Set(arr));
 
 /** Check peer liquidity

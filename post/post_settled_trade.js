@@ -17,6 +17,7 @@ const {isArray} = Array;
       from: <Saved Node Name>
       public_key: <Public Key Hex String>
     }]
+    to: <Sold to Node with Identity Public Key Hex String>
     tokens: <Trade Price Tokens Number>
     user: <Telegram User Id Number>
   }

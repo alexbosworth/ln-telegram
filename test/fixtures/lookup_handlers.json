@@ -1,0 +1,19 @@
+[
+  "commands/handle_backup_command",
+  "commands/handle_balance_command",
+  "commands/handle_blocknotify_command",
+  "commands/handle_costs_command",
+  "commands/handle_earnings_command",
+  "commands/handle_graph_command",
+  "commands/handle_info_command",
+  "commands/handle_invoice_command",
+  "commands/handle_liquidity_command",
+  "commands/handle_mempool_command",
+  "commands/handle_pay_command",
+  "commands/handle_pending_command",
+  "commands/handle_stop_command",
+  "commands/handle_version_command",
+  "buttons/handle_button_push",
+  "replies/update_invoice_from_reply",
+  "replies/update_trade_from_reply"
+]

@@ -1,8 +1,10 @@
 const {formatTokens} = require('./../interface');
+const {preventLinks} = require('./../interface');
 
 const join = arr => arr.filter(n => !!n).join('\n');
 const markup = undefined;
 const mode = 'MarkdownV2';
+const noLinks = text => preventLinks({text}).text;
 const escape = text => text.replace(/[_*[\]()~`>#+\-=|{}.!\\]/g, '\\\$&');
 
 /** Settle trade message
@@ -24,12 +26,12 @@ const escape = text => text.replace(/[_*[\]()~`>#+\-=|{}.!\\]/g, '\\\$&');
 */
 module.exports = args => {
   const memo = !args.description ? '' : `“${escape(args.description)}”`;
-  const to = `${escape(args.alias)} \`${args.to}\``.trim();
+  const to = `${escape(noLinks(args.alias))} \`${args.to}\``.trim();
 
   const text = join([
     `😎 Sold: ${escape(formatTokens({tokens: args.tokens}).display)} ${memo}`,
     `to ${to}`,
-    `${escape(args.from || '')}`,
+    `${escape(noLinks(args.from || ''))}`,
   ]);
 
   return {markup, mode, text};

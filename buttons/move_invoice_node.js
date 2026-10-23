@@ -1,14 +1,16 @@
 const asyncAuto = require('async/auto');
 const asyncReflect = require('async/reflect');
+const {cancelHodlInvoice} = require('ln-service');
+const {getInvoice} = require('ln-service');
 const {parsePaymentRequest} = require('ln-service');
 const {returnResult} = require('asyncjs-util');
 
 const {callbackCommands} = require('./../interface');
 const {failureMessage} = require('./../messages');
+const interaction = require('./../interaction');
 const {postCreatedInvoice} = require('./../post');
 
 const {isArray} = Array;
-const parseFailure = msg => `⚠️ Unexpected error \`${msg}\`. Try again?`;
 const partialNodeId = (command, data) => data.slice(command.length);
 const split = n => n.split('\n');
 
@@ -64,40 +66,115 @@ module.exports = ({ctx, nodes}, cbk) => {
         }
 
         try {
-          const details = parsePaymentRequest({request});
-
-          return cbk(null, {
-            description: details.description,
-            destination: node.public_key,
-            tokens: details.tokens,
-          });
+          parsePaymentRequest({request});
         } catch (err) {
           return cbk([400, 'ExpectedValidPaymentRequestToMoveInvoiceNode']);
         }
+
+        const details = parsePaymentRequest({request});
+
+        const original = nodes.find(n => n.public_key === details.destination);
+
+        // Make sure the node that created the invoice is there to cancel it
+        if (!original) {
+          return cbk([400, 'ExpectedKnownNodeToSwitchInvoiceFrom']);
+        }
+
+        return cbk(null, {
+          description: details.description,
+          destination: node.public_key,
+          id: details.id,
+          lnd: original.lnd,
+          tokens: details.tokens,
+        });
       })],
 
-      // Remove the original message
-      remove: ['validate', async ({}) => await ctx.deleteMessage()],
+      // Cancel the original invoice so that it can no longer be paid
+      cancel: ['details', asyncReflect(({details}, cbk) => {
+        // Exit early when there is no invoice to move
+        if (!details.value) {
+          return cbk();
+        }
+
+        return cancelHodlInvoice({
+          id: details.value.id,
+          lnd: details.value.lnd,
+        },
+        cbk);
+      })],
+
+      // Check if an invoice that could not be canceled was already paid
+      getInvoice: [
+        'cancel',
+        'details',
+        asyncReflect(({cancel, details}, cbk) =>
+      {
+        // Exit early when the invoice was canceled
+        if (!cancel.error) {
+          return cbk();
+        }
+
+        return getInvoice({id: details.value.id, lnd: details.value.lnd}, cbk);
+      })],
+
+      // Remove the original message once the original invoice is canceled
+      remove: ['cancel', 'details', async ({cancel, details}) => {
+        // Exit early to keep the message when the invoice is not moving
+        if (!details.value || !!cancel.error) {
+          return;
+        }
+
+        return await ctx.deleteMessage();
+      }],
 
       // Stop the loading message
       respond: ['validate', async ({}) => await ctx.answerCallbackQuery()],
 
-      // Post about a failure to parse payment request details
-      failure: ['details', async ({details}) => {
-        // Exit early when there was no parse failure
-        if (!details.error) {
+      // Post about a failure to parse the invoice or cancel it
+      postFailure: [
+        'cancel',
+        'details',
+        'getInvoice',
+        async ({cancel, details, getInvoice}) =>
+      {
+        // Exit early when there was no failure
+        if (!cancel.error && !details.error) {
           return;
         }
 
-        const [, msg] = details.error;
+        // Exit early when the invoice cannot be moved because it was paid
+        if (!!getInvoice.value && getInvoice.value.is_confirmed) {
+          const paid = failureMessage({is_paid_invoice: true});
 
-        return await ctx.reply(parseFailure(msg), failureMessage({}).actions);
+          return await ctx.reply(paid.message, paid.actions);
+        }
+
+        const [, code] = details.error || cancel.error;
+
+        let text;
+
+        // Trying again cannot help when a node is not connected
+        switch (code) {
+        case 'ExpectedKnownNodeToSwitchInvoiceFrom':
+          text = interaction.move_invoice_missing_from_node;
+          break;
+
+        case 'ExpectedKnownNodeToSwitchInvoiceTo':
+          text = interaction.move_invoice_missing_to_node;
+          break;
+
+        default:
+          text = interaction.move_invoice_failed;
+          break;
+        }
+
+        return await ctx.reply(text, failureMessage({}).actions);
       }],
 
       // Post the updated invoice
-      post: ['details', ({details}, cbk) => {
-        // Exit early when there was a parse failure and cannot move node
-        if (!details.value) {
+      post: ['cancel', 'details', ({cancel, details}, cbk) => {
+        // Exit early when the original invoice cannot be moved
+        if (!details.value || !!cancel.error) {
           return cbk();
         }
 

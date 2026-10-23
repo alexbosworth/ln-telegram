@@ -5,12 +5,13 @@ const {returnResult} = require('asyncjs-util');
 
 const {checkAccess} = require('./../authentication');
 const {icons} = require('./../interface');
+const {preventLinks} = require('./../interface');
 
 const escape = text => text.replace(/[_*[\]()~`>#+\-=|{}.!\\]/g, '\\\$&');
 const {isArray} = Array;
 const join = arr => arr.join('\n');
 const markup = {parse_mode: 'MarkdownV2'};
-const replyMarkdownV1 = reply => n => reply(n, {parse_mode: 'Markdown'});
+const noLinks = text => preventLinks({text}).text;
 
 /** Get node info
 
@@ -58,7 +59,7 @@ module.exports = ({from, id, nodes, remove, reply}, cbk) => {
       checkAccess: ['validate', ({}, cbk) => checkAccess({from, id}, cbk)],
 
       // Remove the invocation command
-      remove: ['validate', async ({}) => await remove()],
+      remove: ['checkAccess', async ({}) => await remove()],
 
       // Get wallet info
       getInfo: ['checkAccess', ({}, cbk) => {
@@ -69,7 +70,7 @@ module.exports = ({from, id, nodes, remove, reply}, cbk) => {
       summary: ['getInfo', ({getInfo}, cbk) => {
         const summary = getInfo.map(node => {
           const active = node.active_channels_count;
-          const {alias} = node;
+          const alias = noLinks(node.alias);
           const connected = node.peers_count;
           const {version} = node;
 

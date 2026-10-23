@@ -3,11 +3,13 @@ const {getPeerLiquidity} = require('ln-sync');
 const {returnResult} = require('asyncjs-util');
 
 const {formatTokens} = require('./../interface');
+const {preventLinks} = require('./../interface');
 
 const detailsJoiner = ' ';
 const displayTokens = tokens => formatTokens({tokens}).display;
 const escape = text => text.replace(/[_*[\]()~`>#+\-=|{}.!\\]/g, '\\\$&');
 const markup = {parse_mode: 'MarkdownV2'};
+const noLinks = text => preventLinks({text}).text;
 const textJoiner = '\n';
 
 /** Post a channel closed message for Telegram
@@ -109,15 +111,21 @@ module.exports = (args, cbk) => {
 
       // Update text
       message: ['event', 'getLiquidity', ({event, getLiquidity}, cbk) => {
+        const inbound = displayTokens(getLiquidity.inbound);
+        const outbound = displayTokens(getLiquidity.outbound);
+
         const details = [
-          `${event} ${getLiquidity.alias} ${args.partner_public_key}.`,
-          `Inbound liquidity now: ${displayTokens(getLiquidity.inbound)}.`,
-          `Outbound liquidity now: ${displayTokens(getLiquidity.outbound)}.`,
+          escape(`${event} ${noLinks(getLiquidity.alias)}`),
+          `\`${args.partner_public_key}\`${escape('.')}`,
+          escape(`Inbound liquidity now: ${inbound}.`),
+          escape(`Outbound liquidity now: ${outbound}.`),
         ];
 
-        const text = [`🥀 ${details.join(detailsJoiner)}`, args.from];
+        const from = escape(noLinks(args.from));
 
-        return cbk(null, {text: escape(text.join(textJoiner))});
+        const text = [`🥀 ${details.join(detailsJoiner)}`, from];
+
+        return cbk(null, {text: text.join(textJoiner)});
       }],
 
       // Send channel open message

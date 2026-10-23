@@ -1,5 +1,15 @@
 # Versions
 
+## Version 8.2.0
+
+- `actOnMessageReply`, `handleButtonPush`: Cancel invoices on the node when
+    their messages are deleted, moved or edited
+- `handleInvoiceCommand`: Fix crash when posting an invoice fails
+- `handlePayCommand`: Report payments rejected by the receiver as rejected
+- `postClosedMessage`, `postClosingMessage`, `postOpenMessage`: Show public
+    keys as code to make them easier to copy
+- Prevent aliases and node names that look like links from showing as links
+
 ## Version 8.1.2
 
 - `postClosedMessage`: Add `is_partner_closed` to indicate peer coop closes

@@ -5,11 +5,13 @@ const {returnResult} = require('asyncjs-util');
 
 const {icons} = require('./../interface');
 const {formatTokens} = require('./../interface');
+const {preventLinks} = require('./../interface');
 
 const elementJoiner = ' ';
 const escape = text => text.replace(/[_*[\]()~`>#+\-=|{}.!\\]/g, '\\\$&');
 const {isArray} = Array;
 const markup = {parse_mode: 'MarkdownV2'};
+const noLinks = text => preventLinks({text}).text;
 const textJoiner = '\n';
 const {unannounced} = icons;
 
@@ -75,9 +77,11 @@ module.exports = ({from, id, lnd, opening, send}, cbk) => {
           const node = getAliases.find(n => n.id === chan.partner_public_key);
 
           const action = chan.is_partner_initiated ? 'Accepting' : 'Opening';
+          const alias = escape(noLinks(node.alias));
           const announce = chan.is_private ? `${unannounced} private` : '';
           const direction = !!chan.is_partner_initiated ? 'from' : 'to';
-          const moniker = `${escape(node.alias)} \`${node.id}\``.trim();
+
+          const moniker = `${alias} \`${node.id}\``.trim();
 
           const elements = [
             `${icons.opening} ${action} new`,
@@ -88,7 +92,7 @@ module.exports = ({from, id, lnd, opening, send}, cbk) => {
           return elements.join(elementJoiner);
         });
 
-        const text = [lines.join(textJoiner), `_${escape(from)}_`];
+        const text = [lines.join(textJoiner), `_${escape(noLinks(from))}_`];
 
         return cbk(null, {text: text.join(textJoiner)});
       }],

@@ -3,11 +3,13 @@ const {getPeerLiquidity} = require('ln-sync');
 const {returnResult} = require('asyncjs-util');
 
 const {formatTokens} = require('./../interface');
+const {preventLinks} = require('./../interface');
 
 const detailsJoiner = ' ';
 const displayAmount = tokens => formatTokens({tokens}).display;
 const escape = text => text.replace(/[_*[\]()~`>#+\-=|{}.!\\]/g, '\\\$&');
 const markup = {parse_mode: 'MarkdownV2'};
+const noLinks = text => preventLinks({text}).text;
 const textJoiner = '\n';
 
 /** Send channel open message to telegram
@@ -79,19 +81,23 @@ module.exports = (args, cbk) => {
         const capacity = displayAmount(args.capacity);
         const channel = args.is_private ? 'private channel' : 'channel';
         const direction = !!args.is_partner_initiated ? 'from' : 'to';
-        const moniker = `${getLiquidity.alias} ${args.partner_public_key}`;
+        const inbound = displayAmount(getLiquidity.inbound);
+        const outbound = displayAmount(getLiquidity.outbound);
 
         const event = `${action} new ${capacity} ${channel}`;
 
         const details = [
-          `${event} ${direction} ${moniker}.`,
-          `Inbound liquidity now: ${displayAmount(getLiquidity.inbound)}.`,
-          `Outbound liquidity now: ${displayAmount(getLiquidity.outbound)}.`,
+          escape(`${event} ${direction} ${noLinks(getLiquidity.alias)}`),
+          `\`${args.partner_public_key}\`${escape('.')}`,
+          escape(`Inbound liquidity now: ${inbound}.`),
+          escape(`Outbound liquidity now: ${outbound}.`),
         ];
 
-        const text = [`🌹 ${details.join(detailsJoiner)}`, args.from];
+        const from = escape(noLinks(args.from));
 
-        return cbk(null, {text: escape(text.join(textJoiner))});
+        const text = [`🌹 ${details.join(detailsJoiner)}`, from];
+
+        return cbk(null, {text: text.join(textJoiner)});
       }],
 
       // Send channel open message

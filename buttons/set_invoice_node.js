@@ -67,8 +67,8 @@ module.exports = ({ctx, nodes}, cbk) => {
         const buttons = [].concat(editButtons).concat(nodeButtons);
 
         // Add buttons to message markup
-        buttons.forEach(([label, command], i) => {
-          if (i < rowsIndex) {
+        buttons.forEach(([label, command], index) => {
+          if (index < rowsIndex) {
             return markup.text(label, command);
           } else {
             return markup.text(label, command).row();

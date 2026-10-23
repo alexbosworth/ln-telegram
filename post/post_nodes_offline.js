@@ -2,11 +2,13 @@ const asyncAuto = require('async/auto');
 const {returnResult} = require('asyncjs-util');
 
 const {icons} = require('./../interface');
+const {preventLinks} = require('./../interface');
 
 const escape = text => text.replace(/[_*[\]()~`>#+\-=|{}.!\\]/g, '\\\$&');
 const {isArray} = Array;
 const markup = {parse_mode: 'MarkdownV2'};
-const shortId = id => id.slice(0, 8);
+const noLinks = text => preventLinks({text}).text;
+const nodeName = n => `${n.alias} ${n.id.slice(0, 8)}`.trim();
 
 /** Post that nodes have gone offline
 
@@ -49,7 +51,7 @@ module.exports = ({bot, connected, offline}, cbk) => {
           return cbk();
         }
 
-        const aliases = offline.map(n => `${n.alias} ${shortId(n.id)}`.trim());
+        const aliases = offline.map(nodeName).map(noLinks);
         const event = `${icons.disconnected} Lost connection!`
 
         const details = `Cannot connect to ${aliases}.`;

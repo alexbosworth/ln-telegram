@@ -4,9 +4,6 @@ const {returnResult} = require('asyncjs-util');
 const {checkAccess} = require('./../authentication');
 const {stopBotMessage} = require('./../messages');
 
-const markup = {parse_mode: 'MarkdownV2'};
-const replyMarkdownV1 = reply => n => reply(n, {parse_mode: 'Markdown'});
-
 /** Execute stop command to stop the bot
 
   {

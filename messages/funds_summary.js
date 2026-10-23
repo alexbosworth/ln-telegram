@@ -3,24 +3,24 @@ const renderTable = require('table').table;
 
 const {formatTokens} = require('./../interface');
 const {icons} = require('./../interface');
+const {preventLinks} = require('./../interface');
 
 const border = getBorderCharacters('void');
 const escape = text => text.replace(/[_*[\]()~`>#+\-=|{}.!\\]/g, '\\\$&');
 const formatCoins = tokens => formatTokens({tokens, none: ''}).display;
 const formatReport = (from, n) => `${from}\`\`\`\n${n}\`\`\``;
+const noLinks = text => preventLinks({text}).text;
 const sumOf = arr => arr.reduce((sum, n) => sum + n, Number());
 
-/** Message summarizing liquidity
+/** Message summarizing funds
 
   {
     balances: [{
       closing_balance: <Balance of Tokens Moving Out Of Channels Tokens Number>
-      conflicted_pending: <Conflicting Pending Balance Tokens Number>
-      invalid_pending: <Invalid Pending Balance Tokens Number>
       offchain_balance: <Balance of Owned Tokens In Channels Tokens Number>
       offchain_pending: <Total Pending Local Balance Tokens Number>
-      onchain_balance: <Balance of Transaction Outputs Number>
-      onchain_vbytes: <Estimated Virtual Bytes to Spend On-Chain Funds Number>
+      onchain_confirmed: <Confirmed On Chain Balance Tokens Number>
+      onchain_pending: <Pending Chain Tokens Balance Tokens Number>
     }]
     nodes: [{
       from: <From Name String>
@@ -37,60 +37,58 @@ const sumOf = arr => arr.reduce((sum, n) => sum + n, Number());
 module.exports = ({balances, nodes}) => {
   const [, otherNode] = nodes;
 
-  const total = sumOf(nodes.map((_, i) => {
+  const total = sumOf(nodes.map((node, index) => {
     return sumOf([
-      balances[i].closing_balance,
-      balances[i].offchain_balance,
-      balances[i].offchain_pending,
-      balances[i].onchain_confirmed,
-      balances[i].onchain_pending,
+      balances[index].closing_balance,
+      balances[index].offchain_balance,
+      balances[index].offchain_pending,
+      balances[index].onchain_confirmed,
+      balances[index].onchain_pending,
     ]);
   }));
 
   const overallTotal = escape(formatTokens({tokens: total}).display);
 
   const table = nodes
-    .map((node, i) => {
+    .map((node, index) => {
       const total = sumOf([
-        balances[i].closing_balance,
-        balances[i].offchain_balance,
-        balances[i].offchain_pending,
-        balances[i].onchain_confirmed,
-        balances[i].onchain_pending,
+        balances[index].closing_balance,
+        balances[index].offchain_balance,
+        balances[index].offchain_pending,
+        balances[index].onchain_confirmed,
+        balances[index].onchain_pending,
       ]);
 
-      const displayTotal = escape(formatCoins(total));
+      const displayTotal = escape(formatTokens({tokens: total}).display);
       const icon = !!otherNode ? `${icons.funds} ` : '';
 
-      const from = `_${icon}${escape(node.from)}_: ${displayTotal}\n`;
+      const from = `_${icon}${escape(noLinks(node.from))}_: ${displayTotal}\n`;
 
       // Exit early when there are no individual balances
       if (!total) {
-        const zeroTotal = escape(formatTokens({tokens: total}).display);
-
-        return `${escape(from)}: ${zeroTotal}\n`;
+        return from;
       }
 
       const rows = [
         [
           'Channel Balance',
-          formatCoins(balances[i].offchain_balance),
+          formatCoins(balances[index].offchain_balance),
         ],
         [
           'Channel Pending',
-          formatCoins(balances[i].offchain_pending),
+          formatCoins(balances[index].offchain_pending),
         ],
         [
           'Closing Out',
-          formatCoins(balances[i].closing_balance),
+          formatCoins(balances[index].closing_balance),
         ],
         [
           'Chain Confirmed',
-          formatCoins(balances[i].onchain_confirmed),
+          formatCoins(balances[index].onchain_confirmed),
         ],
         [
           'Chain Pending',
-          formatCoins(balances[i].onchain_pending),
+          formatCoins(balances[index].onchain_pending),
         ],
       ];
 
