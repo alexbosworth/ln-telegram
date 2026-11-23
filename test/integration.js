@@ -1,7 +1,7 @@
 const {join} = require('node:path');
 const {readdirSync} = require('node:fs');
 const {run} = require('node:test');
-const {tap} = require('node:test/reporters');
+const {spec} = require('node:test/reporters');
 
 const asPath = file => join(file.path || file.parentPath, file.name);
 const concurrency = 3;
@@ -15,4 +15,4 @@ run({
       .map(asPath);
   }),
   timeout,
-}).compose(tap).pipe(process.stdout);
+}).compose(spec).pipe(process.stdout);

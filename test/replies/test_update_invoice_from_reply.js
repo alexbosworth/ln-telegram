@@ -86,7 +86,7 @@ const makeCtx = ({answer, attachment, deleteErr, question, replyErr}) => {
 };
 
 // Every invoice the node creates comes back as the 1 sat “description” request
-const makeLnd = ({addErr, cancelErr, lookupErr, settled}) => {
+const makeLnd = ({addErr, cancelErr, lookupErr, settled, state}) => {
   const canceled = [];
   const created = [];
 
@@ -133,7 +133,7 @@ const makeLnd = ({addErr, cancelErr, lookupErr, settled}) => {
           settle_date: !!settled ? '1' : '0',
           settle_index: !!settled ? '1' : '0',
           settled: !!settled,
-          state: !!settled ? 'SETTLED' : 'OPEN',
+          state: state || (!!settled ? 'SETTLED' : 'OPEN'),
           value: '1',
           value_msat: '1000',
         });
@@ -717,30 +717,85 @@ const tests = [
         public_key: key,
       }],
     }),
-    description: 'A failure to cancel an invoice that is not found is posted',
+    description: 'A failure to look up the invoice keeps the question',
     expected: {
-      canceled: [id],
+      canceled: [],
+      created: [],
+      deleted: [{chat: 1, id: 4}],
+      replies: [{
+        options: {
+          parse_mode: 'Markdown',
+          reply_markup: new InlineKeyboard().text('OK', 'remove-message'),
+        },
+        text: ['FailedToLookUpInvoiceToUpdate'],
+      }],
+    },
+  },
+  {
+    args: makeArgs({
+      nodes: [{
+        from: 'node1',
+        lnd: makeLnd({state: 'CANCELED'}),
+        public_key: key,
+      }],
+    }),
+    description: 'An invoice that was already updated is not updated again',
+    expected: {
+      canceled: [],
       created: [],
       deleted: [{chat: 1, id: 4}, {chat: 1, id: 3}],
-      replies: [
-        {
-          options: {
-            parse_mode: 'Markdown',
-            reply_markup: new InlineKeyboard().text('OK', 'remove-message'),
-          },
-          text: ['UnexpectedErrorCancelingHodlInvoice'],
+      replies: [{
+        options: {
+          parse_mode: 'Markdown',
+          reply_markup: new InlineKeyboard().text('OK', 'remove-message'),
         },
-        {
-          options: {
-            parse_mode: 'MarkdownV2',
-            reply_markup: new InlineKeyboard()
-              .text('Set Memo', 'set-invoice-description')
-              .text('Amount...', 'set-invoice-tokens')
-              .text('🗑', 'cancel-invoice'),
-          },
-          text: ['Invoice: 0\\.00000001 “description”', `\`${request}\``],
+        text: ['InvoiceWasAlreadyUpdatedOrCanceled'],
+      }],
+    },
+  },
+  {
+    args: makeArgs({
+      ctx: makeCtx({answer: 'a'.repeat(640)}),
+      nodes: [{
+        from: 'node1',
+        lnd: makeLnd({state: 'CANCELED'}),
+        public_key: key,
+      }],
+    }),
+    description: 'An invoice that was already updated is not posted again',
+    expected: {
+      canceled: [],
+      created: [],
+      deleted: [{chat: 1, id: 4}, {chat: 1, id: 3}],
+      replies: [{
+        options: {
+          parse_mode: 'Markdown',
+          reply_markup: new InlineKeyboard().text('OK', 'remove-message'),
         },
-      ],
+        text: ['InvoiceWasAlreadyUpdatedOrCanceled'],
+      }],
+    },
+  },
+  {
+    args: makeArgs({
+      nodes: [{
+        from: 'node1',
+        lnd: makeLnd({lookupErr: {details: 'unable to locate invoice'}}),
+        public_key: key,
+      }],
+    }),
+    description: 'An invoice that LND no longer has is not updated',
+    expected: {
+      canceled: [],
+      created: [],
+      deleted: [{chat: 1, id: 4}, {chat: 1, id: 3}],
+      replies: [{
+        options: {
+          parse_mode: 'Markdown',
+          reply_markup: new InlineKeyboard().text('OK', 'remove-message'),
+        },
+        text: ['InvoiceWasAlreadyUpdatedOrCanceled'],
+      }],
     },
   },
   {
@@ -784,4 +839,34 @@ tests.forEach(({args, description, error, expected}) => {
 
     return;
   });
+});
+
+test('Replies at the same time update an invoice once', async () => {
+  const lnd = makeLnd({});
+
+  const nodes = [{lnd, from: 'node1', public_key: key}];
+
+  const replies = [makeArgs({nodes}), makeArgs({nodes})];
+
+  await Promise.all(replies.map(args => method(args)));
+
+  const [, second] = replies;
+
+  deepEqual(lnd.canceled, [id], 'The invoice is canceled once');
+  deepEqual(lnd.created.length, 1, 'One updated invoice is created');
+
+  deepEqual(
+    second.ctx.replies.map(n => n.text),
+    [['InvoiceUpdateAlreadyInProgress']],
+    'The second reply fails'
+  );
+
+  deepEqual(second.api.deleted, [], 'The second reply keeps the question');
+
+  // A later reply is not blocked by the finished replies
+  await method(makeArgs({nodes}));
+
+  deepEqual(lnd.created.length, 2, 'The invoice can be updated again');
+
+  return;
 });

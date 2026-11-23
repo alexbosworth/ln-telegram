@@ -2,6 +2,7 @@ const asyncAuto = require('async/auto');
 const {InlineKeyboard} = require('grammy');
 const {returnResult} = require('asyncjs-util');
 
+const {checkAccess} = require('./../authentication');
 const {icons} = require('./../interface');
 
 const escape = text => text.replace(/[_*[\]()~`>#+\-=|{}.!\\]/g, '\\\$&');
@@ -16,17 +17,22 @@ const title = 'Editing past messages is not supported.';
 
   {
     ctx: <Telegram Object>
+    id: <Connected User Id Number>
   }
 
   @returns via cbk or Promise
 */
-module.exports = ({ctx}, cbk) => {
+module.exports = ({ctx, id}, cbk) => {
   return new Promise((resolve, reject) => {
     return asyncAuto({
       // Check arguments
       validate: cbk => {
         if (!ctx) {
           return cbk([400, 'ExpectedTelegramContextToHandleEditedMessage']);
+        }
+
+        if (!id) {
+          return cbk([400, 'ExpectedConnectedUserIdToHandleEditedMessage']);
         }
 
         return cbk();
@@ -40,6 +46,13 @@ module.exports = ({ctx}, cbk) => {
         }
 
         const message = ctx.update.edited_message;
+
+        // Ignore edits that are not from the connected user
+        try {
+          await checkAccess({id, from: (message.from || {}).id});
+        } catch (err) {
+          return;
+        }
 
         // Ignore messages that are old
         if (msSince(ctx.update.edited_message.date) > maxCommandDelayMs) {

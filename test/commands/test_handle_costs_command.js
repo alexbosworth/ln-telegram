@@ -310,8 +310,64 @@ const tests = [
         public_key: key,
       }],
     }),
-    description: 'An error getting chain transactions is passed back',
-    error: [503, 'UnexpectedGetChainTransactionsError', {err: 'err'}],
+    description: 'An error getting chain transactions is reported',
+    expected: {
+      replies: [[
+        '⚡️ Spent on node1',
+        '',
+        '```             Day  Week ',
+        ' Rebalances  -    -    ',
+        '',
+        '- Chain fees unavailable: UnexpectedGetChainTransactionsError',
+        '```',
+      ]],
+      working: 1,
+    },
+  },
+  {
+    args: makeArgs({
+      nodes: [
+        {
+          from: 'node1',
+          lnd: makeLnd({
+            invoices: [{ago: hourMs, id: 1}],
+            methods: {getTransactions: ({}, cbk) => cbk('err')},
+            payments: [{ago: hourMs, fee: '2000', id: 1}],
+            transactions: [],
+          }),
+          public_key: key,
+        },
+        {
+          from: 'node2',
+          lnd: makeLnd({
+            invoices: [],
+            payments: [],
+            transactions: [{ago: hourMs, confirmations: 1, fee: '5', id: 1}],
+          }),
+          public_key: otherKey,
+        },
+      ],
+    }),
+    description: 'A node with unknown chain fees keeps the other costs',
+    expected: {
+      replies: [[
+        '⚡️ Spent on node1',
+        '',
+        '```             Day         Week       ',
+        ' Rebalances  0.00000002  0.00000002 ',
+        '',
+        '- Chain fees unavailable: UnexpectedGetChainTransactionsError',
+        '```',
+        '⚡️ Spent on node2',
+        '',
+        '```             Day         Week       ',
+        ' Rebalances  -           -          ',
+        ' Chain Fees  0.00000005  0.00000005 ',
+        '',
+        '```',
+      ]],
+      working: 1,
+    },
   },
 ];
 

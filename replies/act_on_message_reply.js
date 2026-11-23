@@ -61,7 +61,12 @@ module.exports = ({api, ctx, id, nodes, request}, cbk) => {
           return cbk();
         }
 
-        const {text} = ctx.update.message.reply_to_message;
+        const {from, text} = ctx.update.message.reply_to_message;
+
+        // Only messages that the bot posted can be reply action messages
+        if (!ctx.me || !from || from.id !== ctx.me.id) {
+          return cbk();
+        }
 
         // Reply action messages must fit a specific type
         if (!text) {

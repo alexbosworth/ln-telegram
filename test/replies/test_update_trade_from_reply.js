@@ -24,14 +24,22 @@ const tradeId = Buffer.alloc(32).toString('hex');
 Settings.defaultLocale = 'en-US';
 Settings.defaultZone = 'utc';
 
-const makeApi = ({}) => {
+const makeApi = ({err}) => {
   const deleted = [];
   const messages = [];
 
   return {
     deleted,
     messages,
-    deleteMessage: async (chat, id) => deleted.push({chat, id}),
+    deleteMessage: async (chat, id) => {
+      deleted.push({chat, id});
+
+      if (!!err) {
+        throw new Error(err);
+      }
+
+      return;
+    },
     sendMessage: async (user, text, options) => {
       return messages.push({options, user, text: text.split('\n')});
     },
@@ -39,7 +47,7 @@ const makeApi = ({}) => {
 };
 
 // The answer is message 4, a reply to the question in message 3
-const makeCtx = ({answer, attachment, question}) => {
+const makeCtx = ({answer, attachment, deleteErr, question}) => {
   const deleted = [];
   const replies = [];
 
@@ -71,7 +79,13 @@ const makeCtx = ({answer, attachment, question}) => {
     message,
     replies,
     deleteMessage: async () => {
-      return deleted.push({chat: message.chat.id, id: message.message_id});
+      deleted.push({chat: message.chat.id, id: message.message_id});
+
+      if (!!deleteErr) {
+        throw new Error(deleteErr);
+      }
+
+      return;
     },
     reply: async (text, options) => {
       return replies.push({options, text: text.split('\n')});
@@ -81,9 +95,10 @@ const makeCtx = ({answer, attachment, question}) => {
 };
 
 // The node has an anchored trade that expires at 2100-01-01
-const makeLnd = ({addErr, cancelErr, lookupErr, memo}) => {
+const makeLnd = ({addErr, cancelErr, lookupErr, memo, state, statusErr}) => {
   const canceled = [];
   const created = [];
+  const lookups = [];
 
   return {
     canceled,
@@ -110,9 +125,16 @@ const makeLnd = ({addErr, cancelErr, lookupErr, memo}) => {
         });
       },
       getInfo: ({}, cbk) => cbk(null, getInfoRes()),
-      lookupInvoice: ({}, cbk) => {
+      lookupInvoice: ({r_hash}, cbk) => {
+        lookups.push(r_hash);
+
         if (!!lookupErr) {
           return cbk(lookupErr);
+        }
+
+        // The trade is looked up first and then its status is looked up
+        if (!!statusErr && lookups.length > [r_hash].length) {
+          return cbk(statusErr);
         }
 
         return cbk(null, {
@@ -136,7 +158,7 @@ const makeLnd = ({addErr, cancelErr, lookupErr, memo}) => {
           settle_date: '0',
           settle_index: '0',
           settled: false,
-          state: 'OPEN',
+          state: state || 'OPEN',
           value: '1',
           value_msat: '1000',
         });
@@ -198,6 +220,26 @@ const tests = [
   {
     args: makeArgs({}),
     description: 'The trade description is updated',
+    expected: {
+      deleted: [{chat: 1, id: 4}, {chat: 1, id: 3}],
+      messages: [],
+      nodes: [{
+        canceled: [tradeId],
+        created: [{
+          expires_at: '2100-01-01T00:00:00.000Z',
+          memo: newAnchor,
+          value_msat: '1000',
+        }],
+      }],
+      replies: [],
+    },
+  },
+  {
+    args: makeArgs({
+      api: makeApi({err: 'err'}),
+      ctx: makeCtx({deleteErr: 'err'}),
+    }),
+    description: 'Errors deleting the question and answer are ignored',
     expected: {
       deleted: [{chat: 1, id: 4}, {chat: 1, id: 3}],
       messages: [],
@@ -343,7 +385,7 @@ const tests = [
     }),
     description: 'A trade not found on any node is posted as a failure',
     expected: {
-      deleted: [{chat: 1, id: 4}, {chat: 1, id: 3}],
+      deleted: [{chat: 1, id: 4}],
       messages: [],
       nodes: [{canceled: [], created: []}],
       replies: [{
@@ -363,7 +405,7 @@ const tests = [
     }),
     description: 'A failure to get the trade is posted',
     expected: {
-      deleted: [{chat: 1, id: 4}, {chat: 1, id: 3}],
+      deleted: [{chat: 1, id: 4}],
       messages: [],
       nodes: [{canceled: [], created: []}],
       replies: [{
@@ -491,6 +533,50 @@ const tests = [
     },
   },
   {
+    args: makeArgs({
+      nodes: [{
+        from: 'node1',
+        lnd: makeLnd({state: 'CANCELED'}),
+        public_key: key,
+      }],
+    }),
+    description: 'A trade that was already updated is not updated again',
+    expected: {
+      deleted: [{chat: 1, id: 4}, {chat: 1, id: 3}],
+      messages: [],
+      nodes: [{canceled: [], created: []}],
+      replies: [{
+        options: {
+          parse_mode: 'Markdown',
+          reply_markup: new InlineKeyboard().text('OK', 'remove-message'),
+        },
+        text: ['⚠️ Failed to update trade: TradeWasAlreadyUpdatedOrCanceled.'],
+      }],
+    },
+  },
+  {
+    args: makeArgs({
+      nodes: [{
+        from: 'node1',
+        lnd: makeLnd({statusErr: 'err'}),
+        public_key: key,
+      }],
+    }),
+    description: 'A failure to look up the trade status keeps the question',
+    expected: {
+      deleted: [{chat: 1, id: 4}],
+      messages: [],
+      nodes: [{canceled: [], created: []}],
+      replies: [{
+        options: {
+          parse_mode: 'Markdown',
+          reply_markup: new InlineKeyboard().text('OK', 'remove-message'),
+        },
+        text: ['⚠️ Failed to update trade: UnexpectedLookupInvoiceErr.'],
+      }],
+    },
+  },
+  {
     args: makeArgs({ctx: makeCtx({question: 'Unknown question?'})}),
     description: 'A reply that is not a trade question is ignored',
     expected: {
@@ -523,4 +609,34 @@ tests.forEach(({args, description, error, expected}) => {
 
     return;
   });
+});
+
+test('Replies at the same time update a trade once', async () => {
+  const lnd = makeLnd({});
+
+  const nodes = [{lnd, from: 'node1', public_key: key}];
+
+  const replies = [makeArgs({nodes}), makeArgs({nodes})];
+
+  await Promise.all(replies.map(args => method(args)));
+
+  const [, second] = replies;
+
+  deepEqual(lnd.canceled, [tradeId], 'The trade is canceled once');
+  deepEqual(lnd.created.length, 1, 'One updated trade is created');
+
+  deepEqual(
+    second.ctx.replies.map(n => n.text),
+    [['⚠️ Failed to update trade: TradeUpdateAlreadyInProgress.']],
+    'The second reply fails'
+  );
+
+  deepEqual(second.api.deleted, [], 'The second reply keeps the question');
+
+  // A later reply is not blocked by the finished replies
+  await method(makeArgs({nodes}));
+
+  deepEqual(lnd.created.length, 2, 'The trade can be updated again');
+
+  return;
 });

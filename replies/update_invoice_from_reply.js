@@ -14,11 +14,15 @@ const invoiceActionType = require('./invoice_action_type');
 const {postCreatedInvoice} = require('./../post');
 
 const byteLength = text => Buffer.byteLength(text, 'utf8');
+const grpcDetails = ([,, res]) => !!res && !!res.err && res.err.details;
 const {isArray} = Array;
+const isKeepingQuestion = ([code]) => [409, 503].includes(code);
+const isMissing = n => /unable to locate invoice|no existing invoices/.test(n);
 const {isSafeInteger} = Number;
 const maxDescriptionBytes = 639;
 const maxTokens = 1e13;
 const split = n => n.split('\n');
+const updating = new Set();
 
 /** Update the details of a created invoice from reply input
 
@@ -106,8 +110,14 @@ module.exports = ({api, ctx, id, nodes, request}, cbk) => {
       }],
 
       // Delete the edit message that had the question
-      deleteQuestion: ['type', async ({type}) => {
+      deleteQuestion: ['checkOpen', 'type', async ({checkOpen, type}) => {
         if (!type) {
+          return;
+        }
+
+        // The question is kept when the invoice lookup failed, to try again,
+        // and when another reply is updating the invoice, which may fail
+        if (!!checkOpen.error && isKeepingQuestion(checkOpen.error)) {
           return;
         }
 
@@ -141,6 +151,59 @@ module.exports = ({api, ctx, id, nodes, request}, cbk) => {
         }
 
         return cbk();
+      })],
+
+      // Only one reply at a time can update an invoice
+      lock: ['details', 'type', ({details, type}, cbk) => {
+        // Exit early when this is not an invoice update
+        if (!type) {
+          return cbk(null, {});
+        }
+
+        // Exit early when another reply is updating the invoice
+        if (updating.has(details.id)) {
+          return cbk(null, {is_busy: true});
+        }
+
+        updating.add(details.id);
+
+        return cbk(null, {id: details.id});
+      }],
+
+      // Check that the invoice was not replaced by an earlier reply
+      checkOpen: [
+        'details',
+        'lock',
+        'node',
+        'type',
+        asyncReflect(({details, lock, node, type}, cbk) =>
+      {
+        // Exit early when this is not an invoice update
+        if (!type) {
+          return cbk();
+        }
+
+        if (!!lock.is_busy) {
+          return cbk([409, 'InvoiceUpdateAlreadyInProgress']);
+        }
+
+        return getInvoice({id: details.id, lnd: node.lnd}, (err, res) => {
+          // An invoice that is gone was canceled and then removed by LND
+          if (!!err && isMissing(grpcDetails(err))) {
+            return cbk([400, 'InvoiceWasAlreadyUpdatedOrCanceled']);
+          }
+
+          // Nothing is changed when the state of the invoice is unknown
+          if (!!err) {
+            return cbk([503, 'FailedToLookUpInvoiceToUpdate', {err}]);
+          }
+
+          if (!!res.is_canceled) {
+            return cbk([400, 'InvoiceWasAlreadyUpdatedOrCanceled']);
+          }
+
+          return cbk();
+        });
       })],
 
       // Get the amount as tokens for the invoice
@@ -228,13 +291,14 @@ module.exports = ({api, ctx, id, nodes, request}, cbk) => {
 
       // Cancel the original invoice so that it can no longer be paid
       cancel: [
+        'checkOpen',
         'details',
         'node',
         'updated',
-        asyncReflect(({details, node, updated}, cbk) =>
+        asyncReflect(({checkOpen, details, node, updated}, cbk) =>
       {
         // Exit early when there is no update to make
-        if (!updated) {
+        if (!updated || !!checkOpen.error) {
           return cbk();
         }
 
@@ -260,12 +324,13 @@ module.exports = ({api, ctx, id, nodes, request}, cbk) => {
       // Post the invoice
       postInvoice: [
         'cancel',
+        'checkOpen',
         'details',
         'updated',
-        ({cancel, details, updated}, cbk) =>
+        ({cancel, checkOpen, details, updated}, cbk) =>
       {
         // Exit early when there is no update or the original was not canceled
-        if (!updated || !!cancel.error) {
+        if (!updated || !!cancel.error || !!checkOpen.error) {
           return cbk();
         }
 
@@ -284,17 +349,20 @@ module.exports = ({api, ctx, id, nodes, request}, cbk) => {
       postFailure: [
         'cancel',
         'checkDescription',
+        'checkOpen',
         'getInvoice',
         'getTokens',
-        async ({cancel, checkDescription, getInvoice, getTokens}) =>
+        async ({cancel, checkDescription, checkOpen, getInvoice, getTokens}) =>
       {
+        const failed = checkOpen.error || checkDescription.error ||
+          getTokens.error;
+
+        const error = failed || cancel.error;
+
         // Exit early when there is no failure
-        if (!cancel.error && !checkDescription.error && !getTokens.error) {
+        if (!error) {
           return;
         }
-
-        const error = checkDescription.error || getTokens.error ||
-          cancel.error;
 
         const [, code] = error;
         const isPaid = !!getInvoice.value && getInvoice.value.is_confirmed;
@@ -315,14 +383,30 @@ module.exports = ({api, ctx, id, nodes, request}, cbk) => {
       restoreInvoice: [
         'cancel',
         'checkDescription',
+        'checkOpen',
         'getInvoice',
         'getTokens',
         'node',
         'postFailure',
-        async ({cancel, checkDescription, getInvoice, getTokens, node}) =>
+        async ({
+          cancel,
+          checkDescription,
+          checkOpen,
+          getInvoice,
+          getTokens,
+          node,
+        }) =>
       {
+        const failed = cancel.error || checkDescription.error ||
+          checkOpen.error || getTokens.error;
+
         // Exit early when there was no failure
-        if (!cancel.error && !checkDescription.error && !getTokens.error) {
+        if (!failed) {
+          return;
+        }
+
+        // Exit early when the invoice is not known to still be open
+        if (!!checkOpen.error) {
           return;
         }
 
@@ -352,6 +436,13 @@ module.exports = ({api, ctx, id, nodes, request}, cbk) => {
         }
       }],
     },
-    returnResult({reject, resolve}, cbk));
+    (err, res) => {
+      // The invoice can be updated again when this reply is finished
+      if (!!res && !!res.lock && !!res.lock.id) {
+        updating.delete(res.lock.id);
+      }
+
+      return returnResult({reject, resolve}, cbk)(err, res);
+    });
   });
 };

@@ -20,6 +20,7 @@ const {now} = Date;
 const paidAmount = tokens => formatTokens({tokens, none: '-'}).display;
 const sumOf = arr => arr.reduce((sum, n) => sum + n, BigInt(Number()));
 const tokFromMtok = mtok => Number(BigInt(mtok) / BigInt(1e3));
+const unavailable = ([, code]) => `- Chain fees unavailable: ${code}\n`;
 const weekMs = 1000 * 60 * 60 * 24 * 7;
 
 /** Check node costs
@@ -107,8 +108,9 @@ module.exports = ({from, id, nodes, reply, request, working}, cbk) => {
           const {lnd} = node;
 
           return getChainTransactions({after, lnd, request}, (err, res) => {
+            // A node with unknown chain fees still gets a report
             if (!!err) {
-              return cbk(err);
+              return cbk(null, {error: err, public_key: node.public_key});
             }
 
             const transactions = res.transactions
@@ -141,29 +143,29 @@ module.exports = ({from, id, nodes, reply, request, working}, cbk) => {
           const paid = getRebalances.find(n => n.public_key === key);
 
           // Exit early when there were no costs in the week
-          if (!node.week && !paid.week) {
+          if (!node.error && !node.week && !paid.week) {
             return formatReport(from, '- No fees paid in the past week');
           }
 
-          const rows = [
-            [
-              'Rebalances',
-              paidAmount(tokFromMtok(paid.day)),
-              paidAmount(tokFromMtok(paid.week)),
-            ],
-            [
-              'Chain Fees',
-              paidAmount(node.day),
-              paidAmount(node.week),
-            ],
-          ];
+          // Chain fees are left out when they could not be looked up
+          const chain = !!node.error ? [] : [[
+            'Chain Fees',
+            paidAmount(node.day),
+            paidAmount(node.week),
+          ]];
+          const note = !node.error ? '' : unavailable(node.error);
+          const rebalances = [[
+            'Rebalances',
+            paidAmount(tokFromMtok(paid.day)),
+            paidAmount(tokFromMtok(paid.week)),
+          ]];
 
-          const chart = renderTable([header].concat(rows), {
-            border,
-            singleLine: true,
-          });
+          const chart = renderTable(
+            [header].concat(rebalances).concat(chain),
+            {border, singleLine: true}
+          );
 
-          return formatReport(from, chart);
+          return formatReport(from, `${chart}${note}`);
         });
 
         return cbk(null, formatReports(reports));

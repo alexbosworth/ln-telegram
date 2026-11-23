@@ -20,7 +20,9 @@ const {isArray} = Array;
 const maxAnswer = BigInt(80518);
 const messageType = '34349334';
 const minAnswer = BigInt(80509);
+const noEndQuote = text => text.replace(/”/g, '"');
 const noLinks = text => preventLinks({text}).text;
+const oneLine = text => text.replace(/[^\S ]+/g, ' ');
 const short = n => n.slice(0, 32);
 const signatureType = '34349337';
 const sort = (a, b) => (a < b) ? -1 : ((a > b) ? 1 : 0);
@@ -112,7 +114,7 @@ module.exports = ({description, lnd, payments, received, via}, cbk) => {
         const relays = via
           .map(n => noLinks(short(n.alias || n.id)))
           .join(', ');
-        const quoted = !description ? '' : `for “${description}”`;
+        const quoted = !description ? '' : `for “${noLinks(description)}”`;
 
         const got = `Received ${formatAmt(received)} ${quoted}`.trim();
 
@@ -192,7 +194,10 @@ module.exports = ({description, lnd, payments, received, via}, cbk) => {
 
         const senderMsg = bufFromHex(messageDetails.message.value).toString();
 
-        const senderLine = `Sender message: “${senderMsg}”`;
+        // A sender must not be able to end the quote, add lines or add links
+        const quoted = noLinks(noEndQuote(oneLine(senderMsg)));
+
+        const senderLine = `Sender message: “${quoted}”`;
 
         // Exit early when there is no from key
         if (!messageDetails.from) {

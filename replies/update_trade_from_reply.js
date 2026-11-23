@@ -6,6 +6,7 @@ const {createAnchoredTrade} = require('paid-services');
 const {DateTime} = require('luxon');
 const {decodeTrade} = require('paid-services');
 const {getAnchoredTrade} = require('paid-services');
+const {getInvoice} = require('ln-service');
 const {returnResult} = require('asyncjs-util');
 
 const {callbackCommands} = require('./../interface');
@@ -17,10 +18,12 @@ const tradeActionType = require('./trade_action_type');
 const failure = message => `⚠️ Failed to update trade: ${message}.`;
 const {fromISO} = DateTime;
 const {isArray} = Array;
+const isGone = ([code]) => code === 410;
 const maxDescriptionLength = 100;
 const {now} = DateTime;
 const split = n => n.split('\n');
 const toISOString = n => n.setZone('utc').toISO();
+const updating = new Set();
 
 /** Update the details of a created trade from reply input
 
@@ -65,8 +68,43 @@ module.exports = ({api, ctx, id, nodes}, cbk) => {
         return checkAccess({id, from: ctx.message.from.id}, cbk);
       }],
 
+      // Determine what type of edit message this is
+      type: ['checkAccess', ({}, cbk) => {
+        const {text} = ctx.update.message.reply_to_message;
+
+        const {type} = tradeActionType({nodes, text});
+
+        return cbk(null, type);
+      }],
+
+      // Only one reply at a time can update a trade
+      lock: ['type', ({type}, cbk) => {
+        // Exit early when this is not a trade update
+        if (!type) {
+          return cbk(null, {});
+        }
+
+        // The encoded trade is the 2nd line
+        const [, trade] = split(ctx.update.message.reply_to_message.text);
+
+        const {id} = decodeTrade({trade}).connect;
+
+        // Exit early when another reply is updating the trade
+        if (updating.has(id)) {
+          return cbk(null, {is_busy: true});
+        }
+
+        updating.add(id);
+
+        return cbk(null, {id});
+      }],
+
       // Get the referenced trade
-      getTrade: ['checkAccess', asyncReflect(({}, cbk) => {
+      getTrade: ['lock', asyncReflect(({lock}, cbk) => {
+        if (!!lock.is_busy) {
+          return cbk([409, 'TradeUpdateAlreadyInProgress']);
+        }
+
         // The encoded trade is the 2nd line
         const [, trade] = split(ctx.update.message.reply_to_message.text);
 
@@ -119,42 +157,60 @@ module.exports = ({api, ctx, id, nodes}, cbk) => {
             return cbk([400, 'CannotFindAnchoredTradeForId']);
           }
 
-          return cbk(null, {
-            description: anchor.trade.description,
-            destination: anchor.public_key,
-            expires_at: anchor.trade.expires_at,
-            id: connect.id,
-            lnd: anchor.lnd,
-            secret: anchor.trade.secret,
-            tokens: anchor.trade.tokens,
+          return getInvoice({id: connect.id, lnd: anchor.lnd}, (err, res) => {
+            if (!!err) {
+              return cbk(err);
+            }
+
+            // A canceled trade was already replaced by an earlier reply
+            if (!!res.is_canceled) {
+              return cbk([410, 'TradeWasAlreadyUpdatedOrCanceled']);
+            }
+
+            return cbk(null, {
+              description: anchor.trade.description,
+              destination: anchor.public_key,
+              expires_at: anchor.trade.expires_at,
+              id: connect.id,
+              lnd: anchor.lnd,
+              secret: anchor.trade.secret,
+              tokens: anchor.trade.tokens,
+            });
           });
         });
       })],
 
-      // Determine what type of edit message this is
-      type: ['checkAccess', ({}, cbk) => {
-        const {text} = ctx.update.message.reply_to_message;
-
-        const {type} = tradeActionType({nodes, text});
-
-        return cbk(null, type);
-      }],
-
       // Delete the answer message
       deleteAnswer: ['type', async ({type}) => {
-        return !!type ? await ctx.deleteMessage() : null;
+        try {
+          return !!type ? await ctx.deleteMessage() : null;
+        } catch (err) {
+          // Ignore errors when deleting
+          return;
+        }
       }],
 
       // Delete the edit message
-      deleteQuestion: ['type', async ({type}) => {
+      deleteQuestion: ['getTrade', 'type', async ({getTrade, type}) => {
         if (!type) {
           return;
         }
 
-        return await api.deleteMessage(
-          ctx.update.message.reply_to_message.chat.id,
-          ctx.update.message.reply_to_message.message_id,
-        );
+        // The question is kept when the trade could not be looked up, to try
+        // again, and when another reply is updating the trade, which may fail
+        if (!!getTrade.error && !isGone(getTrade.error)) {
+          return;
+        }
+
+        try {
+          return await api.deleteMessage(
+            ctx.update.message.reply_to_message.chat.id,
+            ctx.update.message.reply_to_message.message_id,
+          );
+        } catch (err) {
+          // Ignore errors when deleting
+          return;
+        }
       }],
 
       // Details for the updated new anchored trade
@@ -303,6 +359,13 @@ module.exports = ({api, ctx, id, nodes}, cbk) => {
         cbk);
       }],
     },
-    returnResult({reject, resolve}, cbk));
+    (err, res) => {
+      // The trade can be updated again when this reply is finished
+      if (!!res && !!res.lock && !!res.lock.id) {
+        updating.delete(res.lock.id);
+      }
+
+      return returnResult({reject, resolve}, cbk)(err, res);
+    });
   });
 };

@@ -40,7 +40,8 @@ const makeApi = ({}) => {
   };
 };
 
-const makeCtx = ({update}) => {
+// The bot is user 2
+const makeCtx = ({me = {id: 2}, update}) => {
   const deleted = [];
   const replies = [];
 
@@ -53,6 +54,7 @@ const makeCtx = ({update}) => {
 
       return deleted.push({chat: chat.id, id: message_id});
     },
+    me,
     message: !update ? undefined : update.message,
     reply: async (text, options) => {
       return replies.push({options, text: text.split('\n')});
@@ -114,14 +116,19 @@ const makeLnd = ({}) => {
   };
 };
 
-// The answer is message 4, a reply to the question in message 3
-const makeUpdate = ({answer, question}) => {
+// The answer is message 4, a reply to the question the bot asked in message 3
+const makeUpdate = ({answer, asker = {id: 2}, question}) => {
   return {
     message: {
       chat: {id: 1},
       from: {id: 1},
       message_id: 4,
-      reply_to_message: {chat: {id: 1}, message_id: 3, text: question},
+      reply_to_message: {
+        chat: {id: 1},
+        from: asker,
+        message_id: 3,
+        text: question,
+      },
       text: answer,
     },
   };
@@ -226,6 +233,78 @@ const tests = [
       ctx: makeCtx({update: makeUpdate({answer: 'text', question: 'text'})}),
     }),
     description: 'A reply to a message that is not a question is ignored',
+    expected: {
+      canceled: [],
+      created: [],
+      deleted: [],
+      messages: [],
+      replies: [],
+    },
+  },
+  {
+    args: makeArgs({
+      ctx: makeCtx({
+        update: makeUpdate({
+          answer: 'new description',
+          asker: {id: 3},
+          question: join([
+            invoiceTitle,
+            request,
+            '',
+            'What is this invoice for?',
+          ]),
+        }),
+      }),
+    }),
+    description: 'A reply to a question the bot did not post is ignored',
+    expected: {
+      canceled: [],
+      created: [],
+      deleted: [],
+      messages: [],
+      replies: [],
+    },
+  },
+  {
+    args: makeArgs({
+      ctx: makeCtx({
+        update: makeUpdate({
+          answer: 'new description',
+          asker: null,
+          question: join([
+            invoiceTitle,
+            request,
+            '',
+            'What is this invoice for?',
+          ]),
+        }),
+      }),
+    }),
+    description: 'A reply to a question with no sender is ignored',
+    expected: {
+      canceled: [],
+      created: [],
+      deleted: [],
+      messages: [],
+      replies: [],
+    },
+  },
+  {
+    args: makeArgs({
+      ctx: makeCtx({
+        me: null,
+        update: makeUpdate({
+          answer: 'new description',
+          question: join([
+            invoiceTitle,
+            request,
+            '',
+            'What is this invoice for?',
+          ]),
+        }),
+      }),
+    }),
+    description: 'A reply is ignored when the bot is not known',
     expected: {
       canceled: [],
       created: [],

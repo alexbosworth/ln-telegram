@@ -1,6 +1,6 @@
 # Versions
 
-## Version 8.2.0
+## Version 9.0.0
 
 - `actOnMessageReply`, `handleButtonPush`: Cancel invoices on the node when
     their messages are deleted, moved or edited
@@ -9,6 +9,11 @@
 - `postClosedMessage`, `postClosingMessage`, `postOpenMessage`: Show public
     keys as code to make them easier to copy
 - Prevent aliases and node names that look like links from showing as links
+
+### Breaking Changes
+
+- `handleEditedMessage`: `id` is now required and only the connected user is
+    warned about edits
 
 ## Version 8.1.2
 

@@ -8,22 +8,26 @@ const {nodeTrade: trade} = require('./../fixtures/encoded');
 
 const join = lines => lines.join('\n');
 
-const makeCtx = ({reply}) => {
-  return {update: {message: {reply_to_message: reply, text: 'text'}}};
+// The bot is user 2
+const makeCtx = ({me = {id: 2}, reply}) => {
+  return {me, update: {message: {reply_to_message: reply, text: 'text'}}};
+};
+
+const makeQuestion = ({from}) => {
+  return {
+    from,
+    text: join([
+      'Invoice: 0.00000001 “description”',
+      request,
+      '',
+      'What is this invoice for?',
+    ]),
+  };
 };
 
 const makeArgs = overrides => {
   const args = {
-    ctx: makeCtx({
-      reply: {
-        text: join([
-          'Invoice: 0.00000001 “description”',
-          request,
-          '',
-          'What is this invoice for?',
-        ]),
-      },
-    }),
+    ctx: makeCtx({reply: makeQuestion({from: {id: 2}})}),
     nodes: [{public_key: key}],
   };
 
@@ -42,6 +46,7 @@ const tests = [
     args: makeArgs({
       ctx: makeCtx({
         reply: {
+          from: {id: 2},
           text: join([
             'Trade-Secret: 0.00000001 “description” expires 1/1/2100',
             trade,
@@ -75,13 +80,30 @@ const tests = [
     expected: false,
   },
   {
-    args: makeArgs({ctx: makeCtx({reply: {}})}),
+    args: makeArgs({ctx: makeCtx({reply: {from: {id: 2}}})}),
     description: 'A reply to a message without text is not a reply action',
     expected: false,
   },
   {
-    args: makeArgs({ctx: makeCtx({reply: {text: 'text'}})}),
+    args: makeArgs({ctx: makeCtx({reply: {from: {id: 2}, text: 'text'}})}),
     description: 'A reply to a message that is not a question is not an action',
+    expected: false,
+  },
+  {
+    args: makeArgs({ctx: makeCtx({reply: makeQuestion({from: {id: 3}})})}),
+    description: 'A reply to a question the bot did not post is not an action',
+    expected: false,
+  },
+  {
+    args: makeArgs({ctx: makeCtx({reply: makeQuestion({})})}),
+    description: 'A reply to a question with no sender is not a reply action',
+    expected: false,
+  },
+  {
+    args: makeArgs({
+      ctx: makeCtx({me: null, reply: makeQuestion({from: {id: 2}})}),
+    }),
+    description: 'A reply is not a reply action when the bot is not known',
     expected: false,
   },
 ];

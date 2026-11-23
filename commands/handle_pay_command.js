@@ -15,6 +15,7 @@ const {preventLinks} = require('./../interface');
 const {ceil} = Math;
 const cltvDeltaBuffer = 3;
 const defaultMaxTokensMultiplier = 1.01;
+const escape = text => text.replace(/[_*`[]/g, '\\\$&');
 const {isArray} = Array;
 const isNumber = n => !isNaN(n);
 const {min} = Math;
@@ -196,11 +197,17 @@ module.exports = ({budget, from, id, nodes, reply, text}, cbk) => {
             fromName = node.alias || fromName;
           } catch (err) {}
 
-          const from = !source ? '' : ` from ${noLinks(fromName)}`;
+          // An alias must not add formatting or links to the reply
+          const from = !source ? '' : ` from ${escape(noLinks(fromName))}`;
 
           const text = `${fail.reason} ${at}${from}`;
 
-          return reply(text);
+          try {
+            return await reply(text);
+          } catch (err) {
+            // Ignore errors posting the routing failure
+            return;
+          }
         });
 
         // Finish with successful probe

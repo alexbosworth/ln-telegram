@@ -25,9 +25,11 @@ const makeArgs = overrides => {
           get date() {
             return nowSeconds();
           },
+          from: {id: 1},
         },
       },
     }),
+    id: 1,
   };
 
   Object.keys(overrides).forEach(k => args[k] = overrides[k]);
@@ -40,6 +42,11 @@ const tests = [
     args: makeArgs({ctx: undefined}),
     description: 'A Telegram context is expected',
     error: [400, 'ExpectedTelegramContextToHandleEditedMessage'],
+  },
+  {
+    args: makeArgs({id: undefined}),
+    description: 'A connected user id is expected',
+    error: [400, 'ExpectedConnectedUserIdToHandleEditedMessage'],
   },
   {
     args: makeArgs({}),
@@ -55,8 +62,22 @@ const tests = [
     },
   },
   {
+    args: makeArgs({id: 2}),
+    description: 'An edit that is not from the connected user is ignored',
+    expected: {replies: []},
+  },
+  {
     args: makeArgs({
-      ctx: makeCtx({update: {edited_message: {date: nowSeconds() - 60}}}),
+      ctx: makeCtx({update: {edited_message: {date: nowSeconds()}}}),
+    }),
+    description: 'An edit without a from user is ignored',
+    expected: {replies: []},
+  },
+  {
+    args: makeArgs({
+      ctx: makeCtx({
+        update: {edited_message: {date: nowSeconds() - 60, from: {id: 1}}},
+      }),
     }),
     description: 'An edit made a minute ago is ignored',
     expected: {replies: []},

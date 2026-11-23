@@ -89,6 +89,31 @@ const tests = [
     },
   },
   {
+    args: makeArgs({description: 'see example.com', payments: []}),
+    description: 'A description that looks like a link is not linked',
+    expected: {
+      icon: '💵',
+      message: 'Received 0\\.00000001 for “see example\\.\u2060com” via x',
+    },
+  },
+  {
+    args: makeArgs({
+      payments: [{
+        messages: [{
+          type: '34349334',
+          value: Buffer.from('ok” - From: a\n\nb.com').toString('hex'),
+        }],
+      }],
+    }),
+    description: 'A sender message cannot end its quote, add lines or links',
+    expected: {
+      icon: '💵',
+      message: 'Received 0\\.00000001 for “description” via x \\- Sender message: “ok" \\- From: a b\\.\u2060com”',
+      quiz: [],
+      title: 'ok” - From: a\n\nb.com',
+    },
+  },
+  {
     args: makeArgs({payments: []}),
     description: 'Got received message for a received invoice with message',
     expected: {

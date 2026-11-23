@@ -12,6 +12,7 @@ const {request: requestWithoutSecret} = require('./../fixtures/encoded');
 const key = Buffer.alloc(33, 3).toString('hex');
 const otherKey = Buffer.alloc(33, 4).toString('hex');
 const peer = Buffer.alloc(33, 2).toString('hex');
+const unpostable = 'unpostable';
 
 const makeFailure = ({code, index}) => {
   return {failure: {code, failure_source_index: index}, status: 'FAILED'};
@@ -141,7 +142,16 @@ const makeArgs = overrides => {
       }),
       public_key: key,
     }],
-    reply: async text => calls.replies.push(text.split('\n')),
+    // Posting a message that mentions the unpostable alias fails
+    reply: async text => {
+      calls.replies.push(text.split('\n'));
+
+      if (text.includes(unpostable)) {
+        throw new Error('FailedToPostReply');
+      }
+
+      return;
+    },
     text: `/pay ${request}`,
   };
 
@@ -496,6 +506,58 @@ const tests = [
         ['No route to payment destination, create a new channel?'],
         // The failure is posted after looking up the alias of the failed node
         [`TemporaryChannelFailure at 2x2x2 from ${peer}`],
+      ],
+    },
+  },
+  {
+    args: makeArgs({
+      nodes: [{
+        from: 'node1',
+        lnd: makeLnd({
+          attempts: [
+            makeFailure({code: 'TEMPORARY_CHANNEL_FAILURE', index: 1}),
+          ],
+          graph: [{alias: '[a](http://1/) my_node *`', public_key: peer}],
+          routes: [makeRoute({fee: 1})],
+          status: 'SUCCEEDED',
+        }),
+        public_key: key,
+      }],
+    }),
+    description: 'A routing failure alias cannot add formatting or links',
+    expected: {
+      payment: {tokens: 0},
+      replies: [
+        ['🤖 Paying 10...'],
+        ['No route to payment destination, create a new channel?'],
+        // The failure is posted after looking up the alias of the failed node
+        ['TemporaryChannelFailure at 2x2x2 from \\[a](http://1/) my\\_node \\*\\`'],
+      ],
+    },
+  },
+  {
+    args: makeArgs({
+      nodes: [{
+        from: 'node1',
+        lnd: makeLnd({
+          attempts: [
+            makeFailure({code: 'TEMPORARY_CHANNEL_FAILURE', index: 1}),
+          ],
+          graph: [{alias: unpostable, public_key: peer}],
+          routes: [makeRoute({fee: 1})],
+          status: 'SUCCEEDED',
+        }),
+        public_key: key,
+      }],
+    }),
+    description: 'A failure to post a routing failure is ignored',
+    expected: {
+      payment: {tokens: 0},
+      replies: [
+        ['🤖 Paying 10...'],
+        ['No route to payment destination, create a new channel?'],
+        // The failure is posted after looking up the alias of the failed node
+        ['TemporaryChannelFailure at 2x2x2 from unpostable'],
       ],
     },
   },
